@@ -22,20 +22,21 @@ Full documentation lives in [`docs/`](docs/):
 DOCX versions of every document are in the same `docs/` folder.
 
 ## Repository Structure
+
+```
 quickserve/
 ├── apps/
-│ ├── mobile/ Flutter mobile app (Customer + Agent)
-│ └── admin/ Flutter Web admin portal (planned)
+│   ├── mobile/       Flutter mobile app (Customer + Agent)
+│   └── admin/        Flutter Web admin portal (planned)
 ├── packages/
-│ └── shared/ Shared Dart package (planned)
-├── docs/ Project documentation
+│   └── shared/       Shared Dart package (planned)
+├── docs/             Project documentation
 ├── firestore.rules
 ├── firestore.indexes.json
 ├── firebase.json
 ├── .gitignore
 └── README.md
-
-text
+```
 
 ## Tech Stack
 
@@ -51,4 +52,3 @@ See [`docs/QuickServe_README_Setup_Deployment.md`](docs/QuickServe_README_Setup_
 ## Program
 
 Swasiq Technology Internship Program — Health-tech, Nagpur
-The long-form setup guide stays inside docs/QuickServe_README_Setup_Deployment.md. The root README is just the entry point.
