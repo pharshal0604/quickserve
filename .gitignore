@@ -1,0 +1,57 @@
+# ---------- Dart / Flutter ----------
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.ipr
+*.iws
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---------- Firebase Emulator (local data) ----------
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+
+# ---------- Environment / Secrets ----------
+.env
+.env.local
+.env.*.local
+serviceAccount*.json
+*.key
+
+# ---------- Node (tooling only) ----------
+node_modules/
+
+# ---------- Coverage ----------
+coverage/
+
+# ---------- iOS / macOS ----------
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+macos/Pods/
+macos/Flutter/ephemeral/
+
+# ---------- Android ----------
+android/.gradle/
+android/captures/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# ---------- Linux / Windows ----------
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
