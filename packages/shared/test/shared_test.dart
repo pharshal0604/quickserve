@@ -20,10 +20,7 @@ void main() {
 
     test('RequestPriority round-trips every stored value', () {
       for (final value in RequestPriority.values) {
-        expect(
-          RequestPriority.fromStoredValue(value.toStoredValue()),
-          value,
-        );
+        expect(RequestPriority.fromStoredValue(value.toStoredValue()), value);
       }
     });
 
@@ -139,32 +136,35 @@ void main() {
       expect(counter, Counter.fromMap(counter.toMap()));
     });
 
-    test('models reject missing or malformed fields with SharedParseException', () {
-      expect(
-        () => User.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-      expect(
-        () => Service.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-      expect(
-        () => Request.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-      expect(
-        () => StatusHistory.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-      expect(
-        () => AuditLog.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-      expect(
-        () => Counter.fromMap(<String, dynamic>{}),
-        throwsA(isA<SharedParseException>()),
-      );
-    });
+    test(
+      'models reject missing or malformed fields with SharedParseException',
+      () {
+        expect(
+          () => User.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+        expect(
+          () => Service.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+        expect(
+          () => Request.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+        expect(
+          () => StatusHistory.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+        expect(
+          () => AuditLog.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+        expect(
+          () => Counter.fromMap(<String, dynamic>{}),
+          throwsA(isA<SharedParseException>()),
+        );
+      },
+    );
   });
 
   group('validators', () {
@@ -254,10 +254,7 @@ void main() {
         isValidTransitionForRole('accepted', 'cancelled', 'customer'),
         isFalse,
       );
-      expect(
-        isCancellableByCustomer('in_progress'),
-        isFalse,
-      );
+      expect(isCancellableByCustomer('in_progress'), isFalse);
     });
 
     test('prevents Agents from cancelling', () {
@@ -265,23 +262,12 @@ void main() {
         isValidTransitionForRole('assigned', 'cancelled', 'agent'),
         isFalse,
       );
-      expect(
-        isValidTransitionForRole('assigned', 'accepted', 'agent'),
-        isTrue,
-      );
+      expect(isValidTransitionForRole('assigned', 'accepted', 'agent'), isTrue);
     });
 
     test('allows Admin cancellation from every non-terminal state', () {
-      for (final status in [
-        'created',
-        'assigned',
-        'accepted',
-        'in_progress',
-      ]) {
-        expect(
-          isValidTransitionForRole(status, 'cancelled', 'admin'),
-          isTrue,
-        );
+      for (final status in ['created', 'assigned', 'accepted', 'in_progress']) {
+        expect(isValidTransitionForRole(status, 'cancelled', 'admin'), isTrue);
       }
     });
 
@@ -307,7 +293,10 @@ void main() {
     test('formats and parses a request code', () {
       const code = 'REQ-2026-000123';
       expect(formatRequestCode(2026, 123), code);
-      expect(parseRequestCode(code), const ParsedRequestCode(year: 2026, sequence: 123));
+      expect(
+        parseRequestCode(code),
+        const ParsedRequestCode(year: 2026, sequence: 123),
+      );
       expect(isValidRequestCode(code), isTrue);
     });
 

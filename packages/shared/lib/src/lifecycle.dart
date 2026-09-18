@@ -4,14 +4,14 @@ import 'errors.dart';
 /// Returns whether [from] can transition to [to].
 bool canTransition(String from, String to) {
   return switch (from) {
-    StatusNames.created => to == StatusNames.assigned ||
-        to == StatusNames.cancelled,
-    StatusNames.assigned => to == StatusNames.accepted ||
-        to == StatusNames.cancelled,
-    StatusNames.accepted => to == StatusNames.inProgress ||
-        to == StatusNames.cancelled,
-    StatusNames.inProgress => to == StatusNames.completed ||
-        to == StatusNames.cancelled,
+    StatusNames.created =>
+      to == StatusNames.assigned || to == StatusNames.cancelled,
+    StatusNames.assigned =>
+      to == StatusNames.accepted || to == StatusNames.cancelled,
+    StatusNames.accepted =>
+      to == StatusNames.inProgress || to == StatusNames.cancelled,
+    StatusNames.inProgress =>
+      to == StatusNames.completed || to == StatusNames.cancelled,
     StatusNames.completed || StatusNames.cancelled => false,
     _ => false,
   };
@@ -22,8 +22,7 @@ bool isValidTransitionForRole(String from, String to, String role) {
   if (!canTransition(from, to)) return false;
 
   if (role == RoleNames.customer) {
-    return to == StatusNames.cancelled &&
-        isCancellableByCustomer(from);
+    return to == StatusNames.cancelled && isCancellableByCustomer(from);
   }
   if (role == RoleNames.agent) {
     return to != StatusNames.cancelled &&

@@ -25,9 +25,7 @@ class AuditLog {
       actorRole: UserRole.fromStoredValue(
         readRequired<String>(map, 'actorRole'),
       ),
-      action: AuditEvent.fromStoredValue(
-        readRequired<String>(map, 'action'),
-      ),
+      action: AuditEvent.fromStoredValue(readRequired<String>(map, 'action')),
       targetType: readRequired<String>(map, 'targetType'),
       targetId: readRequired<String>(map, 'targetId'),
       oldValue: readMap(map, 'oldValue'),
@@ -66,16 +64,16 @@ class AuditLog {
 
   /// Converts this audit log to Firestore field names and values.
   Map<String, dynamic> toMap() => {
-        'actorUserId': actorUserId,
-        'actorRole': actorRole.toStoredValue(),
-        'action': action.toStoredValue(),
-        'targetType': targetType,
-        'targetId': targetId,
-        'oldValue': Map<String, dynamic>.from(oldValue),
-        'newValue': Map<String, dynamic>.from(newValue),
-        'result': result,
-        'timestamp': timestamp,
-      };
+    'actorUserId': actorUserId,
+    'actorRole': actorRole.toStoredValue(),
+    'action': action.toStoredValue(),
+    'targetType': targetType,
+    'targetId': targetId,
+    'oldValue': Map<String, dynamic>.from(oldValue),
+    'newValue': Map<String, dynamic>.from(newValue),
+    'result': result,
+    'timestamp': timestamp,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -93,14 +91,14 @@ class AuditLog {
 
   @override
   int get hashCode => Object.hash(
-        actorUserId,
-        actorRole,
-        action,
-        targetType,
-        targetId,
-        deepHash(oldValue),
-        deepHash(newValue),
-        result,
-        timestamp,
-      );
+    actorUserId,
+    actorRole,
+    action,
+    targetType,
+    targetId,
+    deepHash(oldValue),
+    deepHash(newValue),
+    result,
+    timestamp,
+  );
 }

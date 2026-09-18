@@ -13,10 +13,10 @@ enum UserRole {
 
   /// Returns the exact lowercase value stored in Firestore.
   String toStoredValue() => switch (this) {
-        UserRole.customer => 'customer',
-        UserRole.agent => 'agent',
-        UserRole.admin => 'admin',
-      };
+    UserRole.customer => 'customer',
+    UserRole.agent => 'agent',
+    UserRole.admin => 'admin',
+  };
 
   /// Parses an exact stored role value.
   static UserRole fromStoredValue(String value) {
@@ -49,13 +49,13 @@ enum RequestStatus {
 
   /// Returns the exact lowercase value stored in Firestore.
   String toStoredValue() => switch (this) {
-        RequestStatus.created => 'created',
-        RequestStatus.assigned => 'assigned',
-        RequestStatus.accepted => 'accepted',
-        RequestStatus.inProgress => 'in_progress',
-        RequestStatus.completed => 'completed',
-        RequestStatus.cancelled => 'cancelled',
-      };
+    RequestStatus.created => 'created',
+    RequestStatus.assigned => 'assigned',
+    RequestStatus.accepted => 'accepted',
+    RequestStatus.inProgress => 'in_progress',
+    RequestStatus.completed => 'completed',
+    RequestStatus.cancelled => 'cancelled',
+  };
 
   /// Parses an exact stored request-status value.
   static RequestStatus fromStoredValue(String value) {
@@ -79,10 +79,10 @@ enum RequestPriority {
 
   /// Returns the exact lowercase value stored in Firestore.
   String toStoredValue() => switch (this) {
-        RequestPriority.low => 'low',
-        RequestPriority.medium => 'medium',
-        RequestPriority.high => 'high',
-      };
+    RequestPriority.low => 'low',
+    RequestPriority.medium => 'medium',
+    RequestPriority.high => 'high',
+  };
 
   /// Parses an exact stored priority value.
   static RequestPriority fromStoredValue(String value) {
@@ -115,13 +115,13 @@ enum AuditEvent {
 
   /// Returns the exact uppercase value stored in Firestore.
   String toStoredValue() => switch (this) {
-        AuditEvent.loginSuccess => 'LOGIN_SUCCESS',
-        AuditEvent.requestCreated => 'REQUEST_CREATED',
-        AuditEvent.requestAssigned => 'REQUEST_ASSIGNED',
-        AuditEvent.requestUpdated => 'REQUEST_UPDATED',
-        AuditEvent.authorizationFailed => 'AUTHORIZATION_FAILED',
-        AuditEvent.databaseError => 'DATABASE_ERROR',
-      };
+    AuditEvent.loginSuccess => 'LOGIN_SUCCESS',
+    AuditEvent.requestCreated => 'REQUEST_CREATED',
+    AuditEvent.requestAssigned => 'REQUEST_ASSIGNED',
+    AuditEvent.requestUpdated => 'REQUEST_UPDATED',
+    AuditEvent.authorizationFailed => 'AUTHORIZATION_FAILED',
+    AuditEvent.databaseError => 'DATABASE_ERROR',
+  };
 
   /// Parses an exact stored audit event value.
   static AuditEvent fromStoredValue(String value) {

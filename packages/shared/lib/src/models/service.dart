@@ -36,11 +36,11 @@ class Service {
 
   /// Converts this service to Firestore field names and values.
   Map<String, dynamic> toMap() => {
-        'name': name,
-        'description': description,
-        'active': active,
-        'createdAt': createdAt,
-      };
+    'name': name,
+    'description': description,
+    'active': active,
+    'createdAt': createdAt,
+  };
 
   @override
   bool operator ==(Object other) {

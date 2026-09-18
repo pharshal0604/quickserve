@@ -81,19 +81,19 @@ class Request {
 
   /// Converts this request to Firestore field names and values.
   Map<String, dynamic> toMap() => {
-        'requestCode': requestCode,
-        'customerId': customerId,
-        'agentId': agentId,
-        'serviceType': serviceType,
-        'description': description,
-        'preferredDateTime': preferredDateTime,
-        'address': address,
-        'priority': priority.toStoredValue(),
-        'status': status.toStoredValue(),
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-        'cancellationReason': cancellationReason,
-      };
+    'requestCode': requestCode,
+    'customerId': customerId,
+    'agentId': agentId,
+    'serviceType': serviceType,
+    'description': description,
+    'preferredDateTime': preferredDateTime,
+    'address': address,
+    'priority': priority.toStoredValue(),
+    'status': status.toStoredValue(),
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'cancellationReason': cancellationReason,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -114,17 +114,17 @@ class Request {
 
   @override
   int get hashCode => Object.hash(
-        requestCode,
-        customerId,
-        agentId,
-        serviceType,
-        description,
-        preferredDateTime,
-        address,
-        priority,
-        status,
-        createdAt,
-        updatedAt,
-        cancellationReason,
-      );
+    requestCode,
+    customerId,
+    agentId,
+    serviceType,
+    description,
+    preferredDateTime,
+    address,
+    priority,
+    status,
+    createdAt,
+    updatedAt,
+    cancellationReason,
+  );
 }

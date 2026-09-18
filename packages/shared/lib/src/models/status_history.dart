@@ -41,12 +41,12 @@ class StatusHistory {
 
   /// Converts this history record to Firestore field names and values.
   Map<String, dynamic> toMap() => {
-        'fromStatus': fromStatus,
-        'toStatus': toStatus,
-        'changedBy': changedBy,
-        'changedAt': changedAt,
-        'note': note,
-      };
+    'fromStatus': fromStatus,
+    'toStatus': toStatus,
+    'changedBy': changedBy,
+    'changedAt': changedAt,
+    'note': note,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -59,11 +59,6 @@ class StatusHistory {
   }
 
   @override
-  int get hashCode => Object.hash(
-        fromStatus,
-        toStatus,
-        changedBy,
-        changedAt,
-        note,
-      );
+  int get hashCode =>
+      Object.hash(fromStatus, toStatus, changedBy, changedAt, note);
 }

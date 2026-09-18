@@ -16,10 +16,7 @@ T? readNullable<T>(Map<String, dynamic> map, String field) {
 }
 
 /// Reads a typed map field from a serialized model map.
-Map<String, dynamic> readMap(
-  Map<String, dynamic> map,
-  String field,
-) {
+Map<String, dynamic> readMap(Map<String, dynamic> map, String field) {
   final value = map[field];
   if (value is Map<String, dynamic>) return Map<String, dynamic>.from(value);
   throw SharedParseException('Field $field is missing or has the wrong type.');
@@ -60,9 +57,11 @@ int deepHash(Object? value) {
     final entries = value.entries.toList()
       ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
 
-    return Object.hashAll(entries.map((entry) {
-      return Object.hash(entry.key, deepHash(entry.value));
-    }));
+    return Object.hashAll(
+      entries.map((entry) {
+        return Object.hash(entry.key, deepHash(entry.value));
+      }),
+    );
   }
 
   if (value is List) return Object.hashAll(value.map(deepHash));

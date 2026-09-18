@@ -29,9 +29,7 @@ String formatRequestCode(int year, int sequence) {
     throw SharedValidationException('Year must contain exactly four digits.');
   }
   if (sequence < 0 || sequence > 999999) {
-    throw SharedValidationException(
-      'Sequence must be between 0 and 999999.',
-    );
+    throw SharedValidationException('Sequence must be between 0 and 999999.');
   }
   return '${RequestCodeConstants.prefix}$year-${sequence.toString().padLeft(6, '0')}';
 }
@@ -40,9 +38,7 @@ String formatRequestCode(int year, int sequence) {
 ParsedRequestCode parseRequestCode(String code) {
   final match = RegExp(r'^REQ-([0-9]{4})-([0-9]{6})$').firstMatch(code);
   if (match == null) {
-    throw SharedParseException(
-      'Request code must match REQ-YYYY-000123.',
-    );
+    throw SharedParseException('Request code must match REQ-YYYY-000123.');
   }
   return ParsedRequestCode(
     year: int.parse(match.group(1)!),

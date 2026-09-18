@@ -47,13 +47,13 @@ class User {
 
   /// Converts this profile to Firestore field names and values.
   Map<String, dynamic> toMap() => {
-        'role': role.toStoredValue(),
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-      };
+    'role': role.toStoredValue(),
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -67,12 +67,6 @@ class User {
   }
 
   @override
-  int get hashCode => Object.hash(
-        role,
-        name,
-        email,
-        phone,
-        createdAt,
-        updatedAt,
-      );
+  int get hashCode =>
+      Object.hash(role, name, email, phone, createdAt, updatedAt);
 }

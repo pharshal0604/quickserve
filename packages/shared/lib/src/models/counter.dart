@@ -16,14 +16,11 @@ class Counter {
   final int lastRequestNumber;
 
   /// Converts this counter to Firestore field names and values.
-  Map<String, dynamic> toMap() => {
-        'lastRequestNumber': lastRequestNumber,
-      };
+  Map<String, dynamic> toMap() => {'lastRequestNumber': lastRequestNumber};
 
   @override
   bool operator ==(Object other) {
-    return other is Counter &&
-        other.lastRequestNumber == lastRequestNumber;
+    return other is Counter && other.lastRequestNumber == lastRequestNumber;
   }
 
   @override

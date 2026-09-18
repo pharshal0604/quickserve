@@ -9,7 +9,7 @@ class ValidationResult {
 
   /// Creates a failed validation result with a [reason].
   const ValidationResult.invalid(String reason)
-      : this._(isValid: false, reason: reason);
+    : this._(isValid: false, reason: reason);
 
   /// Whether the input passed validation.
   final bool isValid;
