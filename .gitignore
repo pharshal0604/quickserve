@@ -58,3 +58,6 @@ android/key.properties
 # ---------- Linux / Windows ----------
 linux/flutter/ephemeral/
 windows/flutter/ephemeral/
+
+# ---------- FlutterFire CLI metadata (regenerated locally) ----------
+apps/*/firebase.json
