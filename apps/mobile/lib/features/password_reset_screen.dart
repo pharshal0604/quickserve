@@ -4,6 +4,7 @@ import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 
 /// Provides the QuickServe password reset screen.
 class PasswordResetScreen extends ConsumerStatefulWidget {
@@ -44,10 +45,9 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
 
     if (!mounted) return;
     setState(() => _isSending = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('If that email exists, a reset link has been sent.'),
-      ),
+    AppSnackBar.show(
+      context,
+      message: 'If that email exists, a reset link has been sent.',
     );
   }
 
