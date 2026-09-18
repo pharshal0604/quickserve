@@ -7,7 +7,10 @@
       "type": "dart",
       "program": "apps/mobile/lib/main.dart",
       "cwd": "${workspaceFolder}/apps/mobile",
-      "flutterMode": "debug"
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=FIREBASE_USE_EMULATORS=true"
+      ]
     },
     {
       "name": "QuickServe Mobile (profile)",
