@@ -1,5 +1,5 @@
 name: shared
-description: "A new Flutter package project."
+description: "Shared Dart foundation for QuickServe — enums, models, validators, lifecycle rules, and constants."
 version: 0.0.1
 homepage:
 
