@@ -1,0 +1,61 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "QuickServe Mobile (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/mobile/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "QuickServe Mobile (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/mobile/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "QuickServe Mobile (release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/mobile/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "flutterMode": "release"
+    },
+    {
+      "name": "QuickServe Admin (Chrome, debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/admin/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/admin",
+      "flutterMode": "debug",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "QuickServe Admin (Chrome, profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/admin/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/admin",
+      "flutterMode": "profile",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "QuickServe Admin (Chrome, release)",
+      "request": "launch",
+      "type": "dart",
+      "program": "apps/admin/lib/main.dart",
+      "cwd": "${workspaceFolder}/apps/admin",
+      "flutterMode": "release",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "QuickServe Mobile (attach)",
+      "request": "attach",
+      "type": "dart"
+    }
+  ]
+}
