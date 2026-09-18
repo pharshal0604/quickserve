@@ -19,6 +19,11 @@ class QuickServeApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: router,
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        minScaleFactor: 1.0,
+        maxScaleFactor: 1.5,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

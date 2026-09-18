@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'app_radius.dart';
+
 /// Provides the QuickServe light and dark Material 3 themes.
 abstract final class AppTheme {
-  static const _seedColor = Color(0xFF1B5E20);
-  static const _shape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.all(Radius.circular(12)),
-  );
+  static const _seedColor = Color(0xFF7C5CFC);
+  static const _shape = RoundedRectangleBorder(borderRadius: AppRadius.mdAll);
   static const _buttonShape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.all(Radius.circular(24)),
+    borderRadius: BorderRadius.all(Radius.circular(AppRadius.xl)),
   );
   static const _contentPadding = EdgeInsets.symmetric(
     horizontal: 16,
@@ -37,9 +37,9 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-        enabledBorder: OutlineInputBorder(),
-        focusedBorder: OutlineInputBorder(),
+        border: OutlineInputBorder(borderRadius: AppRadius.mdAll),
+        enabledBorder: OutlineInputBorder(borderRadius: AppRadius.mdAll),
+        focusedBorder: OutlineInputBorder(borderRadius: AppRadius.mdAll),
         contentPadding: _contentPadding,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
