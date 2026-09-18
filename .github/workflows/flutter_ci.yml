@@ -1,0 +1,59 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.47.4'
+
+jobs:
+  analyze-and-test:
+    name: Analyze and Test (${{ matrix.project }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: apps/mobile
+            name: Mobile
+          - project: apps/admin
+            name: Admin
+          - project: packages/shared
+            name: Shared
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: flutter pub get
+
+      - name: Verify formatting
+        working-directory: ${{ matrix.project }}
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: ${{ matrix.project }}
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: ${{ matrix.project }}
+        run: flutter test
