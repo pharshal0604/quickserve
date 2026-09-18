@@ -25,14 +25,25 @@ ValidationResult _required(String value, String field) {
   return const ValidationResult.valid();
 }
 
-/// Validates a person's name: trimmed length must be 2–80 characters.
+/// Validates a person's name using letters and spaces only.
 ValidationResult validateName(String value) {
-  final required = _required(value, 'Name');
-  if (!required.isValid) return required;
-  final length = value.trim().length;
-  if (length < 2 || length > 80) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return const ValidationResult.invalid('Name is required.');
+  }
+  if (trimmed.length < 2) {
     return const ValidationResult.invalid(
-      'Name must be between 2 and 80 characters.',
+      'Name must be at least 2 characters.',
+    );
+  }
+  if (trimmed.length > 50) {
+    return const ValidationResult.invalid(
+      'Name must be 50 characters or fewer.',
+    );
+  }
+  if (!RegExp(r'^[A-Za-z ]+$').hasMatch(trimmed)) {
+    return const ValidationResult.invalid(
+      'Name can only contain letters and spaces.',
     );
   }
   return const ValidationResult.valid();
@@ -48,16 +59,67 @@ ValidationResult validateEmail(String value) {
       : const ValidationResult.invalid('Email format is invalid.');
 }
 
-/// Validates a phone number with 8–15 digits and an optional leading plus.
+/// Validates a phone number with exactly ten digits.
 ValidationResult validatePhone(String value) {
-  final required = _required(value, 'Phone');
-  if (!required.isValid) return required;
-  final valid = RegExp(r'^\+?[0-9]{8,15}$').hasMatch(value.trim());
-  return valid
-      ? const ValidationResult.valid()
-      : const ValidationResult.invalid(
-          'Phone must contain 8 to 15 digits and may start with +.',
-        );
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return const ValidationResult.invalid('Phone number is required.');
+  }
+  if (!RegExp(r'^[0-9]{10}$').hasMatch(trimmed)) {
+    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
+      return const ValidationResult.invalid(
+        'Phone number must contain only digits.',
+      );
+    }
+    return const ValidationResult.invalid(
+      'Phone number must be exactly 10 digits.',
+    );
+  }
+  return const ValidationResult.valid();
+}
+
+/// Validates a password with length and character requirements.
+ValidationResult validatePassword(String value) {
+  if (value.isEmpty) {
+    return const ValidationResult.invalid('Password is required.');
+  }
+  if (value.length < 8) {
+    return const ValidationResult.invalid(
+      'Password must be at least 8 characters.',
+    );
+  }
+  if (value.length > 128) {
+    return const ValidationResult.invalid(
+      'Password must be 128 characters or fewer.',
+    );
+  }
+  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+    return const ValidationResult.invalid(
+      'Password must include at least one uppercase letter.',
+    );
+  }
+  if (!RegExp(r'[a-z]').hasMatch(value)) {
+    return const ValidationResult.invalid(
+      'Password must include at least one lowercase letter.',
+    );
+  }
+  if (!RegExp(r'[0-9]').hasMatch(value)) {
+    return const ValidationResult.invalid(
+      'Password must include at least one digit.',
+    );
+  }
+  return const ValidationResult.valid();
+}
+
+/// Validates that a password confirmation matches the original password.
+ValidationResult validateConfirmPassword(String value, String original) {
+  if (value.isEmpty) {
+    return const ValidationResult.invalid('Please confirm your password.');
+  }
+  if (value != original) {
+    return const ValidationResult.invalid('Passwords do not match.');
+  }
+  return const ValidationResult.valid();
 }
 
 /// Validates a request description with a trimmed length of 1–2000 characters.

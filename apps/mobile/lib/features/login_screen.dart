@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
@@ -20,7 +21,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _errorMessage;
-  String? _emailErrorMessage;
   bool _isSigningIn = false;
 
   @override
@@ -69,29 +69,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _sendPasswordReset() async {
-    final emailResult = shared.validateEmail(_emailController.text.trim());
-    if (!emailResult.isValid) {
-      setState(() => _emailErrorMessage = emailResult.reason);
-      return;
-    }
-
-    try {
-      await ref
-          .read(authRepositoryProvider)
-          .sendPasswordResetEmail(_emailController.text.trim());
-    } catch (_) {
-      // The same safe message is shown whether or not the email exists.
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('If that email exists, a reset link has been sent.'),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -119,16 +96,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        errorText: _emailErrorMessage,
-                      ),
+                      decoration: const InputDecoration(labelText: 'Email'),
                       validator: _validateEmail,
-                      onChanged: (_) {
-                        if (_emailErrorMessage != null) {
-                          setState(() => _emailErrorMessage = null);
-                        }
-                      },
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextFormField(
@@ -176,8 +145,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextButton(
-                      onPressed: _sendPasswordReset,
+                      onPressed: () => context.go('/password-reset'),
                       child: const Text('Forgot password?'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/register'),
+                      child: const Text('Create an account'),
                     ),
                   ],
                 ),

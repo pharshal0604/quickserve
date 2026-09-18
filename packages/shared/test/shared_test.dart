@@ -168,10 +168,82 @@ void main() {
   });
 
   group('validators', () {
-    test('name validator accepts and rejects expected values', () {
-      expect(validateName('Asha Rao').isValid, isTrue);
-      expect(validateName('').isValid, isFalse);
-      expect(validateName('A').isValid, isFalse);
+    group('validateName', () {
+      test('accepts valid names', () {
+        expect(validateName('Aarav Sharma').isValid, isTrue);
+        expect(validateName('A' * 2).isValid, isTrue);
+        expect(validateName('Aarav  Sharma').isValid, isTrue);
+      });
+
+      test('rejects invalid names', () {
+        expect(validateName('').isValid, isFalse);
+        expect(validateName('A').isValid, isFalse);
+        expect(validateName('A' * 51).isValid, isFalse);
+        expect(validateName('Aarav1').isValid, isFalse);
+        expect(validateName('Aarav@').isValid, isFalse);
+        expect(validateName('Aarav_Sharma').isValid, isFalse);
+      });
+    });
+
+    group('validatePassword', () {
+      test('accepts valid passwords', () {
+        expect(validatePassword('Valid1Pass').isValid, isTrue);
+        expect(validatePassword('Aa1${'x' * 125}').isValid, isTrue);
+      });
+
+      test('allows the digit at the end', () {
+        expect(validatePassword('Abcdefg1').isValid, isTrue);
+      });
+
+      test('rejects invalid passwords with the expected reason', () {
+        final required = validatePassword('');
+        expect(required.isValid, isFalse);
+        expect(required.reason, contains('required'));
+
+        final tooShort = validatePassword('Aa1');
+        expect(tooShort.isValid, isFalse);
+        expect(tooShort.reason, contains('least 8'));
+
+        final tooLong = validatePassword('Aa1${'x' * 126}');
+        expect(tooLong.isValid, isFalse);
+        expect(tooLong.reason, contains('128'));
+
+        final noUppercase = validatePassword('abcdefg1');
+        expect(noUppercase.isValid, isFalse);
+        expect(noUppercase.reason, contains('uppercase'));
+
+        final noLowercase = validatePassword('ABCDEFG1');
+        expect(noLowercase.isValid, isFalse);
+        expect(noLowercase.reason, contains('lowercase'));
+
+        final noDigit = validatePassword('Abcdefgh');
+        expect(noDigit.isValid, isFalse);
+        expect(noDigit.reason, contains('digit'));
+
+        expect(validatePassword('Abcdefg ').isValid, isFalse);
+      });
+    });
+
+    group('validateConfirmPassword', () {
+      test('accepts matching passwords', () {
+        expect(
+          validateConfirmPassword('Valid1Pass', 'Valid1Pass').isValid,
+          isTrue,
+        );
+      });
+
+      test('rejects empty and mismatched confirmations', () {
+        final empty = validateConfirmPassword('', 'Valid1Pass');
+        expect(empty.isValid, isFalse);
+        expect(empty.reason, contains('confirm'));
+
+        final mismatch = validateConfirmPassword(
+          'Valid1Pass',
+          'Different1Pass',
+        );
+        expect(mismatch.isValid, isFalse);
+        expect(mismatch.reason, contains('match'));
+      });
     });
 
     test('email validator accepts and rejects expected values', () {
@@ -179,9 +251,21 @@ void main() {
       expect(validateEmail('not-an-email').isValid, isFalse);
     });
 
-    test('phone validator accepts and rejects expected values', () {
-      expect(validatePhone('+919876543210').isValid, isTrue);
-      expect(validatePhone('123').isValid, isFalse);
+    group('validatePhone', () {
+      test('accepts exactly ten digits', () {
+        expect(validatePhone('9876543210').isValid, isTrue);
+      });
+
+      test('rejects empty, wrong-length, and non-digit values', () {
+        expect(validatePhone('').isValid, isFalse);
+        expect(validatePhone('987654321').isValid, isFalse);
+        expect(validatePhone('98765432101').isValid, isFalse);
+        expect(validatePhone('98765-4321').isValid, isFalse);
+        expect(validatePhone('98765 4321').isValid, isFalse);
+        expect(validatePhone('+919876543210').isValid, isFalse);
+        expect(validatePhone('98abc4321 0').isValid, isFalse);
+        expect(validatePhone('98765a3210').isValid, isFalse);
+      });
     });
 
     test('description validator accepts and rejects expected values', () {

@@ -24,3 +24,15 @@ final class UserRepositoryException extends AppException {
   /// Creates a user repository exception.
   const UserRepositoryException(super.code, super.userMessage);
 }
+
+/// A request or service repository application exception.
+class RequestRepositoryException extends AppException {
+  /// Creates a request repository exception.
+  const RequestRepositoryException(super.code, super.userMessage);
+}
+
+/// A service-catalog repository application exception.
+final class ServiceRepositoryException extends RequestRepositoryException {
+  /// Creates a service repository exception.
+  const ServiceRepositoryException(super.code, super.userMessage);
+}

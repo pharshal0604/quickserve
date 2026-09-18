@@ -21,4 +21,25 @@ final class UserRepository {
       throw mapUserRepoError(error);
     }
   }
+
+  /// Creates a customer profile for [uid].
+  Future<void> createProfile({
+    required String uid,
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'role': 'customer',
+        'name': name.trim(),
+        'email': email.trim().toLowerCase(),
+        'phone': phone.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      throw mapUserRepoError(error);
+    }
+  }
 }

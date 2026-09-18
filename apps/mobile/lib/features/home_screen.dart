@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
@@ -40,12 +41,8 @@ class HomeScreen extends ConsumerWidget {
           }
 
           return switch (user.role) {
-            shared.UserRole.customer => _GreetingView(
-              text: 'Hello, ${user.name} (customer)',
-            ),
-            shared.UserRole.agent => _GreetingView(
-              text: 'Hello, ${user.name} (agent)',
-            ),
+            shared.UserRole.customer => _CustomerHomeView(name: user.name),
+            shared.UserRole.agent => _AgentHomeView(name: user.name),
             shared.UserRole.admin => _AdminView(onSignOut: () => _signOut(ref)),
           };
         },
@@ -54,22 +51,62 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _GreetingView extends StatelessWidget {
-  const _GreetingView({required this.text});
+class _CustomerHomeView extends StatelessWidget {
+  const _CustomerHomeView({required this.name});
 
-  final String text;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge,
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        Text('Hello, $name', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: AppSpacing.xs),
+        const Text('What service do you need today?'),
+        const SizedBox(height: AppSpacing.xl),
+        FilledButton.icon(
+          onPressed: () => context.push('/requests/create'),
+          icon: const Icon(Icons.add),
+          label: const Text('Create Request'),
         ),
-      ),
+        const SizedBox(height: AppSpacing.md),
+        OutlinedButton.icon(
+          onPressed: () => context.push('/services'),
+          icon: const Icon(Icons.home_repair_service_outlined),
+          label: const Text('Browse Services'),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        OutlinedButton.icon(
+          onPressed: () => context.push('/requests'),
+          icon: const Icon(Icons.list_alt_outlined),
+          label: const Text('My Requests'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AgentHomeView extends StatelessWidget {
+  const _AgentHomeView({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        Text('Hello, $name', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: AppSpacing.xs),
+        const Text('Review the requests assigned to you.'),
+        const SizedBox(height: AppSpacing.xl),
+        FilledButton.icon(
+          onPressed: () => context.push('/agent/requests'),
+          icon: const Icon(Icons.assignment_outlined),
+          label: const Text('Assigned Requests'),
+        ),
+      ],
     );
   }
 }
