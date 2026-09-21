@@ -152,9 +152,7 @@ class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
 }
 
 final _assignedRequestsProvider =
-    FutureProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, agentId) => ref
-          .watch(agentRepositoryProvider)
-          .watchAssignedRequests(agentId)
-          .first,
+    StreamProvider.family<List<({String id, shared.Request request})>, String>(
+      (ref, agentId) =>
+          ref.watch(agentRepositoryProvider).watchAssignedRequests(agentId),
     );

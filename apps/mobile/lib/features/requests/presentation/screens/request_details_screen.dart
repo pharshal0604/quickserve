@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/agent_profile_screen.dart';
+import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
+import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 import 'package:quickserve_mobile/core/error/app_exceptions.dart';
 import 'package:quickserve_mobile/core/utils/app_snackbar.dart';
 
@@ -46,37 +50,39 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               Text(
-                item.requestCode,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
                 item.serviceType,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                children: [
-                  Chip(label: Text(item.status.toStoredValue())),
-                  Chip(label: Text(item.priority.toStoredValue())),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+              _RequestStatusTimeline(
+                currentStatus: item.status.toStoredValue(),
+                priority: item.priority.toStoredValue(),
+                history: history.valueOrNull ?? const [],
               ),
-              const Divider(height: AppSpacing.xl),
-              _DetailRow(label: 'Description', value: item.description),
-              _DetailRow(label: 'Address', value: item.address),
-              _DetailRow(
-                label: 'Preferred date',
-                value: MaterialLocalizations.of(context)
-                    .formatFullDate(item.preferredDateTime.toDate()),
-              ),
-              if (item.agentId != null)
-                _DetailRow(label: 'Assigned Agent', value: item.agentId!),
-              if (item.cancellationReason != null)
+              const SizedBox(height: AppSpacing.lg),
+              _BookingInformation(request: item),
+              if (item.agentId != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _AssignedTechnician(
+                  name: item.agentName,
+                  phone: item.agentPhone,
+                  onTap: () => context.push(
+                    '/agents/${item.agentId!}',
+                    extra: AgentContactSnapshot(
+                      name: item.agentName,
+                      phone: item.agentPhone,
+                    ),
+                  ),
+                ),
+              ],
+              if (item.cancellationReason != null) ...[
+                const SizedBox(height: AppSpacing.md),
                 _DetailRow(
                   label: 'Cancellation reason',
                   value: item.cancellationReason!,
                 ),
+              ],
               if (isAgent) ...[
                 const SizedBox(height: AppSpacing.lg),
                 _AgentActions(
@@ -101,41 +107,23 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   onComplete: () => _completeRequest(widget.requestId),
                 ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Status history',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              history.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (error, stackTrace) =>
-                    const Text('History is unavailable.'),
-                data: (items) => items.isEmpty
-                    ? const Text('No history is available.')
-                    : Column(
-                        children: items.map((entry) {
-                          final transition = entry.fromStatus == null
-                              ? entry.toStatus
-                              : '${entry.fromStatus} → ${entry.toStatus}';
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.radio_button_checked),
-                            title: Text(transition),
-                            subtitle: Text(entry.note ?? 'Status updated.'),
-                          );
-                        }).toList(),
-                      ),
-              ),
               if (isCustomer &&
                   shared.isCancellableByCustomer(
                     item.status.toStoredValue(),
                   )) ...[
                 const SizedBox(height: AppSpacing.lg),
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _cancel,
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Cancel request'),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: _busy ? null : _cancel,
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Cancel Request'),
+                  ),
                 ),
               ],
             ],
@@ -280,17 +268,467 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
   }
 }
 
-final _requestProvider = FutureProvider.family<shared.Request?, String>((
+final _requestProvider = StreamProvider.family<shared.Request?, String>((
   ref,
   requestId,
 ) {
-  return ref.watch(requestRepositoryProvider).getRequest(requestId);
+  return ref.watch(requestRepositoryProvider).watchRequest(requestId);
 });
 
 final _historyProvider =
     StreamProvider.family<List<shared.StatusHistory>, String>((ref, requestId) {
       return ref.watch(requestRepositoryProvider).watchHistory(requestId);
     });
+
+String _statusLabel(String value) {
+  return value
+      .split('_')
+      .map(
+        (part) => part.isEmpty
+            ? part
+            : '${part[0].toUpperCase()}${part.substring(1)}',
+      )
+      .join(' ');
+}
+
+Color _statusColor(String status) {
+  if (status == shared.StatusNames.completed) {
+    return AppColors.statusCompleted;
+  }
+  if (status == shared.StatusNames.cancelled) {
+    return AppColors.statusCancelled;
+  }
+  if (status == shared.StatusNames.inProgress) {
+    return AppColors.statusProgress;
+  }
+  if (status == shared.StatusNames.assigned) {
+    return AppColors.statusAssigned;
+  }
+  if (status == shared.StatusNames.accepted) {
+    return AppColors.statusAccepted;
+  }
+  return AppColors.statusCreated;
+}
+
+class _RequestStatusTimeline extends StatelessWidget {
+  const _RequestStatusTimeline({
+    required this.currentStatus,
+    required this.priority,
+    required this.history,
+  });
+
+  final String currentStatus;
+  final String priority;
+  final List<shared.StatusHistory> history;
+
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      (
+        status: shared.StatusNames.created,
+        label: 'Created',
+        description: 'Request submitted by customer',
+      ),
+      (
+        status: shared.StatusNames.assigned,
+        label: 'Assigned',
+        description: 'Technician assigned by admin',
+      ),
+      (
+        status: shared.StatusNames.accepted,
+        label: 'Accepted',
+        description: 'Technician confirmed dispatch',
+      ),
+      (
+        status: shared.StatusNames.inProgress,
+        label: 'In Progress',
+        description: 'Work is actively underway',
+      ),
+      (
+        status: shared.StatusNames.completed,
+        label: 'Completed',
+        description: 'Job successfully resolved',
+      ),
+    ];
+    final reached = {...history.map((entry) => entry.toStatus), currentStatus};
+    final currentIndex = steps.indexWhere(
+      (step) => step.status == currentStatus,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Request Status Timeline',
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                StatusPill(
+                  label: _statusLabel(currentStatus),
+                  color: _statusColor(currentStatus),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Chip(
+                  label: Text(_statusLabel(priority)),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (var index = 0; index < steps.length; index++)
+              _TimelineStep(
+                label: steps[index].label,
+                description: steps[index].description,
+                status: steps[index].status,
+                isCurrent: steps[index].status == currentStatus,
+                isReached:
+                    reached.contains(steps[index].status) ||
+                    (currentIndex >= 0 && index <= currentIndex),
+                isLast:
+                    index == steps.length - 1 &&
+                    currentStatus != shared.StatusNames.cancelled,
+              ),
+            if (currentStatus == shared.StatusNames.cancelled)
+              _TimelineStep(
+                label: 'Cancelled',
+                description: 'Request was cancelled',
+                status: shared.StatusNames.cancelled,
+                isCurrent: true,
+                isReached: true,
+                isLast: true,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineStep extends StatelessWidget {
+  const _TimelineStep({
+    required this.label,
+    required this.description,
+    required this.status,
+    required this.isCurrent,
+    required this.isReached,
+    required this.isLast,
+  });
+
+  final String label;
+  final String description;
+  final String status;
+  final bool isCurrent;
+  final bool isReached;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isCurrent
+        ? _statusColor(status)
+        : isReached
+        ? AppColors.success
+        : AppColors.outline;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 38,
+            child: Column(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isReached ? color : Colors.transparent,
+                    border: Border.all(color: color, width: 2),
+                  ),
+                  child: isReached
+                      ? Icon(
+                          isCurrent ? Icons.radio_button_checked : Icons.check,
+                          size: 16,
+                          color: Colors.white,
+                        )
+                      : null,
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      color: isReached ? AppColors.success : AppColors.outline,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.sm, bottom: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: isReached
+                                ? (isCurrent ? color : Colors.black87)
+                                : AppColors.mutedText,
+                            fontSize: 17,
+                            fontWeight: isCurrent
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      if (isCurrent) StatusPill(label: 'ACTIVE', color: color),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: isReached
+                          ? AppColors.mutedText
+                          : AppColors.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookingInformation extends StatelessWidget {
+  const _BookingInformation({required this.request});
+
+  final shared.Request request;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = request.preferredDateTime.toDate();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Booking Information',
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _InfoRow(
+              icon: Icons.build_outlined,
+              label: 'Service Type',
+              value: request.serviceType,
+            ),
+            _InfoRow(
+              icon: Icons.description_outlined,
+              label: 'Description',
+              value: request.description,
+            ),
+            _InfoRow(
+              icon: Icons.calendar_today_outlined,
+              label: 'Scheduled Date',
+              value: MaterialLocalizations.of(context).formatFullDate(date),
+            ),
+            _InfoRow(
+              icon: Icons.schedule_outlined,
+              label: 'Scheduled Time',
+              value: TimeOfDay.fromDateTime(date).format(context),
+            ),
+            _InfoRow(
+              icon: Icons.location_on_outlined,
+              label: 'Service Address',
+              value: request.address,
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.mutedText, size: 27),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssignedTechnician extends StatelessWidget {
+  const _AssignedTechnician({
+    required this.name,
+    required this.phone,
+    required this.onTap,
+  });
+
+  final String? name;
+  final String? phone;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = name?.trim().isNotEmpty == true
+        ? name!.trim()
+        : 'Technician contact unavailable';
+    final hasSnapshot =
+        (name?.trim().isNotEmpty ?? false) ||
+        (phone?.trim().isNotEmpty ?? false);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Assigned Field Technician',
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _TechnicianIdentity(
+              name: displayName,
+              subtitle: hasSnapshot
+                  ? 'Tap to view contact details'
+                  : 'Contact details unavailable for this request',
+              onTap: hasSnapshot ? onTap : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TechnicianIdentity extends StatelessWidget {
+  const _TechnicianIdentity({
+    required this.name,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String name;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: const Color(0xFFE9EEFF),
+              child: Icon(
+                Icons.person,
+                color: AppColors.statusAssigned,
+                size: 34,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.success,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (onTap != null) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'View contact details',
+                      style: TextStyle(color: AppColors.mutedText),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (onTap != null) const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AgentActions extends StatelessWidget {
   const _AgentActions({

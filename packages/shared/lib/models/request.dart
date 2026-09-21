@@ -10,6 +10,8 @@ class Request {
     required this.requestCode,
     required this.customerId,
     required this.agentId,
+    required this.agentName,
+    required this.agentPhone,
     required this.serviceType,
     required this.description,
     required this.preferredDateTime,
@@ -27,6 +29,8 @@ class Request {
       requestCode: readRequired<String>(map, 'requestCode'),
       customerId: readRequired<String>(map, 'customerId'),
       agentId: readNullable<String>(map, 'agentId'),
+      agentName: readNullable<String>(map, 'agentName'),
+      agentPhone: readNullable<String>(map, 'agentPhone'),
       serviceType: readRequired<String>(map, 'serviceType'),
       description: readRequired<String>(map, 'description'),
       preferredDateTime: readRequired<Timestamp>(map, 'preferredDateTime'),
@@ -51,6 +55,12 @@ class Request {
 
   /// The assigned Agent ID, or null before assignment.
   final String? agentId;
+
+  /// The assigned technician name captured at assignment time.
+  final String? agentName;
+
+  /// The assigned technician phone captured at assignment time.
+  final String? agentPhone;
 
   /// The selected service type.
   final String serviceType;
@@ -84,6 +94,8 @@ class Request {
     'requestCode': requestCode,
     'customerId': customerId,
     'agentId': agentId,
+    'agentName': agentName,
+    'agentPhone': agentPhone,
     'serviceType': serviceType,
     'description': description,
     'preferredDateTime': preferredDateTime,
@@ -101,6 +113,8 @@ class Request {
         other.requestCode == requestCode &&
         other.customerId == customerId &&
         other.agentId == agentId &&
+        other.agentName == agentName &&
+        other.agentPhone == agentPhone &&
         other.serviceType == serviceType &&
         other.description == description &&
         other.preferredDateTime == preferredDateTime &&
@@ -117,6 +131,8 @@ class Request {
     requestCode,
     customerId,
     agentId,
+    agentName,
+    agentPhone,
     serviceType,
     description,
     preferredDateTime,

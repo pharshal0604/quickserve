@@ -6,6 +6,7 @@ import 'package:shared/shared.dart';
 
 import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
+
 import '../../../requests/presentation/screens/request_details_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -250,7 +251,15 @@ class _StatusChart extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(adminLabel(status))),
+                            Expanded(
+                              child: Text(
+                                adminLabel(status),
+                                style: TextStyle(
+                                  color: adminStatusColor(context, status),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                             Text(
                               '${counts[status] ?? 0}',
                               style: const TextStyle(
@@ -313,43 +322,77 @@ class _RecentRequests extends StatelessWidget {
   final AdminRepository repository;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Recent service requests',
-                  style: Theme.of(context).textTheme.titleLarge,
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: repository.watchUsers(role: RoleNames.customer),
+      builder: (context, usersSnapshot) {
+        final usersById = {
+          for (final doc in usersSnapshot.data?.docs ?? const [])
+            doc.id: doc.data(),
+        };
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recent service requests',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(onPressed: () {}, child: const Text('View all')),
+                  ],
                 ),
-              ),
-              TextButton(onPressed: () {}, child: const Text('View all')),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (docs.isEmpty) const Text('No requests are available.'),
-          for (final doc in docs)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(adminStatusIcon('${doc.data()['status'] ?? ''}')),
-              title: Text(
-                '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['serviceType'] ?? 'Service'}',
-              ),
-              subtitle: Text(
-                '${doc.data()['customerId'] ?? 'Unknown customer'} · ${adminLabel('${doc.data()['status'] ?? 'unknown'}')}',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _openRequest(context, repository, doc),
+                const SizedBox(height: 8),
+                if (docs.isEmpty) const Text('No requests are available.'),
+                for (final doc in docs)
+                  Builder(
+                    builder: (context) {
+                      final status = '${doc.data()['status'] ?? 'unknown'}';
+                      final statusColor = adminStatusColor(context, status);
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          adminStatusIcon(status),
+                          color: statusColor,
+                        ),
+                        title: Text(
+                          '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['serviceType'] ?? 'Service'}',
+                        ),
+                        subtitle: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text:
+                                    '${adminUserLabel(usersById[doc.data()['customerId']])} · ',
+                              ),
+                              TextSpan(
+                                text: adminLabel(status),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _openRequest(context, repository, doc),
+                      );
+                    },
+                  ),
+              ],
             ),
-        ],
-      ),
-    ),
-  );
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _CriticalAlerts extends StatelessWidget {

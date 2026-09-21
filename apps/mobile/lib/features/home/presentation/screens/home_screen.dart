@@ -582,7 +582,6 @@ final _homeRequestsProvider =
     );
 
 final _agentHomeRequestsProvider =
-    FutureProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) =>
-          ref.watch(agentRepositoryProvider).watchAssignedRequests(uid).first,
+    StreamProvider.family<List<({String id, shared.Request request})>, String>(
+      (ref, uid) => ref.watch(agentRepositoryProvider).watchAssignedRequests(uid),
     );

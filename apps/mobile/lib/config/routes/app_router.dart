@@ -9,6 +9,7 @@ import 'package:quickserve_mobile/features/requests/presentation/screens/create_
 import 'package:quickserve_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/my_requests_screen.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/agent_profile_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/notifications_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_details_screen.dart';
@@ -93,6 +94,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/agent/requests',
         builder: (context, state) => const AgentRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/agents/:agentId',
+        builder: (context, state) => AgentProfileScreen(
+          snapshot: state.extra is AgentContactSnapshot
+              ? state.extra as AgentContactSnapshot
+              : null,
+        ),
       ),
       GoRoute(
         path: '/requests/:requestId',

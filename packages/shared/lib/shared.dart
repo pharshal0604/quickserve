@@ -1,5 +1,6 @@
 export 'constants/constants.dart';
 export 'constants/enums.dart';
+export 'constants/status_colors.dart';
 export 'utils/errors.dart';
 export 'utils/lifecycle.dart';
 export 'utils/request_code.dart';

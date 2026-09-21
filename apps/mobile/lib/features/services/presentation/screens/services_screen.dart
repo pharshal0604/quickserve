@@ -76,11 +76,66 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
     );
   }
 
+  Color _requestStatusColor(String status) {
+    if (status == shared.StatusNames.completed) {
+      return AppColors.statusCompleted;
+    }
+    if (status == shared.StatusNames.cancelled) {
+      return AppColors.statusCancelled;
+    }
+    if (status == shared.StatusNames.inProgress) {
+      return AppColors.statusProgress;
+    }
+    if (status == shared.StatusNames.assigned) {
+      return AppColors.statusAssigned;
+    }
+    if (status == shared.StatusNames.accepted) {
+      return AppColors.statusAccepted;
+    }
+    return AppColors.statusCreated;
+  }
+
+  Widget _recentRequestCard(
+    BuildContext context,
+    ({String id, shared.Request request}) item,
+  ) {
+    final request = item.request;
+    final status = request.status.toStoredValue();
+    return Card(
+      child: ListTile(
+        onTap: () => context.push('/requests/${item.id}'),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        title: Text(
+          '${request.serviceType} · ${request.requestCode}',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        subtitle: Text(
+          '${request.description}\n${request.address}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        isThreeLine: true,
+        trailing: StatusPill(
+          label: status,
+          color: _requestStatusColor(status),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = ref.watch(_servicesProvider);
-    return Scaffold(
-      bottomNavigationBar: const CustomerBottomNav(currentIndex: 1),
+    final user = ref.watch(authStateProvider).value;
+    final requests = user == null
+        ? null
+        : ref.watch(_customerRequestsProvider(user.uid));
+    return HomeBackScope(
+      child: Scaffold(
+        bottomNavigationBar: const CustomerBottomNav(currentIndex: 1),
       body: SafeArea(
         child: services.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -146,6 +201,39 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                SectionHeader(
+                  title: 'Your recent requests',
+                  action: 'View all',
+                  onTap: () => context.go('/requests'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (requests == null || requests.isLoading)
+                  const LinearProgressIndicator()
+                else if (requests.hasError)
+                  const Text(
+                    'Request activity is unavailable right now.',
+                    style: TextStyle(color: AppColors.mutedText),
+                  )
+                else if (requests.valueOrNull?.isEmpty ?? true)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.receipt_long_outlined,
+                        color: AppColors.primary,
+                      ),
+                      title: Text('No requests yet'),
+                      subtitle: Text(
+                        'Your created requests will appear here with live status updates.',
+                      ),
+                    ),
+                  )
+                else
+                  ...requests.valueOrNull!
+                      .take(3)
+                      .map((item) => _recentRequestCard(context, item)),
+                const SizedBox(height: AppSpacing.xl),
+                SectionHeader(title: 'Available services'),
+                const SizedBox(height: AppSpacing.sm),
                 if (filtered.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(AppSpacing.xl),
@@ -158,6 +246,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
           },
         ),
       ),
+      ),
     );
   }
 }
@@ -165,3 +254,8 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
 final _servicesProvider = FutureProvider<List<shared.Service>>(
   (ref) => ref.watch(serviceRepositoryProvider).getServices(),
 );
+
+final _customerRequestsProvider =
+    StreamProvider.family<List<({String id, shared.Request request})>, String>(
+      (ref, uid) => ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
+    );

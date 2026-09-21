@@ -104,11 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: IconButton(
-                  tooltip: 'Back',
-                  onPressed: () => context.go('/splash'),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                ),
+                child: const BackButton(),
               ),
               const QuickServeBrandHeader(
                 eyebrow: 'QuickServe',
@@ -192,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const Text('Remember me'),
                           const Spacer(),
                           TextButton(
-                            onPressed: () => context.go('/password-reset'),
+                            onPressed: () => context.push('/password-reset'),
                             child: const Text('Forgot Password?'),
                           ),
                         ],
@@ -233,7 +229,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               style: TextStyle(color: AppColors.mutedText),
                             ),
                             TextButton(
-                              onPressed: () => context.go('/register'),
+                              onPressed: () => context.push('/register'),
                               child: const Text('Create Account'),
                             ),
                           ],

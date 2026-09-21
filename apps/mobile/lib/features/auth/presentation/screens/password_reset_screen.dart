@@ -69,10 +69,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => context.go('/login'),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                ),
+                child: const BackButton(),
               ),
               const QuickServeBrandHeader(
                 eyebrow: 'Reset access',
@@ -157,7 +154,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                       const SizedBox(height: AppSpacing.lg),
                       Center(
                         child: TextButton(
-                          onPressed: () => context.go('/login'),
+                          onPressed: () => context.pop(),
                           child: const Text('Back to Sign In'),
                         ),
                       ),

@@ -100,6 +100,8 @@ void main() {
         'requestCode': 'REQ-2026-000123',
         'customerId': 'customer-1',
         'agentId': null,
+        'agentName': null,
+        'agentPhone': null,
         'serviceType': 'Electrical',
         'description': 'Repair a socket',
         'preferredDateTime': timestamp,

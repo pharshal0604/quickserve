@@ -65,189 +65,191 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            onPressed: () => context.go('/notifications'),
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const CustomerBottomNav(currentIndex: 3),
-      body: profile.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) =>
-            const Center(child: Text('Could not load your profile.')),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Profile not found.'));
-          }
-          if (!_seeded) {
-            _nameController.text = user.name;
-            _phoneController.text = user.phone;
-            _seeded = true;
-          }
-          final authUser = ref.watch(authStateProvider).value;
-          final photoUrl = authUser?.photoURL;
-          final initial = user.name.trim().isEmpty
-              ? '?'
-              : user.name.trim()[0].toUpperCase();
-          final roleLabel = user.role.toStoredValue().replaceFirstMapped(
-            RegExp(r'^.'),
-            (match) => match.group(0)!.toUpperCase(),
-          );
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.xl,
+    return HomeBackScope(
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: const Text('Profile'),
+          actions: [
+            IconButton(
+              onPressed: () => context.push('/notifications'),
+              icon: const Icon(Icons.notifications_none_rounded),
             ),
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 42,
-                  backgroundColor: AppColors.mintSurface,
-                  backgroundImage: photoUrl == null || photoUrl.isEmpty
-                      ? null
-                      : NetworkImage(photoUrl),
-                  child: photoUrl == null || photoUrl.isEmpty
-                      ? Text(
-                          initial,
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        )
-                      : null,
-                ),
+          ],
+        ),
+        bottomNavigationBar: const CustomerBottomNav(currentIndex: 3),
+        body: profile.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) =>
+              const Center(child: Text('Could not load your profile.')),
+          data: (user) {
+            if (user == null) {
+              return const Center(child: Text('Profile not found.'));
+            }
+            if (!_seeded) {
+              _nameController.text = user.name;
+              _phoneController.text = user.phone;
+              _seeded = true;
+            }
+            final authUser = ref.watch(authStateProvider).value;
+            final photoUrl = authUser?.photoURL;
+            final initial = user.name.trim().isEmpty
+                ? '?'
+                : user.name.trim()[0].toUpperCase();
+            final roleLabel = user.role.toStoredValue().replaceFirstMapped(
+              RegExp(r'^.'),
+              (match) => match.group(0)!.toUpperCase(),
+            );
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.xl,
               ),
-              const SizedBox(height: AppSpacing.md),
-              Center(
-                child: Text(
-                  user.name,
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-              ),
-              const SizedBox(height: 3),
-              Center(
-                child: Text(
-                  user.email,
-                  style: const TextStyle(color: AppColors.mutedText),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Center(
-                child: OutlinedButton(
-                  onPressed: () => setState(() => _editing = !_editing),
-                  style: OutlinedButton.styleFrom(
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
+              children: [
+                Center(
+                  child: CircleAvatar(
+                    radius: 42,
+                    backgroundColor: AppColors.mintSurface,
+                    backgroundImage: photoUrl == null || photoUrl.isEmpty
+                        ? null
+                        : NetworkImage(photoUrl),
+                    child: photoUrl == null || photoUrl.isEmpty
+                        ? Text(
+                            initial,
+                            style: const TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : null,
                   ),
-                  child: Text(_editing ? 'Cancel' : 'Edit Profile'),
                 ),
-              ),
-              if (_editing) ...[
+                const SizedBox(height: AppSpacing.md),
+                Center(
+                  child: Text(
+                    user.name,
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Center(
+                  child: Text(
+                    user.email,
+                    style: const TextStyle(color: AppColors.mutedText),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Center(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _editing = !_editing),
+                    style: OutlinedButton.styleFrom(
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                    ),
+                    child: Text(_editing ? 'Cancel' : 'Edit Profile'),
+                  ),
+                ),
+                if (_editing) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _nameController,
+                    decoration: quickServeInputDecoration(
+                      'Full Name',
+                      icon: Icons.person_outline,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: quickServeInputDecoration(
+                      'Phone Number',
+                      icon: Icons.phone_outlined,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  FilledButton(
+                    onPressed: _saving ? null : _save,
+                    child: Text(_saving ? 'Saving...' : 'Save changes'),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
-                TextField(
-                  controller: _nameController,
-                  decoration: quickServeInputDecoration(
-                    'Full Name',
-                    icon: Icons.person_outline,
-                  ),
+                _AccountCard(roleLabel: roleLabel, email: user.email),
+                const SizedBox(height: AppSpacing.xl),
+                const _ProfileSectionLabel('ACCOUNT MANAGEMENT'),
+                _ProfileRow(
+                  icon: Icons.history_rounded,
+                  title: 'Service History',
+                  subtitle: 'View past and current requests',
+                  onTap: () => context.go('/requests'),
+                ),
+                _ProfileRow(
+                  icon: Icons.location_on_outlined,
+                  title: 'Saved Addresses',
+                  subtitle: 'Address book is not enabled yet',
+                  onTap: () => _showUnavailable('Saved addresses'),
+                ),
+                _ProfileRow(
+                  icon: Icons.credit_card_outlined,
+                  title: 'Payment Methods',
+                  subtitle: 'Payments are not part of the current flow',
+                  onTap: () => _showUnavailable('Payment methods'),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const _ProfileSectionLabel('PREFERENCES'),
+                _ProfileRow(
+                  icon: Icons.notifications_none,
+                  title: 'Notifications',
+                  subtitle: 'Manage request alerts',
+                  onTap: () => context.push('/notifications'),
+                  trailing: const StatusPill(label: '•', color: AppColors.gold),
+                ),
+                _ProfileRow(
+                  icon: Icons.phone_android_outlined,
+                  title: 'App Settings',
+                  subtitle: 'Theme, language, and display',
+                  onTap: () => context.push('/settings'),
+                ),
+                _ProfileRow(
+                  icon: Icons.shield_outlined,
+                  title: 'Privacy & Security',
+                  subtitle: 'Manage your data and security',
+                  onTap: () => context.push('/settings'),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const _ProfileSectionLabel('SUPPORT'),
+                _ProfileRow(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Help Center',
+                  subtitle: 'FAQs and customer support',
+                  onTap: _showSupport,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: quickServeInputDecoration(
-                    'Phone Number',
-                    icon: Icons.phone_outlined,
-                  ),
+                _ProfileRow(
+                  icon: Icons.logout_rounded,
+                  title: 'Sign Out',
+                  subtitle: 'End your current session',
+                  titleColor: AppColors.error,
+                  iconColor: AppColors.error,
+                  onTap: () => ref.read(authRepositoryProvider).signOut(),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Saving...' : 'Save changes'),
+                const SizedBox(height: AppSpacing.xl),
+                const Center(
+                  child: Text(
+                    'QuickServe Mobile',
+                    style: TextStyle(color: AppColors.outline, fontSize: 11),
+                  ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              _AccountCard(roleLabel: roleLabel, email: user.email),
-              const SizedBox(height: AppSpacing.xl),
-              const _ProfileSectionLabel('ACCOUNT MANAGEMENT'),
-              _ProfileRow(
-                icon: Icons.history_rounded,
-                title: 'Service History',
-                subtitle: 'View past and current requests',
-                onTap: () => context.go('/requests'),
-              ),
-              _ProfileRow(
-                icon: Icons.location_on_outlined,
-                title: 'Saved Addresses',
-                subtitle: 'Address book is not enabled yet',
-                onTap: () => _showUnavailable('Saved addresses'),
-              ),
-              _ProfileRow(
-                icon: Icons.credit_card_outlined,
-                title: 'Payment Methods',
-                subtitle: 'Payments are not part of the current flow',
-                onTap: () => _showUnavailable('Payment methods'),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const _ProfileSectionLabel('PREFERENCES'),
-              _ProfileRow(
-                icon: Icons.notifications_none,
-                title: 'Notifications',
-                subtitle: 'Manage request alerts',
-                onTap: () => context.go('/notifications'),
-                trailing: const StatusPill(label: '•', color: AppColors.gold),
-              ),
-              _ProfileRow(
-                icon: Icons.phone_android_outlined,
-                title: 'App Settings',
-                subtitle: 'Theme, language, and display',
-                onTap: () => context.go('/settings'),
-              ),
-              _ProfileRow(
-                icon: Icons.shield_outlined,
-                title: 'Privacy & Security',
-                subtitle: 'Manage your data and security',
-                onTap: () => context.go('/settings'),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const _ProfileSectionLabel('SUPPORT'),
-              _ProfileRow(
-                icon: Icons.help_outline_rounded,
-                title: 'Help Center',
-                subtitle: 'FAQs and customer support',
-                onTap: _showSupport,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _ProfileRow(
-                icon: Icons.logout_rounded,
-                title: 'Sign Out',
-                subtitle: 'End your current session',
-                titleColor: AppColors.error,
-                iconColor: AppColors.error,
-                onTap: () => ref.read(authRepositoryProvider).signOut(),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              const Center(
-                child: Text(
-                  'QuickServe Mobile',
-                  style: TextStyle(color: AppColors.outline, fontSize: 11),
-                ),
-              ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

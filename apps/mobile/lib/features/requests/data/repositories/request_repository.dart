@@ -15,18 +15,31 @@ final class RequestRepository {
   Stream<List<({String id, shared.Request request})>> watchCustomerRequests(
     String customerId,
   ) {
-    return _requests
-        .where('customerId', isEqualTo: customerId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    (id: doc.id, request: shared.Request.fromMap(doc.data())),
-              )
-              .toList(growable: false),
+    return _requests.where('customerId', isEqualTo: customerId).snapshots().map(
+      (snapshot) {
+        final items = snapshot.docs
+            .map(
+              (doc) =>
+                  (id: doc.id, request: shared.Request.fromMap(doc.data())),
+            )
+            .toList();
+        items.sort(
+          (a, b) => b.request.createdAt
+              .toDate()
+              .compareTo(a.request.createdAt.toDate()),
         );
+        return items;
+      },
+    );
+  }
+
+  /// Streams a request by document ID so lifecycle changes appear live.
+  Stream<shared.Request?> watchRequest(String requestId) {
+    return _requests.doc(requestId).snapshots().map(
+      (snapshot) => snapshot.exists
+          ? shared.Request.fromMap(snapshot.data()!)
+          : null,
+    );
   }
 
   /// Loads a request by document ID.
@@ -131,6 +144,8 @@ final class RequestRepository {
           'requestCode': requestCode,
           'customerId': customerId,
           'agentId': null,
+          'agentName': null,
+          'agentPhone': null,
           'serviceType': normalizedService,
           'description': normalizedDescription,
           'preferredDateTime': Timestamp.fromDate(
