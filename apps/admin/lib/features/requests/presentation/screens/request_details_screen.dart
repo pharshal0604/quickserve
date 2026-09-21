@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import '../../../../admin_repository.dart';
-import '../../../../shared/admin_formatters.dart';
+import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:quickserve_admin/shared/admin_formatters.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
   const RequestDetailsScreen({
@@ -169,17 +169,26 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   );
 
   Future<void> _showStatusPicker() async {
+    final currentStatus = status ?? StatusNames.created;
+    final nextStatuses = [
+      currentStatus,
+      ...StatusNames.values.where(
+        (value) => value != currentStatus && canTransition(currentStatus, value),
+      ),
+    ];
     final next = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final value in StatusNames.values)
+            for (final value in nextStatuses)
               ListTile(
                 leading: Icon(adminStatusIcon(value)),
                 title: Text(adminLabel(value)),
-                trailing: value == status ? const Icon(Icons.check) : null,
+                trailing: value == currentStatus
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () => Navigator.pop(context, value),
               ),
           ],

@@ -778,7 +778,7 @@ The Rules do not provide a client-side role-promotion path. Controlled Agent/Adm
 
 Signed-in users may read the service catalog. Admins may create or update services if that administrative capability is enabled in the final product configuration. Creation and update field sets are explicit, `createdAt` is immutable after creation, and deletes are denied.
 
-The mobile client should select only active services for new requests. Rules validate request structure and authorization; the repository should also verify that the selected service is currently active before creation. If active-service validation is made a hard database requirement, it must be added deliberately with an allowed `get()` path and Rules test coverage.
+The mobile client selects active services for new requests, the repository re-checks the active catalog before creation, and Firestore Rules enforce the closed service enum plus the four seeded catalog documents being active. Any future service-catalog schema change must update the explicit Rules mapping and its emulator coverage.
 
 ### `requests/{requestId}` reads
 

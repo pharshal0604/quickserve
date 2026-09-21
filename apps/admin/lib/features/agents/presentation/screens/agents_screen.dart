@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import '../../../../admin_repository.dart';
+import 'package:quickserve_admin/core/network/admin_repository.dart';
 import '../../../customers/presentation/screens/people_screen.dart';
 import 'agent_details_screen.dart';
 

@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quickserve_mobile/utils/app_exceptions.dart';
-import 'package:quickserve_mobile/utils/firebase_error_mapper.dart';
+import 'package:quickserve_mobile/core/error/app_exceptions.dart';
+import 'package:quickserve_mobile/core/error/firebase_error_mapper.dart';
 
 const genericFallback = 'Something went wrong. Please try again.';
 const unknownAuthCode = 'unknown-auth-error';
