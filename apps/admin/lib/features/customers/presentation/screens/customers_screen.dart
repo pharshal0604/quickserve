@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
 import 'package:quickserve_admin/core/network/admin_repository.dart';
+
 import 'people_screen.dart';
 
 class CustomersScreen extends StatelessWidget {

@@ -67,10 +67,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: const BackButton(),
-              ),
+              Align(alignment: Alignment.centerLeft, child: const BackButton()),
               const QuickServeBrandHeader(
                 eyebrow: 'Reset access',
                 subtitle: 'We will help you get back to your account.',

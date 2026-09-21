@@ -52,7 +52,10 @@ void main() {
 
   group('service catalog constants', () {
     test('maps every supported service name to its canonical document ID', () {
-      expect(ServiceNames.documentIdFor(ServiceNames.acServicing), 'ac_servicing');
+      expect(
+        ServiceNames.documentIdFor(ServiceNames.acServicing),
+        'ac_servicing',
+      );
       expect(ServiceNames.documentIdFor(ServiceNames.plumbing), 'plumbing');
       expect(ServiceNames.documentIdFor(ServiceNames.electrical), 'electrical');
       expect(ServiceNames.documentIdFor(ServiceNames.cleaning), 'cleaning');

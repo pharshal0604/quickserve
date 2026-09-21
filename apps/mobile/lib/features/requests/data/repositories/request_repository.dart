@@ -24,9 +24,9 @@ final class RequestRepository {
             )
             .toList();
         items.sort(
-          (a, b) => b.request.createdAt
-              .toDate()
-              .compareTo(a.request.createdAt.toDate()),
+          (a, b) => b.request.createdAt.toDate().compareTo(
+            a.request.createdAt.toDate(),
+          ),
         );
         return items;
       },
@@ -35,19 +35,21 @@ final class RequestRepository {
 
   /// Streams a request by document ID so lifecycle changes appear live.
   Stream<shared.Request?> watchRequest(String requestId) {
-    return _requests.doc(requestId).snapshots().map(
-      (snapshot) => snapshot.exists
-          ? shared.Request.fromMap(snapshot.data()!)
-          : null,
-    );
+    return _requests
+        .doc(requestId)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.exists ? shared.Request.fromMap(snapshot.data()!) : null,
+        );
   }
 
   /// Loads a request by document ID.
   Future<shared.Request?> getRequest(String requestId) async {
     try {
-      final snapshot = await _requests.doc(requestId).get(
-        const GetOptions(source: Source.server),
-      );
+      final snapshot = await _requests
+          .doc(requestId)
+          .get(const GetOptions(source: Source.server));
       return snapshot.exists ? shared.Request.fromMap(snapshot.data()!) : null;
     } catch (error) {
       throw _mapError(error, 'Could not load this request.');
@@ -246,9 +248,7 @@ final class RequestRepository {
         'action': shared.EventNames.requestUpdated,
         'targetType': 'request',
         'targetId': requestRef.id,
-        'oldValue': <String, dynamic>{
-          'status': request.status.toStoredValue(),
-        },
+        'oldValue': <String, dynamic>{'status': request.status.toStoredValue()},
         'newValue': <String, dynamic>{'status': shared.StatusNames.cancelled},
         'result': 'success',
         'timestamp': FieldValue.serverTimestamp(),

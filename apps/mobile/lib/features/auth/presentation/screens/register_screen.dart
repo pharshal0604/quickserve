@@ -170,10 +170,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: const BackButton(),
-              ),
+              Align(alignment: Alignment.centerLeft, child: const BackButton()),
               const QuickServeBrandHeader(
                 eyebrow: 'Join QuickServe',
                 subtitle: 'Simple service help starts here.',

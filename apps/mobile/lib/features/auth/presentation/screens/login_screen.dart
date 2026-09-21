@@ -102,10 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: const BackButton(),
-              ),
+              Align(alignment: Alignment.centerLeft, child: const BackButton()),
               const QuickServeBrandHeader(
                 eyebrow: 'QuickServe',
                 subtitle: 'Sign in to manage your service requests.',
