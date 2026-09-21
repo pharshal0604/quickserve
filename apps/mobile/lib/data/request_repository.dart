@@ -63,7 +63,44 @@ final class RequestRepository {
     required shared.RequestPriority priority,
   }) async {
     try {
-      final now = DateTime.now();
+      final normalizedService = serviceType.trim();
+      final normalizedDescription = shared.sanitizeRequestText(description);
+      final normalizedAddress = shared.sanitizeRequestText(address);
+      final serviceResult = shared.validateServiceType(normalizedService);
+      final descriptionResult = shared.validateDescription(
+        normalizedDescription,
+      );
+      final addressResult = shared.validateAddress(normalizedAddress);
+      final preferredResult = shared.validatePreferredDateTime(
+        preferredDateTime.toDate(),
+      );
+      for (final result in [
+        serviceResult,
+        descriptionResult,
+        addressResult,
+        preferredResult,
+      ]) {
+        if (!result.isValid) {
+          throw RequestRepositoryException(
+            'validation-failed',
+            result.reason ?? 'Request details are invalid.',
+          );
+        }
+      }
+      final activeService = await FirebaseFirestore.instance
+          .collection(shared.CollectionNames.services)
+          .where('name', isEqualTo: normalizedService)
+          .where('active', isEqualTo: true)
+          .limit(1)
+          .get();
+      if (activeService.docs.isEmpty) {
+        throw const RequestRepositoryException(
+          'service-unavailable',
+          'That service is no longer available. Please choose another service.',
+        );
+      }
+
+      final now = DateTime.now().toUtc();
       final year = now.year;
       final counterRef = FirebaseFirestore.instance
           .collection(shared.CollectionNames.counters)
@@ -90,10 +127,12 @@ final class RequestRepository {
           'requestCode': requestCode,
           'customerId': customerId,
           'agentId': null,
-          'serviceType': serviceType.trim(),
-          'description': description.trim(),
-          'preferredDateTime': preferredDateTime,
-          'address': address.trim(),
+          'serviceType': normalizedService,
+          'description': normalizedDescription,
+          'preferredDateTime': Timestamp.fromDate(
+            preferredDateTime.toDate().toUtc(),
+          ),
+          'address': normalizedAddress,
           'priority': priority.toStoredValue(),
           'status': shared.StatusNames.created,
           'createdAt': FieldValue.serverTimestamp(),
@@ -135,6 +174,14 @@ final class RequestRepository {
     required String customerId,
   }) async {
     try {
+      final normalizedReason = shared.sanitizeRequestText(reason);
+      final reasonResult = shared.validateCancellationReason(normalizedReason);
+      if (!reasonResult.isValid) {
+        throw RequestRepositoryException(
+          'validation-failed',
+          reasonResult.reason ?? 'Cancellation reason is invalid.',
+        );
+      }
       final requestRef = _requests.doc(requestId);
       final historyRef = requestRef
           .collection(shared.CollectionNames.statusHistory)
@@ -163,14 +210,14 @@ final class RequestRepository {
         transaction.update(requestRef, {
           'status': shared.StatusNames.cancelled,
           'updatedAt': FieldValue.serverTimestamp(),
-          'cancellationReason': reason.trim(),
+          'cancellationReason': normalizedReason,
         });
         transaction.set(historyRef, {
           'fromStatus': request.status.toStoredValue(),
           'toStatus': shared.StatusNames.cancelled,
           'changedBy': customerId,
           'changedAt': FieldValue.serverTimestamp(),
-          'note': reason.trim(),
+          'note': normalizedReason,
         });
         transaction.set(auditRef, {
           'actorUserId': customerId,

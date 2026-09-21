@@ -17,7 +17,7 @@ class QuickServeApp extends ConsumerWidget {
       title: 'QuickServe',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       routerConfig: router,
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 1.0,

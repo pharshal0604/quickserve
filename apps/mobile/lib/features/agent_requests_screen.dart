@@ -4,14 +4,42 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'quickserve_widgets.dart';
 
-/// Shows requests assigned to the signed-in Agent.
-class AgentRequestsScreen extends ConsumerWidget {
+class AgentRequestsScreen extends ConsumerStatefulWidget {
   const AgentRequestsScreen({super.key});
+  @override
+  ConsumerState<AgentRequestsScreen> createState() =>
+      _AgentRequestsScreenState();
+}
+
+class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
+  final _searchController = TextEditingController();
+  bool _history = false;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Color _color(String status) {
+    if (status == shared.StatusNames.completed) {
+      return AppColors.statusCompleted;
+    }
+    if (status == shared.StatusNames.cancelled) {
+      return AppColors.statusCancelled;
+    }
+    if (status == shared.StatusNames.inProgress) {
+      return AppColors.statusProgress;
+    }
+    if (status == shared.StatusNames.assigned) return AppColors.statusAssigned;
+    return AppColors.statusAccepted;
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
     if (user == null) {
       return const Scaffold(body: Center(child: Text('Please sign in again.')));
@@ -21,31 +49,103 @@ class AgentRequestsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Assigned Requests')),
       body: requests.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) =>
-            const Center(child: Text('Could not load assigned requests.')),
-        data: (items) => items.isEmpty
-            ? const Center(child: Text('No assigned requests yet.'))
-            : ListView.separated(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                itemCount: items.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final item = items[index];
+        error: (_, _) => Center(
+          child: TextButton(
+            onPressed: () =>
+                ref.invalidate(_assignedRequestsProvider(user.uid)),
+            child: const Text('Retry requests'),
+          ),
+        ),
+        data: (items) {
+          final query = _searchController.text.toLowerCase();
+          final filtered = items.where((item) {
+            final status = item.request.status.toStoredValue();
+            final historyMatch = _history
+                ? shared.isTerminalStatus(status)
+                : !shared.isTerminalStatus(status);
+            return historyMatch &&
+                (query.isEmpty ||
+                    item.request.requestCode.toLowerCase().contains(query) ||
+                    item.request.serviceType.toLowerCase().contains(query));
+          }).toList();
+          return ListView(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            children: [
+              Text(
+                'Manage your queue',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Accept, start, and complete assigned work from one place.',
+                style: TextStyle(color: AppColors.mutedText),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: quickServeInputDecoration(
+                  'Search requests',
+                  icon: Icons.search,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Active')),
+                  ButtonSegment(value: true, label: Text('History')),
+                ],
+                selected: {_history},
+                onSelectionChanged: (selection) =>
+                    setState(() => _history = selection.first),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (filtered.isEmpty)
+                const Text(
+                  'No requests in this view.',
+                  style: TextStyle(color: AppColors.mutedText),
+                )
+              else
+                ...filtered.map((item) {
                   final request = item.request;
-                  return Card(
-                    child: ListTile(
-                      title: Text(request.requestCode),
-                      subtitle: Text(
-                        '${request.serviceType}\n${request.status.toStoredValue()} · ${request.priority.toStoredValue()}',
+                  final status = request.status.toStoredValue();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Card(
+                      child: ListTile(
+                        onTap: () => context.push('/requests/${item.id}'),
+                        contentPadding: const EdgeInsets.all(AppSpacing.md),
+                        leading: const CircleAvatar(
+                          backgroundColor: AppColors.mintSurface,
+                          child: Icon(
+                            Icons.assignment_outlined,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        title: Text(
+                          request.serviceType,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          '${request.requestCode}\n${request.address}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        isThreeLine: true,
+                        trailing: StatusPill(
+                          label: status,
+                          color: _color(status),
+                        ),
                       ),
-                      isThreeLine: true,
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/requests/${item.id}'),
                     ),
                   );
-                },
-              ),
+                }),
+            ],
+          );
+        },
       ),
     );
   }
@@ -53,7 +153,7 @@ class AgentRequestsScreen extends ConsumerWidget {
 
 final _assignedRequestsProvider =
     FutureProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, agentId) async => ref
+      (ref, agentId) => ref
           .watch(agentRepositoryProvider)
           .watchAssignedRequests(agentId)
           .first,

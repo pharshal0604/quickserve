@@ -4,112 +4,215 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'quickserve_widgets.dart';
 
-/// Lists requests owned by the signed-in Customer.
-class MyRequestsScreen extends ConsumerWidget {
-  /// Creates the screen.
+class MyRequestsScreen extends ConsumerStatefulWidget {
   const MyRequestsScreen({super.key});
+  @override
+  ConsumerState<MyRequestsScreen> createState() => _MyRequestsScreenState();
+}
+
+class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
+  final _searchController = TextEditingController();
+  String _filter = 'All';
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Color _statusColor(String status) {
+    if (status == shared.StatusNames.completed) {
+      return AppColors.statusCompleted;
+    }
+    if (status == shared.StatusNames.cancelled) {
+      return AppColors.statusCancelled;
+    }
+    if (status == shared.StatusNames.inProgress) {
+      return AppColors.statusProgress;
+    }
+    if (status == shared.StatusNames.assigned) return AppColors.statusAssigned;
+    return AppColors.statusCreated;
+  }
+
+  List<Widget> _filterChips() {
+    return ['All', 'Active', 'created', 'completed', 'cancelled'].map<Widget>((
+      filter,
+    ) {
+      return Padding(
+        padding: const EdgeInsets.only(right: AppSpacing.sm),
+        child: ChoiceChip(
+          label: Text(filter[0].toUpperCase() + filter.substring(1)),
+          selected: _filter == filter,
+          onSelected: (_) => setState(() => _filter = filter),
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _requestCard(
+    BuildContext context,
+    ({String id, shared.Request request}) item,
+  ) {
+    final request = item.request;
+    final status = request.status.toStoredValue();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push('/requests/${item.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        request.serviceType,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    StatusPill(label: status, color: _statusColor(status)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  request.requestCode,
+                  style: const TextStyle(color: AppColors.mutedText),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 15,
+                      color: AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      MaterialLocalizations.of(context)
+                          .formatShortDate(request.preferredDateTime.toDate()),
+                      style: const TextStyle(color: AppColors.mutedText),
+                    ),
+                    const Spacer(),
+                    Text(
+                      request.priority.toStoredValue(),
+                      style: const TextStyle(color: AppColors.mutedText),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
     if (user == null) {
       return const Scaffold(body: Center(child: Text('Please sign in again.')));
     }
     final requests = ref.watch(_customerRequestsProvider(user.uid));
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Requests'),
-        actions: [
-          IconButton(
-            onPressed: () =>
-                ref.invalidate(_customerRequestsProvider(user.uid)),
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+      bottomNavigationBar: const CustomerBottomNav(currentIndex: 2),
+      body: SafeArea(
+        child: requests.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => Center(
+            child: TextButton(
+              onPressed: () =>
+                  ref.invalidate(_customerRequestsProvider(user.uid)),
+              child: const Text('Retry requests'),
+            ),
           ),
-        ],
-      ),
-      body: requests.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => _RequestMessage(
-          message: 'Could not load your requests.',
-          action: TextButton(
-            onPressed: () =>
-                ref.invalidate(_customerRequestsProvider(user.uid)),
-            child: const Text('Retry'),
-          ),
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return _RequestMessage(
-              message: 'You have not created any requests yet.',
-              action: FilledButton(
-                onPressed: () => context.push('/requests/create'),
-                child: const Text('Create Request'),
+          data: (items) {
+            final query = _searchController.text.toLowerCase();
+            final filtered = items.where((item) {
+              final status = item.request.status.toStoredValue();
+              final matchesQuery =
+                  query.isEmpty ||
+                  item.request.requestCode.toLowerCase().contains(query) ||
+                  item.request.serviceType.toLowerCase().contains(query);
+              final matchesFilter =
+                  _filter == 'All' ||
+                  (_filter == 'Active'
+                      ? !shared.isTerminalStatus(status)
+                      : status == _filter.toLowerCase());
+              return matchesQuery && matchesFilter;
+            }).toList();
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.xl,
               ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final request = item.request;
-              return Card(
-                child: ListTile(
-                  title: Text(request.requestCode),
-                  subtitle: Text(
-                    '${request.serviceType}\n${request.status.toStoredValue()} · ${request.priority.toStoredValue()}',
+              children: [
+                Text(
+                  'My Requests',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
                   ),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/requests/${item.id}'),
                 ),
-              );
-            },
-          );
-        },
+                const SizedBox(height: 5),
+                const Text(
+                  'Track every request from creation to completion.',
+                  style: TextStyle(color: AppColors.mutedText),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                TextField(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: quickServeInputDecoration(
+                    'Search by service or ID',
+                    icon: Icons.search,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  height: 38,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: _filterChips(),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (filtered.isEmpty)
+                  Center(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: AppSpacing.xl),
+                        const Text('No matching requests.'),
+                        const SizedBox(height: AppSpacing.md),
+                        FilledButton(
+                          onPressed: () => context.push('/requests/create'),
+                          child: const Text('Create a request'),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...filtered.map((item) => _requestCard(context, item)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
 final _customerRequestsProvider =
-    FutureProvider.family<List<({String id, shared.Request request})>, String>((
-      ref,
-      uid,
-    ) async {
-      await ref.watch(authStateProvider.future);
-      return ref
-          .watch(requestRepositoryProvider)
-          .watchCustomerRequests(uid)
-          .first;
-    });
-
-class _RequestMessage extends StatelessWidget {
-  const _RequestMessage({required this.message, this.action});
-
-  final String message;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            if (action != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              action!,
-            ],
-          ],
-        ),
-      ),
+    FutureProvider.family<List<({String id, shared.Request request})>, String>(
+      (ref, uid) =>
+          ref.watch(requestRepositoryProvider).watchCustomerRequests(uid).first,
     );
-  }
-}
