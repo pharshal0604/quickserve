@@ -230,7 +230,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       ),
     );
     controller.dispose();
-    if (!mounted || reason == null || reason.isEmpty) return;
+    if (!mounted || reason == null) return;
+    final normalizedReason = shared.sanitizeRequestText(reason);
+    final reasonResult = shared.validateCancellationReason(normalizedReason);
+    if (!reasonResult.isValid) {
+      AppSnackBar.show(context, message: reasonResult.reason!);
+      return;
+    }
     final user = ref.read(authStateProvider).value;
     if (user == null) return;
     setState(() => _busy = true);
@@ -239,7 +245,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
           .read(requestRepositoryProvider)
           .cancelRequest(
             requestId: widget.requestId,
-            reason: reason,
+            reason: normalizedReason,
             customerId: user.uid,
           );
       _refreshDetails();

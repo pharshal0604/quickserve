@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
 import 'app_radius.dart';
 
 /// Provides the QuickServe light and dark Material 3 themes.
 abstract final class AppTheme {
-  static const _seedColor = Color(0xFF7C5CFC);
-  static const _shape = RoundedRectangleBorder(borderRadius: AppRadius.mdAll);
+  static const _seedColor = AppColors.primary;
+  static const _shape = RoundedRectangleBorder(borderRadius: AppRadius.lgAll);
   static const _buttonShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.all(Radius.circular(AppRadius.xl)),
   );
   static const _contentPadding = EdgeInsets.symmetric(
-    horizontal: 16,
+    horizontal: 18,
     vertical: 16,
   );
 
-  /// Creates the light QuickServe theme.
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _seedColor,
       brightness: Brightness.light,
     );
-    return _theme(colorScheme);
+    return _theme(colorScheme)
+        .copyWith(scaffoldBackgroundColor: AppColors.pageBackground);
   }
 
-  /// Creates the dark QuickServe theme.
   static ThemeData dark() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _seedColor,
@@ -36,29 +36,40 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: AppRadius.mdAll),
-        enabledBorder: OutlineInputBorder(borderRadius: AppRadius.mdAll),
-        focusedBorder: OutlineInputBorder(borderRadius: AppRadius.mdAll),
+      fontFamily: 'sans',
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
         contentPadding: _contentPadding,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(54),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
           shape: _buttonShape,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+        style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
       appBarTheme: const AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       cardTheme: const CardThemeData(
-        elevation: 1,
+        elevation: 0,
+        color: Colors.white,
         shape: _shape,
         margin: EdgeInsets.zero,
       ),

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Semantic and lifecycle-status colors not covered by Material 3's
-/// ColorScheme. Values are chosen to read on both light and dark surfaces.
+/// Semantic colors used throughout QuickServe mobile.
 abstract final class AppColors {
+  static const Color primary = Color(0xFF075B3E);
+  static const Color primaryDark = Color(0xFF043D2A);
+  static const Color mintSurface = Color(0xFFEAF4F0);
+  static const Color pageBackground = Color(0xFFF7F9F7);
+  static const Color gold = Color(0xFFF0C95A);
+  static const Color outline = Color(0xFFD9E3DE);
+  static const Color mutedText = Color(0xFF6D7A74);
   static const Color success = Color(0xFF2E9F5B);
   static const Color warning = Color(0xFFF5A623);
   static const Color error = Color(0xFFE5484D);

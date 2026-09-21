@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import '../state/auth_providers.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../utils/app_exceptions.dart';
+import 'quickserve_widgets.dart';
 
-/// Provides the QuickServe email/password login screen.
 class LoginScreen extends ConsumerStatefulWidget {
-  /// Creates the login screen.
   const LoginScreen({super.key});
 
   @override
@@ -20,8 +20,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _rememberMe = true;
+  bool _isLoading = false;
   String? _errorMessage;
-  bool _isSigningIn = false;
 
   @override
   void dispose() {
@@ -30,26 +32,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
+  String? _emailValidator(String? value) {
     final result = shared.validateEmail(value ?? '');
     return result.isValid ? null : result.reason;
   }
 
-  String? _validatePassword(String? value) {
-    final password = value ?? '';
-    if (password.isEmpty) return 'Password is required.';
-    if (password.length < 6) return 'Password must be at least 6 characters.';
-    return null;
-  }
-
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() {
+      _isLoading = true;
       _errorMessage = null;
-      _isSigningIn = true;
     });
-
     try {
       await ref
           .read(authRepositoryProvider)
@@ -60,105 +53,256 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = error is AuthException
+        _isLoading = false;
+        _errorMessage = error is AppException
             ? error.userMessage
-            : 'Something went wrong. Please try again.';
+            : 'We could not sign you in. Please try again.';
       });
-    } finally {
-      if (mounted) setState(() => _isSigningIn = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final credential = await ref
+          .read(authRepositoryProvider)
+          .signInWithGoogle();
+      final user = credential?.user;
+      if (user != null) {
+        final repository = ref.read(userRepositoryProvider);
+        final profile = await repository.getProfile(user.uid);
+        if (profile == null) {
+          await repository.createProfile(
+            uid: user.uid,
+            name: user.displayName ?? 'QuickServe customer',
+            email: user.email ?? '',
+            phone: user.phoneNumber ?? '',
+          );
+        }
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = error is AppException
+            ? error.userMessage
+            : 'Google sign-in was not completed.';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final width = MediaQuery.sizeOf(context).width;
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'QuickServe',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: _validateEmail,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(labelText: 'Password'),
-                      validator: _validatePassword,
-                      onFieldSubmitted: (_) => _isSigningIn ? null : _signIn(),
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(12),
-                          ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  tooltip: 'Back',
+                  onPressed: () => context.go('/splash'),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
+              ),
+              const QuickServeBrandHeader(
+                eyebrow: 'QuickServe',
+                subtitle: 'Sign in to manage your service requests.',
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  width > 600 ? width * .18 : AppSpacing.xl,
+                  AppSpacing.xl,
+                  width > 600 ? width * .18 : AppSpacing.xl,
+                  AppSpacing.xxl,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Welcome Back',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Sign in to manage your service requests',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.mutedText),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                        decoration: quickServeInputDecoration(
+                          'Email Address',
+                          icon: Icons.mail_outline_rounded,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: colorScheme.onErrorContainer,
+                        validator: _emailValidator,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        decoration: quickServeInputDecoration(
+                          'Password',
+                          icon: Icons.lock_outline_rounded,
+                          suffix: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                             ),
                           ),
                         ),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Enter your password.'
+                            : null,
+                        onFieldSubmitted: (_) => _isLoading ? null : _signIn(),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) =>
+                                setState(() => _rememberMe = value ?? false),
+                            activeColor: AppColors.primary,
+                          ),
+                          const Text('Remember me'),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => context.go('/password-reset'),
+                            child: const Text('Forgot Password?'),
+                          ),
+                        ],
+                      ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        _ErrorBanner(message: _errorMessage!),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      FilledButton(
+                        onPressed: _isLoading ? null : _signIn,
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Sign In'),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      const _DividerLabel(label: 'OR CONTINUE WITH'),
+                      const SizedBox(height: AppSpacing.md),
+                      OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _signInWithGoogle,
+                        icon: const _GoogleMark(),
+                        label: const Text('Continue with Google'),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Don\'t have an account? ',
+                              style: TextStyle(color: AppColors.mutedText),
+                            ),
+                            TextButton(
+                              onPressed: () => context.go('/register'),
+                              child: const Text('Create Account'),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
-                    FilledButton(
-                      onPressed: _isSigningIn ? null : _signIn,
-                      child: _isSigningIn
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: colorScheme.onPrimary,
-                              ),
-                            )
-                          : const Text('Sign in'),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextButton(
-                      onPressed: () => context.go('/password-reset'),
-                      child: const Text('Forgot password?'),
-                    ),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text('Create an account'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _DividerLabel extends StatelessWidget {
+  const _DividerLabel({required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(child: Divider()),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: AppColors.mutedText, letterSpacing: 1),
+        ),
+      ),
+      const Expanded(child: Divider()),
+    ],
+  );
+}
+
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 22,
+    height: 22,
+    child: Center(
+      child: Text(
+        'G',
+        style: TextStyle(
+          fontSize: 19,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF4285F4),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.errorContainer,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Text(
+      message,
+      style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+    ),
+  );
 }

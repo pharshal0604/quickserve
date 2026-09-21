@@ -2,16 +2,22 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared/shared.dart' as shared;
 
 import '../features/agent_requests_screen.dart';
 import '../features/create_request_screen.dart';
 import '../features/home_screen.dart';
 import '../features/login_screen.dart';
 import '../features/my_requests_screen.dart';
+import '../features/notifications_screen.dart';
+import '../features/profile_screen.dart';
 import '../features/request_details_screen.dart';
+import '../features/settings_screen.dart';
 import '../features/services_screen.dart';
 import '../features/password_reset_screen.dart';
 import '../features/register_screen.dart';
+import '../features/request_success_screen.dart';
+import '../features/service_details_screen.dart';
 import '../features/splash_screen.dart';
 import '../state/auth_providers.dart';
 
@@ -54,6 +60,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ServicesScreen(),
       ),
       GoRoute(
+        path: '/services/detail',
+        builder: (context, state) =>
+            ServiceDetailsScreen(service: state.extra as shared.Service),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
         path: '/requests',
         builder: (context, state) => const MyRequestsScreen(),
       ),
@@ -61,6 +84,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/requests/create',
         builder: (context, state) =>
             CreateRequestScreen(initialService: state.extra as String?),
+      ),
+      GoRoute(
+        path: '/request-success/:requestId',
+        builder: (context, state) =>
+            RequestSuccessScreen(requestId: state.pathParameters['requestId']!),
       ),
       GoRoute(
         path: '/agent/requests',
