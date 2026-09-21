@@ -14,7 +14,7 @@ class ValidationResult {
   /// Whether the input passed validation.
   final bool isValid;
 
-  /// The reason for failure, or null when the input is valid.
+  /// The reason for failure, or null when the value is valid.
   final String? reason;
 }
 
@@ -23,6 +23,14 @@ ValidationResult _required(String value, String field) {
     return ValidationResult.invalid('$field must not be empty.');
   }
   return const ValidationResult.valid();
+}
+
+/// Removes surrounding whitespace and common control characters from user text.
+String sanitizeRequestText(String value) {
+  return value
+      .replaceAll(RegExp(r'[\u0000-\u001F\u007F]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 }
 
 /// Validates a person's name using letters and spaces only.
@@ -122,27 +130,70 @@ ValidationResult validateConfirmPassword(String value, String original) {
   return const ValidationResult.valid();
 }
 
-/// Validates a request description with a trimmed length of 1–2000 characters.
+/// Validates a request description after sanitization: 10–1000 characters.
 ValidationResult validateDescription(String value) {
-  final required = _required(value, 'Description');
-  if (!required.isValid) return required;
-  final length = value.trim().length;
-  if (length > 2000) {
+  final normalized = sanitizeRequestText(value);
+  if (normalized.isEmpty) {
+    return const ValidationResult.invalid('Description is required.');
+  }
+  if (normalized.length < 10 || normalized.length > 1000) {
     return const ValidationResult.invalid(
-      'Description must not exceed 2000 characters.',
+      'Description must be between 10 and 1000 characters.',
     );
   }
   return const ValidationResult.valid();
 }
 
-/// Validates a request address with a trimmed length of 5–300 characters.
+/// Validates a request address after sanitization: 10–200 characters.
 ValidationResult validateAddress(String value) {
-  final required = _required(value, 'Address');
-  if (!required.isValid) return required;
-  final length = value.trim().length;
-  if (length < 5 || length > 300) {
+  final normalized = sanitizeRequestText(value);
+  if (normalized.isEmpty) {
+    return const ValidationResult.invalid('Address is required.');
+  }
+  if (normalized.length < 10 || normalized.length > 200) {
     return const ValidationResult.invalid(
-      'Address must be between 5 and 300 characters.',
+      'Address must be between 10 and 200 characters.',
+    );
+  }
+  return const ValidationResult.valid();
+}
+
+/// Validates a preferred service time within the supported one-year window.
+ValidationResult validatePreferredDateTime(DateTime value, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  if (!value.isAfter(current)) {
+    return const ValidationResult.invalid(
+      'Preferred date and time must be in the future.',
+    );
+  }
+  if (value.isAfter(current.add(const Duration(days: 365)))) {
+    return const ValidationResult.invalid(
+      'Preferred date and time must be within one year.',
+    );
+  }
+  return const ValidationResult.valid();
+}
+
+/// Validates a cancellation reason after sanitization: 5–500 characters.
+ValidationResult validateCancellationReason(String value) {
+  final normalized = sanitizeRequestText(value);
+  if (normalized.length < 5 || normalized.length > 500) {
+    return const ValidationResult.invalid(
+      'Cancellation reason must be between 5 and 500 characters.',
+    );
+  }
+  return const ValidationResult.valid();
+}
+
+/// Validates a selected service reference before the catalog lookup.
+ValidationResult validateServiceType(String value) {
+  final normalized = value.trim();
+  if (normalized.isEmpty) {
+    return const ValidationResult.invalid('Service is required.');
+  }
+  if (!ServiceNames.values.contains(normalized)) {
+    return const ValidationResult.invalid(
+      'Service must be AC servicing, Plumbing, Electrical, or Cleaning.',
     );
   }
   return const ValidationResult.valid();

@@ -13,6 +13,16 @@ class AdminRepository {
   Stream<QuerySnapshot<Map<String, dynamic>>> watchRequests() =>
       firestore.collection(CollectionNames.requests).limit(200).snapshots();
 
+  Future<void> sendPasswordReset(String email) {
+    return auth.sendPasswordResetEmail(email: email.trim().toLowerCase());
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchServices() => firestore
+      .collection(CollectionNames.services)
+      .orderBy('name')
+      .limit(100)
+      .snapshots();
+
   Stream<QuerySnapshot<Map<String, dynamic>>> watchUsers({String? role}) {
     Query<Map<String, dynamic>> query = firestore
         .collection(CollectionNames.users)
@@ -67,16 +77,32 @@ class AdminRepository {
   }) async {
     final uid = auth.currentUser?.uid;
     if (uid == null) throw StateError('Admin session is not signed in.');
+    final normalizedNote = note == null ? null : sanitizeRequestText(note);
+    if (normalizedNote != null && normalizedNote.length > 500) {
+      throw ArgumentError('Notes must be 500 characters or fewer.');
+    }
     final requestRef = firestore
         .collection(CollectionNames.requests)
         .doc(requestId);
+    final agentRef = agentId == null
+        ? null
+        : firestore.collection(CollectionNames.users).doc(agentId);
     final historyRef = requestRef
         .collection(CollectionNames.statusHistory)
         .doc();
     final auditRef = firestore.collection(CollectionNames.auditLogs).doc();
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(requestRef);
+      final agentSnapshot = agentRef == null
+          ? null
+          : await transaction.get(agentRef);
       if (!snapshot.exists) throw StateError('Request no longer exists.');
+      if (agentId != null &&
+          (agentSnapshot == null ||
+              !agentSnapshot.exists ||
+              agentSnapshot.data()?['role'] != RoleNames.agent)) {
+        throw StateError('The selected user is not an active service agent.');
+      }
       final data = snapshot.data()!;
       final oldStatus = data['status'] as String?;
       if (oldStatus == null || !StatusNames.values.contains(status)) {
@@ -89,6 +115,15 @@ class AdminRepository {
         'status': status,
         'updatedAt': FieldValue.serverTimestamp(),
       };
+      if (status == StatusNames.cancelled) {
+        final cancellationReason = normalizedNote?.isNotEmpty == true
+            ? normalizedNote!
+            : 'Cancelled by administrator';
+        if (!validateCancellationReason(cancellationReason).isValid) {
+          throw ArgumentError('Cancellation reason is invalid.');
+        }
+        changes['cancellationReason'] = cancellationReason;
+      }
       if (agentId != null) changes['agentId'] = agentId;
       transaction.update(requestRef, changes);
       transaction.set(historyRef, {
@@ -96,7 +131,7 @@ class AdminRepository {
         'toStatus': status,
         'changedBy': uid,
         'changedAt': FieldValue.serverTimestamp(),
-        'note': note ?? '',
+        'note': normalizedNote ?? '',
       });
       transaction.set(auditRef, {
         'actorUserId': uid,

@@ -65,6 +65,24 @@ abstract final class StatusNames {
   ];
 }
 
+/// Fixed service catalog values.
+abstract final class ServiceNames {
+  /// Air-conditioning servicing.
+  static const acServicing = 'AC servicing';
+
+  /// Plumbing work.
+  static const plumbing = 'Plumbing';
+
+  /// Electrical work.
+  static const electrical = 'Electrical';
+
+  /// Cleaning work.
+  static const cleaning = 'Cleaning';
+
+  /// All supported service names.
+  static const values = <String>[acServicing, plumbing, electrical, cleaning];
+}
+
 /// Fixed stored priority values.
 abstract final class PriorityNames {
   /// Low priority.
