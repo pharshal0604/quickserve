@@ -51,7 +51,8 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       final requestedService = widget.initialService;
       setState(() {
         _availableServices = services;
-        _serviceType = requestedService != null &&
+        _serviceType =
+            requestedService != null &&
                 services.any((service) => service.name == requestedService)
             ? requestedService
             : null;
@@ -84,8 +85,8 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       now.day,
     ).add(const Duration(days: 1));
     final selectedDate = _preferredDateTime;
-    final initialDate = selectedDate != null &&
-            !selectedDate.isBefore(firstAvailableDate)
+    final initialDate =
+        selectedDate != null && !selectedDate.isBefore(firstAvailableDate)
         ? selectedDate
         : firstAvailableDate;
     final date = await showDatePicker(
@@ -188,78 +189,80 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       child: Scaffold(
         appBar: AppBar(title: const Text('Create Request')),
         body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            children: [
-              Text(
-                'Step ${_step + 1} of 3',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              LinearProgressIndicator(
-                value: (_step + 1) / 3,
-                color: AppColors.primary,
-                backgroundColor: AppColors.mintSurface,
-                borderRadius: BorderRadius.circular(99),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              if (_step == 0)
-                _detailsStep()
-              else if (_step == 1)
-                _scheduleStep()
-              else
-                _reviewStep(),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              children: [
                 Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: AppColors.error),
+                  'Step ${_step + 1} of 3',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              Row(
-                children: [
-                  if (_step > 0)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _isSubmitting
-                            ? null
-                            : () => setState(() {
-                                _step--;
-                                _errorMessage = null;
-                              }),
-                        child: const Text('Back'),
-                      ),
-                    ),
-                  if (_step > 0) const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : (_step == 2 ? _submit : _next),
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(_step == 2 ? 'Submit request' : 'Continue  →'),
-                    ),
+                const SizedBox(height: AppSpacing.sm),
+                LinearProgressIndicator(
+                  value: (_step + 1) / 3,
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.mintSurface,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                if (_step == 0)
+                  _detailsStep()
+                else if (_step == 1)
+                  _scheduleStep()
+                else
+                  _reviewStep(),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: AppColors.error),
                   ),
                 ],
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    if (_step > 0)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(() {
+                                  _step--;
+                                  _errorMessage = null;
+                                }),
+                          child: const Text('Back'),
+                        ),
+                      ),
+                    if (_step > 0) const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : (_step == 2 ? _submit : _next),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                _step == 2 ? 'Submit request' : 'Continue  →',
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -288,14 +291,11 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         ),
         items: _serviceOptions
             .map(
-              (service) => DropdownMenuItem(
-                value: service,
-                child: Text(service),
-              ),
+              (service) =>
+                  DropdownMenuItem(value: service, child: Text(service)),
             )
             .toList(),
-        validator: (value) =>
-            value == null ? 'Service is required.' : null,
+        validator: (value) => value == null ? 'Service is required.' : null,
         onChanged: _isSubmitting
             ? null
             : (value) => setState(() => _serviceType = value),

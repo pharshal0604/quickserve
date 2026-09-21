@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'package:quickserve_admin/core/network/admin_repository.dart';
+
 import 'config/theme/admin_theme.dart';
 import 'features/auth/presentation/auth_gate.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -13,6 +14,7 @@ import 'features/services/presentation/screens/services_screen.dart';
 import 'features/activity/presentation/screens/activity_screen.dart';
 import 'features/activity/presentation/screens/notifications_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
+
 import 'package:quickserve_admin/config/firebase/firebase_options.dart';
 
 Future<void> main() async {

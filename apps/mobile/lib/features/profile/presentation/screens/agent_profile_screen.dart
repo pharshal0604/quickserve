@@ -38,8 +38,9 @@ class AgentProfileScreen extends StatelessWidget {
       );
     }
 
-    final displayName =
-        name?.isNotEmpty == true ? name! : 'Assigned technician';
+    final displayName = name?.isNotEmpty == true
+        ? name!
+        : 'Assigned technician';
     final initial = displayName[0].toUpperCase();
     final displayPhone = phone?.isNotEmpty == true ? phone! : 'Not provided';
 
@@ -87,9 +88,8 @@ class AgentProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Contact Details',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           Card(

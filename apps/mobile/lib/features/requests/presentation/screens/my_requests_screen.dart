@@ -48,9 +48,7 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
       'in_progress',
       'completed',
       'cancelled',
-    ].map<Widget>((
-      filter,
-    ) {
+    ].map<Widget>((filter) {
       return Padding(
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         child: ChoiceChip(
@@ -159,136 +157,143 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
     return HomeBackScope(
       child: Scaffold(
         bottomNavigationBar: const CustomerBottomNav(currentIndex: 2),
-      body: SafeArea(
-        child: requests.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => Center(
-            child: TextButton(
-              onPressed: () =>
-                  ref.invalidate(_customerRequestsProvider(user.uid)),
-              child: const Text('Retry requests'),
-            ),
-          ),
-          data: (items) {
-            final query = _searchController.text.toLowerCase();
-            final filtered = items.where((item) {
-              final status = item.request.status.toStoredValue();
-              final matchesQuery =
-                  query.isEmpty ||
-                  item.request.requestCode.toLowerCase().contains(query) ||
-                  item.request.serviceType.toLowerCase().contains(query);
-              final matchesFilter =
-                  _filter == 'All' ||
-                  (_filter == 'Active'
-                      ? !shared.isTerminalStatus(status)
-                      : status == _filter.toLowerCase());
-              return matchesQuery && matchesFilter;
-            }).toList();
-            final activeCount = items
-                .where((item) =>
-                    !shared.isTerminalStatus(item.request.status.toStoredValue()))
-                .length;
-            final completedCount = items
-                .where((item) =>
-                    item.request.status.toStoredValue() ==
-                    shared.StatusNames.completed)
-                .length;
-            final cancelledCount = items
-                .where((item) =>
-                    item.request.status.toStoredValue() ==
-                    shared.StatusNames.cancelled)
-                .length;
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.lg,
-                AppSpacing.xl,
-                AppSpacing.xl,
+        body: SafeArea(
+          child: requests.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => Center(
+              child: TextButton(
+                onPressed: () =>
+                    ref.invalidate(_customerRequestsProvider(user.uid)),
+                child: const Text('Retry requests'),
               ),
-              children: [
-                Text(
-                  'My Requests',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Track every request from creation to completion.',
-                  style: TextStyle(color: AppColors.mutedText),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RequestMetric(
-                        label: 'Total',
-                        value: '${items.length}',
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _RequestMetric(
-                        label: 'Active',
-                        value: '$activeCount',
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _RequestMetric(
-                        label: 'Done',
-                        value: '$completedCount',
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _RequestMetric(
-                        label: 'Cancelled',
-                        value: '$cancelledCount',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: quickServeInputDecoration(
-                    'Search by service or ID',
-                    icon: Icons.search,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  height: 38,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: _filterChips(),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                if (filtered.isEmpty)
-                  Center(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: AppSpacing.xl),
-                        const Text('No matching requests.'),
-                        const SizedBox(height: AppSpacing.md),
-                        FilledButton(
-                          onPressed: () => context.push('/requests/create'),
-                          child: const Text('Create a request'),
-                        ),
-                      ],
+            ),
+            data: (items) {
+              final query = _searchController.text.toLowerCase();
+              final filtered = items.where((item) {
+                final status = item.request.status.toStoredValue();
+                final matchesQuery =
+                    query.isEmpty ||
+                    item.request.requestCode.toLowerCase().contains(query) ||
+                    item.request.serviceType.toLowerCase().contains(query);
+                final matchesFilter =
+                    _filter == 'All' ||
+                    (_filter == 'Active'
+                        ? !shared.isTerminalStatus(status)
+                        : status == _filter.toLowerCase());
+                return matchesQuery && matchesFilter;
+              }).toList();
+              final activeCount = items
+                  .where(
+                    (item) => !shared.isTerminalStatus(
+                      item.request.status.toStoredValue(),
                     ),
                   )
-                else
-                  ...filtered.map((item) => _requestCard(context, item)),
-              ],
-            );
-          },
+                  .length;
+              final completedCount = items
+                  .where(
+                    (item) =>
+                        item.request.status.toStoredValue() ==
+                        shared.StatusNames.completed,
+                  )
+                  .length;
+              final cancelledCount = items
+                  .where(
+                    (item) =>
+                        item.request.status.toStoredValue() ==
+                        shared.StatusNames.cancelled,
+                  )
+                  .length;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                ),
+                children: [
+                  Text(
+                    'My Requests',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Track every request from creation to completion.',
+                    style: TextStyle(color: AppColors.mutedText),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _RequestMetric(
+                          label: 'Total',
+                          value: '${items.length}',
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _RequestMetric(
+                          label: 'Active',
+                          value: '$activeCount',
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _RequestMetric(
+                          label: 'Done',
+                          value: '$completedCount',
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: _RequestMetric(
+                          label: 'Cancelled',
+                          value: '$cancelledCount',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: quickServeInputDecoration(
+                      'Search by service or ID',
+                      icon: Icons.search,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _filterChips(),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (filtered.isEmpty)
+                    Center(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: AppSpacing.xl),
+                          const Text('No matching requests.'),
+                          const SizedBox(height: AppSpacing.md),
+                          FilledButton(
+                            onPressed: () => context.push('/requests/create'),
+                            child: const Text('Create a request'),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...filtered.map((item) => _requestCard(context, item)),
+                ],
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -324,10 +329,7 @@ class _RequestMetric extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.mutedText,
-              fontSize: 10,
-            ),
+            style: const TextStyle(color: AppColors.mutedText, fontSize: 10),
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -338,5 +340,6 @@ class _RequestMetric extends StatelessWidget {
 
 final _customerRequestsProvider =
     StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) => ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
+      (ref, uid) =>
+          ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
     );

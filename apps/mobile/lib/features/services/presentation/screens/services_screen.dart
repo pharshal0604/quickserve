@@ -118,10 +118,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         isThreeLine: true,
-        trailing: StatusPill(
-          label: status,
-          color: _requestStatusColor(status),
-        ),
+        trailing: StatusPill(label: status, color: _requestStatusColor(status)),
       ),
     );
   }
@@ -136,116 +133,118 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
     return HomeBackScope(
       child: Scaffold(
         bottomNavigationBar: const CustomerBottomNav(currentIndex: 1),
-      body: SafeArea(
-        child: services.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => Center(
-            child: TextButton(
-              onPressed: () => ref.invalidate(_servicesProvider),
-              child: const Text('Retry services'),
-            ),
-          ),
-          data: (items) {
-            final query = _searchController.text.trim().toLowerCase();
-            final filtered = items.where((service) {
-              final matchesQuery =
-                  query.isEmpty ||
-                  service.name.toLowerCase().contains(query) ||
-                  service.description.toLowerCase().contains(query);
-              final matchesFilter =
-                  _filter == 'All' ||
-                  service.name.toLowerCase().contains(_filter.toLowerCase());
-              return matchesQuery && matchesFilter;
-            }).toList();
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.lg,
-                AppSpacing.xl,
-                AppSpacing.xl,
+        body: SafeArea(
+          child: services.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => Center(
+              child: TextButton(
+                onPressed: () => ref.invalidate(_servicesProvider),
+                child: const Text('Retry services'),
               ),
-              children: [
-                Text(
-                  'Find Services',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
+            ),
+            data: (items) {
+              final query = _searchController.text.trim().toLowerCase();
+              final filtered = items.where((service) {
+                final matchesQuery =
+                    query.isEmpty ||
+                    service.name.toLowerCase().contains(query) ||
+                    service.description.toLowerCase().contains(query);
+                final matchesFilter =
+                    _filter == 'All' ||
+                    service.name.toLowerCase().contains(_filter.toLowerCase());
+                return matchesQuery && matchesFilter;
+              }).toList();
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
                 ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Browse services',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 3),
-                const Text(
-                  'Find the right professional for your home.',
-                  style: TextStyle(color: AppColors.mutedText),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: quickServeInputDecoration(
-                    'Search services',
-                    icon: Icons.search,
-                    suffix: const Icon(Icons.tune_rounded),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  height: 38,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: _filterChips(),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                SectionHeader(
-                  title: 'Your recent requests',
-                  action: 'View all',
-                  onTap: () => context.go('/requests'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (requests == null || requests.isLoading)
-                  const LinearProgressIndicator()
-                else if (requests.hasError)
-                  const Text(
-                    'Request activity is unavailable right now.',
-                    style: TextStyle(color: AppColors.mutedText),
-                  )
-                else if (requests.valueOrNull?.isEmpty ?? true)
-                  const Card(
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.receipt_long_outlined,
-                        color: AppColors.primary,
-                      ),
-                      title: Text('No requests yet'),
-                      subtitle: Text(
-                        'Your created requests will appear here with live status updates.',
-                      ),
+                children: [
+                  Text(
+                    'Find Services',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
                     ),
-                  )
-                else
-                  ...requests.valueOrNull!
-                      .take(3)
-                      .map((item) => _recentRequestCard(context, item)),
-                const SizedBox(height: AppSpacing.xl),
-                SectionHeader(title: 'Available services'),
-                const SizedBox(height: AppSpacing.sm),
-                if (filtered.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(AppSpacing.xl),
-                    child: Center(child: Text('No matching services found.')),
-                  )
-                else
-                  ...filtered.map((service) => _serviceCard(context, service)),
-              ],
-            );
-          },
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Browse services',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Find the right professional for your home.',
+                    style: TextStyle(color: AppColors.mutedText),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: quickServeInputDecoration(
+                      'Search services',
+                      icon: Icons.search,
+                      suffix: const Icon(Icons.tune_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _filterChips(),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SectionHeader(
+                    title: 'Your recent requests',
+                    action: 'View all',
+                    onTap: () => context.go('/requests'),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (requests == null || requests.isLoading)
+                    const LinearProgressIndicator()
+                  else if (requests.hasError)
+                    const Text(
+                      'Request activity is unavailable right now.',
+                      style: TextStyle(color: AppColors.mutedText),
+                    )
+                  else if (requests.valueOrNull?.isEmpty ?? true)
+                    const Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.receipt_long_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: Text('No requests yet'),
+                        subtitle: Text(
+                          'Your created requests will appear here with live status updates.',
+                        ),
+                      ),
+                    )
+                  else
+                    ...requests.valueOrNull!
+                        .take(3)
+                        .map((item) => _recentRequestCard(context, item)),
+                  const SizedBox(height: AppSpacing.xl),
+                  SectionHeader(title: 'Available services'),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (filtered.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(AppSpacing.xl),
+                      child: Center(child: Text('No matching services found.')),
+                    )
+                  else
+                    ...filtered.map(
+                      (service) => _serviceCard(context, service),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -257,5 +256,6 @@ final _servicesProvider = FutureProvider<List<shared.Service>>(
 
 final _customerRequestsProvider =
     StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) => ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
+      (ref, uid) =>
+          ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
     );

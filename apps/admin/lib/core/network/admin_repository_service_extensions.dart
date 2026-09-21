@@ -78,7 +78,8 @@ extension AdminRepositoryServiceMutations on AdminRepository {
         'name': normalizedName,
         'description': normalizedDescription,
         'active': active,
-        'createdAt': current.data()?['createdAt'] ?? FieldValue.serverTimestamp(),
+        'createdAt':
+            current.data()?['createdAt'] ?? FieldValue.serverTimestamp(),
       });
       // Deletes are intentionally disallowed by Firestore rules, so leave the
       // legacy record in place but make it unavailable to customers.
