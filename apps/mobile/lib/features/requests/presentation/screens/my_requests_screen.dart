@@ -34,11 +34,21 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
       return AppColors.statusProgress;
     }
     if (status == shared.StatusNames.assigned) return AppColors.statusAssigned;
+    if (status == shared.StatusNames.accepted) return AppColors.statusAccepted;
     return AppColors.statusCreated;
   }
 
   List<Widget> _filterChips() {
-    return ['All', 'Active', 'created', 'completed', 'cancelled'].map<Widget>((
+    return [
+      'All',
+      'Active',
+      'created',
+      'assigned',
+      'accepted',
+      'in_progress',
+      'completed',
+      'cancelled',
+    ].map<Widget>((
       filter,
     ) {
       return Padding(
@@ -85,6 +95,31 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                   request.requestCode,
                   style: const TextStyle(color: AppColors.mutedText),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  request.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 15,
+                      color: AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        request.address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppColors.mutedText),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -121,8 +156,9 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
       return const Scaffold(body: Center(child: Text('Please sign in again.')));
     }
     final requests = ref.watch(_customerRequestsProvider(user.uid));
-    return Scaffold(
-      bottomNavigationBar: const CustomerBottomNav(currentIndex: 2),
+    return HomeBackScope(
+      child: Scaffold(
+        bottomNavigationBar: const CustomerBottomNav(currentIndex: 2),
       body: SafeArea(
         child: requests.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -148,6 +184,20 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                       : status == _filter.toLowerCase());
               return matchesQuery && matchesFilter;
             }).toList();
+            final activeCount = items
+                .where((item) =>
+                    !shared.isTerminalStatus(item.request.status.toStoredValue()))
+                .length;
+            final completedCount = items
+                .where((item) =>
+                    item.request.status.toStoredValue() ==
+                    shared.StatusNames.completed)
+                .length;
+            final cancelledCount = items
+                .where((item) =>
+                    item.request.status.toStoredValue() ==
+                    shared.StatusNames.cancelled)
+                .length;
             return ListView(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.xl,
@@ -167,6 +217,38 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                 const Text(
                   'Track every request from creation to completion.',
                   style: TextStyle(color: AppColors.mutedText),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RequestMetric(
+                        label: 'Total',
+                        value: '${items.length}',
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _RequestMetric(
+                        label: 'Active',
+                        value: '$activeCount',
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _RequestMetric(
+                        label: 'Done',
+                        value: '$completedCount',
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _RequestMetric(
+                        label: 'Cancelled',
+                        value: '$cancelledCount',
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextField(
@@ -206,6 +288,49 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
             );
           },
         ),
+      ),
+      ),
+    );
+  }
+}
+
+class _RequestMetric extends StatelessWidget {
+  const _RequestMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.mintSurface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.mutedText,
+              fontSize: 10,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

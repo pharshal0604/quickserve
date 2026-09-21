@@ -139,15 +139,34 @@ class _RequestSection extends StatelessWidget {
           const SizedBox(height: 8),
           if (docs.isEmpty) const Text('No requests in this section.'),
           for (final doc in docs)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(adminStatusIcon('${doc.data()['status'] ?? ''}')),
-              title: Text(
-                '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['serviceType'] ?? 'Service'}',
-              ),
-              subtitle: Text(
-                '${doc.data()['address'] ?? 'No address'} · ${adminLabel('${doc.data()['status'] ?? 'unknown'}')}',
-              ),
+            Builder(
+              builder: (context) {
+                final status = '${doc.data()['status'] ?? 'unknown'}';
+                final statusColor = adminStatusColor(context, status);
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(adminStatusIcon(status), color: statusColor),
+                  title: Text(
+                    '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['serviceType'] ?? 'Service'}',
+                  ),
+                  subtitle: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${doc.data()['address'] ?? 'No address'} · ',
+                        ),
+                        TextSpan(
+                          text: adminLabel(status),
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
         ],
       ),

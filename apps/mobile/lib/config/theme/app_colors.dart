@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 
 /// Semantic colors used throughout QuickServe mobile.
 abstract final class AppColors {
@@ -14,10 +15,10 @@ abstract final class AppColors {
   static const Color error = Color(0xFFE5484D);
   static const Color info = Color(0xFF3B82F6);
 
-  static const Color statusCreated = Color(0xFF6B7280);
-  static const Color statusAssigned = Color(0xFF3B82F6);
-  static const Color statusAccepted = Color(0xFF9B6DFF);
-  static const Color statusProgress = Color(0xFFF5A623);
-  static const Color statusCompleted = Color(0xFF2E9F5B);
-  static const Color statusCancelled = Color(0xFFE5484D);
+  static const Color statusCreated = QuickServeStatusColors.created;
+  static const Color statusAssigned = QuickServeStatusColors.assigned;
+  static const Color statusAccepted = QuickServeStatusColors.accepted;
+  static const Color statusProgress = QuickServeStatusColors.inProgress;
+  static const Color statusCompleted = QuickServeStatusColors.completed;
+  static const Color statusCancelled = QuickServeStatusColors.cancelled;
 }

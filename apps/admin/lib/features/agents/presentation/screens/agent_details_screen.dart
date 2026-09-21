@@ -440,17 +440,25 @@ class _RecentJobs extends StatelessWidget {
           const SizedBox(height: 8),
           if (requests.isEmpty) const Text('No assigned requests yet.'),
           for (final request in requests)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                adminStatusIcon('${request.data()['status'] ?? ''}'),
-              ),
-              title: Text(
-                '${request.data()['requestCode'] ?? request.id} · ${request.data()['serviceType'] ?? 'Service'}',
-              ),
-              subtitle: Text(
-                adminLabel('${request.data()['status'] ?? 'unknown'}'),
-              ),
+            Builder(
+              builder: (context) {
+                final status = '${request.data()['status'] ?? 'unknown'}';
+                final statusColor = adminStatusColor(context, status);
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(adminStatusIcon(status), color: statusColor),
+                  title: Text(
+                    '${request.data()['requestCode'] ?? request.id} · ${request.data()['serviceType'] ?? 'Service'}',
+                  ),
+                  subtitle: Text(
+                    adminLabel(status),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
             ),
         ],
       ),

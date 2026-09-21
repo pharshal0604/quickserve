@@ -23,16 +23,12 @@ class ServiceDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-        ),
+        leading: const BackButton(),
         centerTitle: true,
         title: const Text('Service Details'),
         actions: [
           IconButton(
-            onPressed: () => context.go('/notifications'),
+            onPressed: () => context.push('/notifications'),
             icon: const Icon(Icons.notifications_none_rounded),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 
 String adminLabel(String value) => value
     .replaceAll('_', ' ')
@@ -14,6 +15,14 @@ String adminInitial(dynamic value) {
   return text.isEmpty ? '?' : text[0].toUpperCase();
 }
 
+String adminUserLabel(Map<String, dynamic>? data) {
+  final name = data?['name'];
+  if (name is String && name.trim().isNotEmpty) return name.trim();
+  final email = data?['email'];
+  if (email is String && email.trim().isNotEmpty) return email.trim();
+  return 'Profile unavailable';
+}
+
 IconData adminStatusIcon(String value) => switch (value) {
   'created' => Icons.fiber_new,
   'assigned' => Icons.person_add_alt_1,
@@ -25,8 +34,11 @@ IconData adminStatusIcon(String value) => switch (value) {
 };
 
 Color adminStatusColor(BuildContext context, String value) => switch (value) {
-  'completed' => Colors.green,
-  'cancelled' => Theme.of(context).colorScheme.error,
-  'in_progress' => Colors.amber.shade700,
+  'created' => QuickServeStatusColors.created,
+  'assigned' => QuickServeStatusColors.assigned,
+  'accepted' => QuickServeStatusColors.accepted,
+  'in_progress' => QuickServeStatusColors.inProgress,
+  'completed' => QuickServeStatusColors.completed,
+  'cancelled' => QuickServeStatusColors.cancelled,
   _ => Theme.of(context).colorScheme.primary,
 };

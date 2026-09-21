@@ -84,6 +84,16 @@ service cloud.firestore {
       return request.resource.data[field] == resource.data[field];
     }
 
+    function unchangedOptional(field) {
+      return (!resource.data.keys().hasAny([field])
+          && !request.resource.data.keys().hasAny([field]))
+        || (
+          resource.data.keys().hasAny([field])
+          && request.resource.data.keys().hasAny([field])
+          && unchanged(field)
+        );
+    }
+
     function hasOnlyKeys(keys) {
       return request.resource.data.keys().hasOnly(keys);
     }
@@ -117,6 +127,8 @@ service cloud.firestore {
           'requestCode',
           'customerId',
           'agentId',
+          'agentName',
+          'agentPhone',
           'serviceType',
           'description',
           'preferredDateTime',
@@ -130,6 +142,8 @@ service cloud.firestore {
         && hasRequiredKeys([
           'requestCode',
           'customerId',
+          'agentName',
+          'agentPhone',
           'serviceType',
           'description',
           'preferredDateTime',
@@ -143,6 +157,8 @@ service cloud.firestore {
         && hasValidRequestCode()
         && request.resource.data.customerId is string
         && request.resource.data.agentId == null
+        && request.resource.data.agentName == null
+        && request.resource.data.agentPhone == null
         && request.resource.data.serviceType is string
         && isValidServiceType(request.resource.data.serviceType)
         && isActiveServiceType(request.resource.data.serviceType)
@@ -282,6 +298,8 @@ service cloud.firestore {
           && unchanged('requestCode')
           && unchanged('customerId')
           && unchanged('agentId')
+          && unchangedOptional('agentName')
+          && unchangedOptional('agentPhone')
           && unchanged('serviceType')
           && unchanged('description')
           && unchanged('preferredDateTime')
@@ -308,6 +326,8 @@ service cloud.firestore {
           && unchanged('requestCode')
           && unchanged('customerId')
           && unchanged('agentId')
+          && unchangedOptional('agentName')
+          && unchangedOptional('agentPhone')
           && unchanged('serviceType')
           && unchanged('description')
           && unchanged('preferredDateTime')
@@ -328,6 +348,8 @@ service cloud.firestore {
           isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'agentId',
+            'agentName',
+            'agentPhone',
             'status',
             'updatedAt',
             'cancellationReason'
@@ -344,11 +366,19 @@ service cloud.firestore {
           && isValidTransition(resource.data.status, request.resource.data.status)
           && (
             request.resource.data.status != 'assigned'
-            || isValidAgentId(request.resource.data.agentId)
+            || (
+              isValidAgentId(request.resource.data.agentId)
+              && request.resource.data.agentName is string
+              && request.resource.data.agentPhone is string
+            )
           )
           && (
             request.resource.data.status == 'assigned'
-            || unchanged('agentId')
+            || (
+              unchanged('agentId')
+              && unchangedOptional('agentName')
+              && unchangedOptional('agentPhone')
+            )
           )
           && (
             request.resource.data.status == 'cancelled'

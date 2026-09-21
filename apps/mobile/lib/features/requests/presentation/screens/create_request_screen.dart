@@ -176,9 +176,18 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create Request')),
-      body: SafeArea(
+    return PopScope<void>(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _step == 0 || _isSubmitting) return;
+        setState(() {
+          _step--;
+          _errorMessage = null;
+        });
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Create Request')),
+        body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
@@ -250,6 +259,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

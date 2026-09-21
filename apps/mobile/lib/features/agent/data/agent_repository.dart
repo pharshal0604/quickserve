@@ -15,18 +15,22 @@ final class AgentRepository {
   Stream<List<({String id, shared.Request request})>> watchAssignedRequests(
     String agentId,
   ) {
-    return _requests
-        .where('agentId', isEqualTo: agentId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    (id: doc.id, request: shared.Request.fromMap(doc.data())),
-              )
-              .toList(growable: false),
+    return _requests.where('agentId', isEqualTo: agentId).snapshots().map(
+      (snapshot) {
+        final items = snapshot.docs
+            .map(
+              (doc) =>
+                  (id: doc.id, request: shared.Request.fromMap(doc.data())),
+            )
+            .toList();
+        items.sort(
+          (a, b) => b.request.createdAt
+              .toDate()
+              .compareTo(a.request.createdAt.toDate()),
         );
+        return items;
+      },
+    );
   }
 
   /// Accepts a request assigned to [agentId].

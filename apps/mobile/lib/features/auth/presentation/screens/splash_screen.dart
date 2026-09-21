@@ -43,13 +43,13 @@ class SplashScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     FilledButton.icon(
-                      onPressed: () => context.go('/register'),
+                      onPressed: () => context.push('/register'),
                       icon: const Icon(Icons.arrow_forward_rounded),
                       label: const Text('Get Started'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     OutlinedButton(
-                      onPressed: () => context.go('/login'),
+                      onPressed: () => context.push('/login'),
                       child: const Text('I already have an account'),
                     ),
                   ],

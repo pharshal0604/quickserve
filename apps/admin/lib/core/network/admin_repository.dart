@@ -124,7 +124,19 @@ class AdminRepository {
         }
         changes['cancellationReason'] = cancellationReason;
       }
-      if (agentId != null) changes['agentId'] = agentId;
+      if (agentId != null) {
+        final agentData = agentSnapshot!.data()!;
+        final agentName = agentData['name'];
+        final agentPhone = agentData['phone'];
+        if (agentName is! String || agentPhone is! String) {
+          throw StateError(
+            'The selected agent profile is missing contact details.',
+          );
+        }
+        changes['agentId'] = agentId;
+        changes['agentName'] = agentName.trim();
+        changes['agentPhone'] = agentPhone.trim();
+      }
       transaction.update(requestRef, changes);
       transaction.set(historyRef, {
         'fromStatus': oldStatus,

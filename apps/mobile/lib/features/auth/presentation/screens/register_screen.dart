@@ -172,10 +172,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => context.go('/splash'),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                ),
+                child: const BackButton(),
               ),
               const QuickServeBrandHeader(
                 eyebrow: 'Join QuickServe',
@@ -410,7 +407,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               style: TextStyle(color: AppColors.mutedText),
                             ),
                             TextButton(
-                              onPressed: () => context.go('/login'),
+                              onPressed: () => context.push('/login'),
                               child: const Text('Sign In'),
                             ),
                           ],

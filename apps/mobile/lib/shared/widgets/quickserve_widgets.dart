@@ -131,6 +131,28 @@ InputDecoration quickServeInputDecoration(
   );
 }
 
+/// Makes Android/system back from a root section return to the Home dashboard.
+///
+/// Root sections are reached through navigation-bar or profile navigation and
+/// are intentionally not part of the nested detail back stack.
+class HomeBackScope extends StatelessWidget {
+  const HomeBackScope({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.go('/home');
+      },
+      child: child,
+    );
+  }
+}
+
 /// Bottom navigation shared by customer-facing screens.
 class CustomerBottomNav extends StatelessWidget {
   const CustomerBottomNav({super.key, required this.currentIndex});
