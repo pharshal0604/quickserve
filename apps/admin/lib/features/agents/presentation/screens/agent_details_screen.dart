@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import '../../../../admin_repository.dart';
-import '../../../../shared/admin_formatters.dart';
+import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:quickserve_admin/shared/admin_formatters.dart';
 
 class AgentDetailsScreen extends StatelessWidget {
   const AgentDetailsScreen({

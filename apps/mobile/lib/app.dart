@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'routing/app_router.dart';
-import 'theme/app_theme.dart';
+import 'package:quickserve_mobile/config/routes/app_router.dart';
+import 'package:quickserve_mobile/config/theme/app_theme.dart';
 
 /// The root application widget for QuickServe mobile.
 class QuickServeApp extends ConsumerWidget {
@@ -14,6 +14,7 @@ class QuickServeApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       title: 'QuickServe',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

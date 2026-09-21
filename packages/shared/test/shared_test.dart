@@ -50,6 +50,22 @@ void main() {
     });
   });
 
+  group('service catalog constants', () {
+    test('maps every supported service name to its canonical document ID', () {
+      expect(ServiceNames.documentIdFor(ServiceNames.acServicing), 'ac_servicing');
+      expect(ServiceNames.documentIdFor(ServiceNames.plumbing), 'plumbing');
+      expect(ServiceNames.documentIdFor(ServiceNames.electrical), 'electrical');
+      expect(ServiceNames.documentIdFor(ServiceNames.cleaning), 'cleaning');
+    });
+
+    test('rejects unsupported service names', () {
+      expect(
+        () => ServiceNames.documentIdFor('Carpentry'),
+        throwsArgumentError,
+      );
+    });
+  });
+
   group('models', () {
     final timestamp = _time();
 
@@ -268,15 +284,51 @@ void main() {
       });
     });
 
-    test('description validator accepts and rejects expected values', () {
-      expect(validateDescription('Repair a socket').isValid, isTrue);
-      expect(validateDescription('').isValid, isFalse);
-      expect(validateDescription('x' * 2001).isValid, isFalse);
+    test(
+      'description validator enforces sanitized 10–1000 character input',
+      () {
+        expect(validateDescription('Repair a socket').isValid, isTrue);
+        expect(validateDescription('short').isValid, isFalse);
+        expect(validateDescription('x' * 1001).isValid, isFalse);
+        expect(validateDescription('Repair\u0000 a socket').isValid, isTrue);
+        expect(sanitizeRequestText('  Repair   a socket  '), 'Repair a socket');
+      },
+    );
+
+    test('address validator enforces sanitized 10–200 character input', () {
+      expect(validateAddress('12 Main Street, Block A').isValid, isTrue);
+      expect(validateAddress('No').isValid, isFalse);
+      expect(validateAddress('x' * 201).isValid, isFalse);
     });
 
-    test('address validator accepts and rejects expected values', () {
-      expect(validateAddress('12 Main Street').isValid, isTrue);
-      expect(validateAddress('No').isValid, isFalse);
+    test('preferred date validator starts tomorrow and enforces one year', () {
+      final now = DateTime(2026, 1, 1, 12);
+      expect(
+        validatePreferredDateTime(DateTime(2026, 1, 1, 13), now: now).isValid,
+        isFalse,
+      );
+      expect(
+        validatePreferredDateTime(DateTime(2026, 1, 2), now: now).isValid,
+        isTrue,
+      );
+      expect(
+        validatePreferredDateTime(DateTime(2027, 1, 2), now: now).isValid,
+        isFalse,
+      );
+    });
+
+    test('cancellation reason validator enforces bounded input', () {
+      expect(
+        validateCancellationReason('Customer unavailable').isValid,
+        isTrue,
+      );
+      expect(validateCancellationReason('no').isValid, isFalse);
+      expect(validateCancellationReason('x' * 501).isValid, isFalse);
+    });
+
+    test('service validator accepts only active catalog names', () {
+      expect(validateServiceType('Plumbing').isValid, isTrue);
+      expect(validateServiceType('Carpentry').isValid, isFalse);
     });
 
     test('priority validator accepts only fixed priorities', () {
