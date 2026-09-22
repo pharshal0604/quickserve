@@ -33,6 +33,7 @@ class QuickServeAdminApp extends StatefulWidget {
 
 class _QuickServeAdminAppState extends State<QuickServeAdminApp> {
   bool darkMode = false;
+  double textScale = 1.0;
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +43,19 @@ class _QuickServeAdminAppState extends State<QuickServeAdminApp> {
       themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: AdminTheme.light(),
       darkTheme: AdminTheme.dark(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+        ),
+        child: child!,
+      ),
       home: AuthGate(
         adminBuilder: (user) => AdminShell(
           user: user,
+          darkMode: darkMode,
+          textScale: textScale,
           onThemeChanged: (value) => setState(() => darkMode = value),
+          onTextScaleChanged: (value) => setState(() => textScale = value),
         ),
       ),
     );
@@ -55,11 +65,17 @@ class _QuickServeAdminAppState extends State<QuickServeAdminApp> {
 class AdminShell extends StatefulWidget {
   const AdminShell({
     required this.user,
+    required this.darkMode,
+    required this.textScale,
     required this.onThemeChanged,
+    required this.onTextScaleChanged,
     super.key,
   });
   final User user;
+  final bool darkMode;
+  final double textScale;
   final ValueChanged<bool> onThemeChanged;
+  final ValueChanged<double> onTextScaleChanged;
   @override
   State<AdminShell> createState() => _AdminShellState();
 }
@@ -112,7 +128,12 @@ class _AdminShellState extends State<AdminShell> {
       ServicesScreen(repository: repository),
       ActivityScreen(repository: repository),
       const NotificationsScreen(),
-      const SettingsScreen(),
+        SettingsScreen(
+          darkMode: widget.darkMode,
+          textScale: widget.textScale,
+          onThemeChanged: widget.onThemeChanged,
+          onTextScaleChanged: widget.onTextScaleChanged,
+        ),
     ];
     return Scaffold(
       appBar: AppBar(
