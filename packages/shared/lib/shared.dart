@@ -11,3 +11,11 @@ export 'models/request.dart';
 export 'models/service.dart';
 export 'models/status_history.dart';
 export 'models/user.dart';
+
+export 'theme/app_breakpoints.dart';
+export 'theme/app_colors.dart';
+export 'theme/app_durations.dart';
+export 'theme/app_radius.dart';
+export 'theme/app_shadows.dart';
+export 'theme/app_spacing.dart';
+export 'theme/app_theme.dart';
