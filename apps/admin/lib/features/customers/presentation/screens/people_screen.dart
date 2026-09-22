@@ -12,11 +12,13 @@ class PeopleScreen extends StatefulWidget {
     required this.repository,
     required this.role,
     this.detailsBuilder,
+    this.onDetails,
     super.key,
   });
 
   final AdminRepository repository;
   final String role;
+  final ValueChanged<({String userId, Map<String, dynamic> data})>? onDetails;
   final Widget Function(
     BuildContext context,
     String userId,
@@ -87,11 +89,6 @@ class _PeopleScreenState extends State<PeopleScreen> {
                       ),
                     ],
                   ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.download_outlined),
-                  label: const Text('Export'),
                 ),
               ],
             ),
@@ -184,22 +181,29 @@ class _PeopleScreenState extends State<PeopleScreen> {
                                 const Icon(Icons.chevron_right),
                               ],
                             ),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    widget.detailsBuilder?.call(
-                                      context,
-                                      doc.id,
-                                      data,
-                                    ) ??
-                                    PersonDetailsScreen(
-                                      repository: widget.repository,
-                                      userId: doc.id,
-                                      role: widget.role,
-                                      data: data,
-                                    ),
-                              ),
-                            ),
+                            onTap: () {
+                              final onDetails = widget.onDetails;
+                              if (onDetails != null) {
+                                onDetails((userId: doc.id, data: data));
+                                return;
+                              }
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      widget.detailsBuilder?.call(
+                                        context,
+                                        doc.id,
+                                        data,
+                                      ) ??
+                                      PersonDetailsScreen(
+                                        repository: widget.repository,
+                                        userId: doc.id,
+                                        role: widget.role,
+                                        data: data,
+                                      ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),

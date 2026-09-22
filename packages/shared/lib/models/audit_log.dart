@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -31,7 +29,7 @@ class AuditLog {
       oldValue: readMap(map, 'oldValue'),
       newValue: readMap(map, 'newValue'),
       result: readRequired<String>(map, 'result'),
-      timestamp: readRequired<Timestamp>(map, 'timestamp'),
+      timestamp: readDateTime(map, 'timestamp'),
     );
   }
 
@@ -60,7 +58,7 @@ class AuditLog {
   final String result;
 
   /// The event timestamp.
-  final Timestamp timestamp;
+  final DateTime timestamp;
 
   /// Converts this audit log to Firestore field names and values.
   Map<String, dynamic> toMap() => {

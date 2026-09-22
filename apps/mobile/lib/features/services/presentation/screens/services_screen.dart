@@ -55,7 +55,10 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
           contentPadding: const EdgeInsets.all(AppSpacing.md),
           leading: CircleAvatar(
             backgroundColor: AppColors.mintSurface,
-            child: Icon(_icon(service.name), color: AppColors.primary),
+            child: Icon(
+              _icon(service.name),
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           title: Text(
             service.name,
@@ -70,7 +73,15 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
             ),
           ),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => context.push('/services/detail', extra: service),
+          onTap: () => context.push(
+            Uri(
+              path: '/services/detail',
+              queryParameters: {
+                'name': service.name,
+                'desc': service.description,
+              },
+            ).toString(),
+          ),
         ),
       ),
     );
@@ -166,7 +177,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                     'Find Services',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -212,11 +223,11 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                       style: TextStyle(color: AppColors.mutedText),
                     )
                   else if (requests.valueOrNull?.isEmpty ?? true)
-                    const Card(
+                    Card(
                       child: ListTile(
                         leading: Icon(
                           Icons.receipt_long_outlined,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         title: Text('No requests yet'),
                         subtitle: Text(

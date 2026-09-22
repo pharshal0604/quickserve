@@ -56,7 +56,9 @@ class AgentProfileScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 46,
-                    backgroundColor: const Color(0xFFE9EEFF),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer,
                     child: Text(
                       initial,
                       style: const TextStyle(

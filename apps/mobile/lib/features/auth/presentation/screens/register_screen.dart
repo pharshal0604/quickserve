@@ -192,7 +192,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -326,11 +326,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             value: _acceptedTerms,
                             onChanged: (value) =>
                                 setState(() => _acceptedTerms = value ?? false),
-                            activeColor: AppColors.primary,
+                            activeColor: Theme.of(context).colorScheme.primary,
                           ),
-                          const Expanded(
+                          Expanded(
                             child: Padding(
-                              padding: EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.only(top: 12),
                               child: Text.rich(
                                 TextSpan(
                                   text: 'I agree to the ',
@@ -338,19 +338,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     TextSpan(
                                       text: 'Terms of Service',
                                       style: TextStyle(
-                                        color: AppColors.primary,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    TextSpan(text: ' and '),
+                                    const TextSpan(text: ' and '),
                                     TextSpan(
                                       text: 'Privacy Policy',
                                       style: TextStyle(
-                                        color: AppColors.primary,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    TextSpan(text: '.'),
+                                    const TextSpan(text: '.'),
                                   ],
                                 ),
                               ),
@@ -369,12 +373,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       FilledButton(
                         onPressed: _isCreating ? null : _createAccount,
                         child: _isCreating
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               )
                             : const Text('Sign Up Now'),
@@ -389,7 +395,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF4285F4),
+                            color: AppColors.googleBlue,
                           ),
                         ),
                         label: const Text('Register with Google'),

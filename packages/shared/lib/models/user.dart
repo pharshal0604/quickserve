@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -13,6 +11,9 @@ class User {
     required this.phone,
     required this.createdAt,
     required this.updatedAt,
+    this.addresses = const [],
+    this.office,
+    this.schedule,
   });
 
   /// Parses a user profile from Firestore field names.
@@ -22,8 +23,11 @@ class User {
       name: readRequired<String>(map, 'name'),
       email: readRequired<String>(map, 'email'),
       phone: readRequired<String>(map, 'phone'),
-      createdAt: readRequired<Timestamp>(map, 'createdAt'),
-      updatedAt: readRequired<Timestamp>(map, 'updatedAt'),
+      createdAt: readDateTime(map, 'createdAt'),
+      updatedAt: readDateTime(map, 'updatedAt'),
+      addresses: List<String>.from(map['addresses'] ?? []),
+      office: map['office'] as String?,
+      schedule: map['schedule'] as String?,
     );
   }
 
@@ -39,11 +43,20 @@ class User {
   /// The user's phone number.
   final String phone;
 
+  /// The customer's saved addresses.
+  final List<String> addresses;
+
+  /// The agent's regional office.
+  final String? office;
+
+  /// The agent's working schedule.
+  final String? schedule;
+
   /// The profile creation timestamp.
-  final Timestamp createdAt;
+  final DateTime createdAt;
 
   /// The profile last-update timestamp.
-  final Timestamp updatedAt;
+  final DateTime updatedAt;
 
   /// Converts this profile to Firestore field names and values.
   Map<String, dynamic> toMap() => {
@@ -51,6 +64,9 @@ class User {
     'name': name,
     'email': email,
     'phone': phone,
+    'addresses': addresses,
+    if (office != null) 'office': office,
+    if (schedule != null) 'schedule': schedule,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -62,11 +78,13 @@ class User {
         other.name == name &&
         other.email == email &&
         other.phone == phone &&
+        other.office == office &&
+        other.schedule == schedule &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
 
   @override
   int get hashCode =>
-      Object.hash(role, name, email, phone, createdAt, updatedAt);
+      Object.hash(role, name, email, phone, office, schedule, createdAt, updatedAt);
 }

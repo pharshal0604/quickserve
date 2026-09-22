@@ -23,11 +23,7 @@ final class AgentRepository {
             (doc) => (id: doc.id, request: shared.Request.fromMap(doc.data())),
           )
           .toList();
-      items.sort(
-        (a, b) => b.request.createdAt.toDate().compareTo(
-          a.request.createdAt.toDate(),
-        ),
-      );
+      items.sort((a, b) => b.request.createdAt.compareTo(a.request.createdAt));
       return items;
     });
   }

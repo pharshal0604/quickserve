@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickserve_mobile/config/routes/app_router.dart';
 import 'package:quickserve_mobile/config/theme/app_theme.dart';
 
+import 'package:quickserve_mobile/config/theme/theme_provider.dart';
+
 /// The root application widget for QuickServe mobile.
 class QuickServeApp extends ConsumerWidget {
   /// Creates the root application widget.
@@ -12,13 +14,14 @@ class QuickServeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'QuickServe',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 1.0,

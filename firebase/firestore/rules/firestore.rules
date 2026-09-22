@@ -1,4 +1,4 @@
-rules_version = '2';
+ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -156,9 +156,9 @@ service cloud.firestore {
         && request.resource.data.requestCode is string
         && hasValidRequestCode()
         && request.resource.data.customerId is string
-        && request.resource.data.agentId == null
-        && request.resource.data.agentName == null
-        && request.resource.data.agentPhone == null
+        && request.resource.data.get('agentId', null) == null
+        && request.resource.data.get('agentName', null) == null
+        && request.resource.data.get('agentPhone', null) == null
         && request.resource.data.serviceType is string
         && isValidServiceType(request.resource.data.serviceType)
         && isActiveServiceType(request.resource.data.serviceType)
@@ -171,7 +171,7 @@ service cloud.firestore {
         && isValidStatus(request.resource.data.status)
         && hasValidTimestamp('createdAt')
         && hasValidTimestamp('updatedAt')
-        && request.resource.data.cancellationReason == null;
+        && request.resource.data.get('cancellationReason', null) == null;
     }
 
     function isValidProfileCreate() {
@@ -416,11 +416,11 @@ service cloud.firestore {
           && request.resource.data.toStatus is string
           && isValidStatus(request.resource.data.toStatus)
           && (
-            request.resource.data.fromStatus == null
+            request.resource.data.get('fromStatus', null) == null
             || isValidStatus(request.resource.data.fromStatus)
           )
           && (
-            request.resource.data.fromStatus == null
+            request.resource.data.get('fromStatus', null) == null
             || isValidTransition(
               request.resource.data.fromStatus,
               request.resource.data.toStatus

@@ -10,6 +10,7 @@ import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/requests/presentation/screens/requests_screen.dart';
 import 'features/customers/presentation/screens/customers_screen.dart';
 import 'features/agents/presentation/screens/agents_screen.dart';
+import 'features/agents/presentation/screens/agent_details_screen.dart';
 import 'features/services/presentation/screens/services_screen.dart';
 import 'features/activity/presentation/screens/activity_screen.dart';
 import 'features/activity/presentation/screens/notifications_screen.dart';
@@ -66,6 +67,8 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int index = 0;
   final repository = AdminRepository();
+  String? selectedAgentId;
+  Map<String, dynamic>? selectedAgentData;
   final titles = const [
     'Dashboard',
     'Requests',
@@ -77,13 +80,35 @@ class _AdminShellState extends State<AdminShell> {
     'Settings',
   ];
 
+  void _clearSelectedAgent() {
+    if (selectedAgentId == null && selectedAgentData == null) return;
+    setState(() {
+      selectedAgentId = null;
+      selectedAgentData = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
       DashboardScreen(repository: repository),
       RequestsScreen(repository: repository),
       CustomersScreen(repository: repository),
-      AgentsScreen(repository: repository),
+      if (selectedAgentId != null && selectedAgentData != null)
+        AgentDetailsScreen(
+          repository: repository,
+          userId: selectedAgentId!,
+          data: selectedAgentData!,
+          onBack: _clearSelectedAgent,
+        )
+      else
+        AgentsScreen(
+          repository: repository,
+          onAgentSelected: (selection) => setState(() {
+            selectedAgentId = selection.userId;
+            selectedAgentData = selection.data;
+          }),
+        ),
       ServicesScreen(repository: repository),
       ActivityScreen(repository: repository),
       const NotificationsScreen(),
@@ -91,12 +116,42 @@ class _AdminShellState extends State<AdminShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: Text('QuickServe · ${titles[index]}'),
+        title: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AdminTheme.ink,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(
+                Icons.business_center_outlined,
+                color: AdminTheme.sidebarText,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'QuickServe',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  'ADMIN PORTAL',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 9,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(child: Text(widget.user.email ?? '')),
-          ),
           IconButton(
             tooltip: 'Toggle light/dark theme',
             onPressed: () => widget.onThemeChanged(
@@ -108,18 +163,17 @@ class _AdminShellState extends State<AdminShell> {
                   : Icons.light_mode_outlined,
             ),
           ),
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: FirebaseAuth.instance.signOut,
-            icon: const Icon(Icons.logout),
-          ),
         ],
       ),
       body: Row(
         children: [
           _AdminSidebar(
             selectedIndex: index,
-            onSelected: (value) => setState(() => index = value),
+            onSelected: (value) => setState(() {
+              index = value;
+              selectedAgentId = null;
+              selectedAgentData = null;
+            }),
             onLogout: FirebaseAuth.instance.signOut,
           ),
           const VerticalDivider(width: 1),
@@ -154,50 +208,12 @@ class _AdminSidebar extends StatelessWidget {
     ];
     return Container(
       width: 220,
-      color: const Color(0xff07120f),
+      color: AdminTheme.sidebar,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xff0d5138),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: const Icon(
-                  Icons.business_center_outlined,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'QuickServe',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'ADMIN PORTAL',
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 9,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 8),
           const _SidebarLabel('MAIN'),
           _sidebarItem(entries[0]),
           const SizedBox(height: 16),
@@ -207,7 +223,7 @@ class _AdminSidebar extends StatelessWidget {
           const _SidebarLabel('SYSTEM'),
           for (final entry in entries.skip(5)) _sidebarItem(entry),
           const Spacer(),
-          const Divider(color: Colors.white12),
+          const Divider(color: AdminTheme.sidebarDivider),
           _sidebarItem((
             label: 'Logout',
             icon: Icons.logout,
@@ -223,34 +239,90 @@ class _AdminSidebar extends StatelessWidget {
     bool logout = false,
   }) {
     final selected = entry.index == selectedIndex;
+    return _SidebarItem(
+      entry: entry,
+      selected: selected,
+      logout: logout,
+      onTap: logout ? onLogout : () => onSelected(entry.index),
+    );
+  }
+}
+
+class _SidebarItem extends StatefulWidget {
+  const _SidebarItem({
+    required this.entry,
+    required this.selected,
+    required this.logout,
+    required this.onTap,
+  });
+
+  final ({String label, IconData icon, int index}) entry;
+  final bool selected;
+  final bool logout;
+  final VoidCallback onTap;
+
+  @override
+  State<_SidebarItem> createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<_SidebarItem> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = widget.selected
+        ? AdminTheme.ink
+        : hovered
+        ? AdminTheme.ink.withValues(alpha: .78)
+        : Colors.transparent;
+    final foreground = widget.logout
+        ? AdminTheme.sidebarLogout
+        : hovered || widget.selected
+        ? AdminTheme.sidebarText
+        : AdminTheme.sidebarMuted;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: logout ? onLogout : () => onSelected(entry.index),
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xff0d5138) : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                entry.icon,
-                size: 17,
-                color: logout ? Colors.amber : Colors.white70,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                entry.label,
-                style: TextStyle(
-                  color: logout ? Colors.amber : Colors.white70,
-                  fontSize: 12,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: hovered && !widget.selected
+                  ? const [
+                      BoxShadow(
+                        color: AdminTheme.shadow,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              children: [
+                Icon(widget.entry.icon, size: 17, color: foreground),
+                const SizedBox(width: 10),
+                Text(
+                  widget.entry.label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 12,
+                    fontWeight: widget.selected || hovered
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -267,7 +339,7 @@ class _SidebarLabel extends StatelessWidget {
     child: Text(
       text,
       style: const TextStyle(
-        color: Colors.white38,
+        color: AdminTheme.sidebarLabel,
         fontSize: 9,
         letterSpacing: 1.1,
         fontWeight: FontWeight.w700,

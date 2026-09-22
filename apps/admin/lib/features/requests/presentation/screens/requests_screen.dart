@@ -37,7 +37,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
       return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: widget.repository.watchUsers(role: RoleNames.customer),
         builder: (context, usersSnapshot) {
-          final usersById = {
+          final usersById = <String, Map<String, dynamic>>{
             for (final doc in usersSnapshot.data?.docs ?? const [])
               doc.id: doc.data(),
           };
@@ -46,32 +46,18 @@ class _RequestsScreenState extends State<RequestsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Service Requests',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$totalMatches matching requests',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: null,
-                      icon: const Icon(Icons.download_outlined),
-                      label: const Text('Export'),
-                    ),
-                  ],
+                Text(
+                  'Service Requests',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
+                Text(
+                  '$totalMatches matching requests',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -97,53 +83,18 @@ class _RequestsScreenState extends State<RequestsScreen> {
                               'No requests match the current filters.',
                             ),
                           )
-                        : ListView.separated(
-                            itemCount: docs.length,
-                            separatorBuilder: (_, _) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final doc = docs[index];
-                              final data = doc.data();
-                              final status = '${data['status'] ?? 'unknown'}';
-                              return ListTile(
-                                leading: Checkbox(
-                                  value: false,
-                                  onChanged: null,
+                        : _RequestsTable(
+                            docs: docs,
+                            usersById: usersById,
+                            onOpen: (doc) => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => RequestDetailsScreen(
+                                  repository: widget.repository,
+                                  requestId: doc.id,
+                                  data: doc.data(),
                                 ),
-                                title: Text(
-                                  '${data['requestCode'] ?? doc.id} · '
-                                  '${data['serviceType'] ?? 'Service'}',
-                                ),
-                                subtitle: Text(
-                                  '${adminUserLabel(usersById[data['customerId']])}\n'
-                                  '${data['address'] ?? 'No address'}',
-                                ),
-                                isThreeLine: true,
-                                trailing: Chip(
-                                  label: Text(
-                                    adminLabel(status),
-                                    style: TextStyle(
-                                      color: adminStatusColor(context, status),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  backgroundColor: adminStatusColor(
-                                    context,
-                                    status,
-                                  ).withValues(alpha: .12),
-                                  side: BorderSide.none,
-                                ),
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => RequestDetailsScreen(
-                                      repository: widget.repository,
-                                      requestId: doc.id,
-                                      data: data,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                              ),
+                            ),
                           ),
                   ),
                 ),
@@ -188,6 +139,147 @@ class _RequestsScreenState extends State<RequestsScreen> {
   );
 }
 
+class _RequestsTable extends StatelessWidget {
+  const _RequestsTable({
+    required this.docs,
+    required this.usersById,
+    required this.onOpen,
+  });
+
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final Map<String, Map<String, dynamic>> usersById;
+  final ValueChanged<QueryDocumentSnapshot<Map<String, dynamic>>> onOpen;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: constraints.maxWidth < 980 ? 980 : constraints.maxWidth,
+        child: SingleChildScrollView(
+          child: DataTable(
+            showCheckboxColumn: false,
+            headingRowHeight: 52,
+            dataRowMinHeight: 70,
+            dataRowMaxHeight: 82,
+            columnSpacing: 28,
+            horizontalMargin: 24,
+            columns: const [
+              DataColumn(label: Text('REQUEST')),
+              DataColumn(label: Text('CUSTOMER')),
+              DataColumn(label: Text('SERVICE')),
+              DataColumn(label: Text('SCHEDULED')),
+              DataColumn(label: Text('STATUS')),
+            ],
+            rows: [
+              for (final doc in docs)
+                DataRow(
+                  onSelectChanged: (_) => onOpen(doc),
+                  cells: [
+                    DataCell(
+                      _RequestCell(data: doc.data(), requestId: doc.id),
+                      onTap: () => onOpen(doc),
+                    ),
+                    DataCell(
+                      _CustomerCell(data: usersById[doc.data()['customerId']]),
+                    ),
+                    DataCell(
+                      Text(
+                        adminLabel('${doc.data()['serviceType'] ?? 'Service'}'),
+                      ),
+                    ),
+                    DataCell(Text(_dateTime(doc.data()['preferredDateTime']))),
+                    DataCell(
+                      _StatusBadge('${doc.data()['status'] ?? 'unknown'}'),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _RequestCell extends StatelessWidget {
+  const _RequestCell({required this.data, required this.requestId});
+
+  final Map<String, dynamic> data;
+  final String requestId;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 150,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${data['requestCode'] ?? requestId}',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${data['address'] ?? 'Address not provided'}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    ),
+  );
+}
+
+class _CustomerCell extends StatelessWidget {
+  const _CustomerCell({required this.data});
+
+  final Map<String, dynamic>? data;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = adminUserLabel(data);
+    return SizedBox(
+      width: 170,
+      child: Row(
+        children: [
+          CircleAvatar(radius: 16, child: Text(adminInitial(name))),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge(this.status);
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = adminStatusColor(context, status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        adminLabel(status),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
 class _FilterBar extends StatefulWidget {
   const _FilterBar({required this.filters, required this.onChanged});
 
@@ -221,6 +313,7 @@ class _FilterBarState extends State<_FilterBar> {
             controller: search,
             maxLength: 100,
             decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
               labelText: 'Search request, customer, or address',
               counterText: '',
             ),
@@ -263,4 +356,12 @@ class _FilterBarState extends State<_FilterBar> {
       ],
     ),
   );
+}
+
+String _dateTime(dynamic value) {
+  if (value is Timestamp) {
+    final date = value.toDate().toLocal();
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}\n${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+  return 'Not scheduled';
 }

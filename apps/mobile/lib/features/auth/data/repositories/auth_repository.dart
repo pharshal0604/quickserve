@@ -8,8 +8,7 @@ import 'package:quickserve_mobile/core/error/firebase_error_mapper.dart';
 final class AuthRepository {
   const AuthRepository();
 
-  Stream<fb.User?> authStateChanges() =>
-      fb.FirebaseAuth.instance.authStateChanges();
+  Stream<fb.User?> authStateChanges() => fb.FirebaseAuth.instance.userChanges();
 
   Future<fb.UserCredential> signIn({
     required String email,

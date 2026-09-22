@@ -52,7 +52,10 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
       return Padding(
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         child: ChoiceChip(
-          label: Text(filter[0].toUpperCase() + filter.substring(1)),
+          label: Text(
+            filter[0].toUpperCase() + filter.substring(1),
+            style: TextStyle(color: AppColors.darkTextPrimary),
+          ),
           selected: _filter == filter,
           onSelected: (_) => setState(() => _filter = filter),
         ),
@@ -66,6 +69,7 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
   ) {
     final request = item.request;
     final status = request.status.toStoredValue();
+    final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Card(
@@ -89,10 +93,7 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  request.requestCode,
-                  style: const TextStyle(color: AppColors.mutedText),
-                ),
+                Text(request.requestCode, style: TextStyle(color: mutedColor)),
                 const SizedBox(height: 6),
                 Text(
                   request.description,
@@ -102,10 +103,10 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                 const SizedBox(height: 5),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on_outlined,
                       size: 15,
-                      color: AppColors.mutedText,
+                      color: mutedColor,
                     ),
                     const SizedBox(width: 5),
                     Expanded(
@@ -113,7 +114,7 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                         request.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.mutedText),
+                        style: TextStyle(color: mutedColor),
                       ),
                     ),
                   ],
@@ -121,21 +122,21 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_outlined,
                       size: 15,
-                      color: AppColors.mutedText,
+                      color: mutedColor,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       MaterialLocalizations.of(context)
-                          .formatShortDate(request.preferredDateTime.toDate()),
-                      style: const TextStyle(color: AppColors.mutedText),
+                          .formatShortDate(request.preferredDateTime),
+                      style: TextStyle(color: mutedColor),
                     ),
                     const Spacer(),
                     Text(
                       request.priority.toStoredValue(),
-                      style: const TextStyle(color: AppColors.mutedText),
+                      style: TextStyle(color: mutedColor),
                     ),
                   ],
                 ),
@@ -203,6 +204,7 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                         shared.StatusNames.cancelled,
                   )
                   .length;
+              final scheme = Theme.of(context).colorScheme;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.xl,
@@ -215,13 +217,13 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                     'My Requests',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: scheme.primary,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  const Text(
+                  Text(
                     'Track every request from creation to completion.',
-                    style: TextStyle(color: AppColors.mutedText),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Row(
@@ -307,21 +309,22 @@ class _RequestMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.mintSurface,
+        color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: scheme.onPrimaryContainer,
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
@@ -329,7 +332,10 @@ class _RequestMetric extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(color: AppColors.mutedText, fontSize: 10),
+            style: TextStyle(
+              color: scheme.onPrimaryContainer.withValues(alpha: .72),
+              fontSize: 10,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ],

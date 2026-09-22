@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:shared/utils/model_helpers.dart';
 
 /// An append-only request lifecycle record.
@@ -19,7 +17,7 @@ class StatusHistory {
       fromStatus: readNullable<String>(map, 'fromStatus'),
       toStatus: readRequired<String>(map, 'toStatus'),
       changedBy: readRequired<String>(map, 'changedBy'),
-      changedAt: readRequired<Timestamp>(map, 'changedAt'),
+      changedAt: readDateTime(map, 'changedAt'),
       note: readNullable<String>(map, 'note'),
     );
   }
@@ -34,7 +32,7 @@ class StatusHistory {
   final String changedBy;
 
   /// The transition timestamp.
-  final Timestamp changedAt;
+  final DateTime changedAt;
 
   /// An optional transition note.
   final String? note;

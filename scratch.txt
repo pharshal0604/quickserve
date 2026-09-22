@@ -1,0 +1,130 @@
+  }
+}
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return ClipRRect(
+    borderRadius: BorderRadius.circular(4),
+    child: SizedBox(
+      height: 150,
+              gradient: LinearGradient(
+                colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primaryContainer],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _DashboardHeroPainter(
+                panelColor: Theme.of(context).colorScheme.primary.withValues(alpha: .88),
+                glassColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .18),
+                lineColor: Theme.of(context).colorScheme.onPrimary,
+                barColor: Theme.of(context).colorScheme.onPrimary.withValues(alpha: .55),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            bottom: 18,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AGENT DASHBOARD',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onPrimary.withValues(alpha: .7),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .8,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Welcome back, ${agentName.trim().split(' ').first}',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'You have new tasks assigned today.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onPrimary.withValues(alpha: .7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  }
+}
+
+class _DashboardHeroPainter extends CustomPainter {
+  const _DashboardHeroPainter({
+    required this.panelColor,
+    required this.glassColor,
+    required this.lineColor,
+    required this.barColor,
+  });
+
+  final Color panelColor;
+  final Color glassColor;
+  final Color lineColor;
+  final Color barColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final panel = Paint()..color = panelColor;
+    final glass = Paint()..color = glassColor;
+    final line = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * .43, 18, size.width * .48, 106),
+        const Radius.circular(8),
+      ),
+      panel,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * .48, 30, size.width * .38, 75),
+        const Radius.circular(5),
+      ),
+      glass,
+    );
+    final chart = Path()
+      ..moveTo(size.width * .52, 88)
+      ..lineTo(size.width * .58, 70)
+      ..lineTo(size.width * .63, 78)
+      ..lineTo(size.width * .70, 52)
+      ..lineTo(size.width * .77, 64)
+      ..lineTo(size.width * .83, 42);
+    canvas.drawPath(chart, line);
+    for (var index = 0; index < 4; index++) {
+      canvas.drawRect(
+        Rect.fromLTWH(
+          size.width * (.53 + index * .07),
+          92 - index * 10,
+          16,
+          26 + index * 10,
+        ),
+        Paint()..color = barColor,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+

@@ -18,6 +18,7 @@ dependencies:
   go_router: ^16.0.0
   shared:
     path: ../../packages/shared
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

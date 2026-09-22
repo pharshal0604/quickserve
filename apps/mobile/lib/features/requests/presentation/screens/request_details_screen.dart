@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
-import 'package:quickserve_mobile/features/profile/presentation/screens/agent_profile_screen.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
@@ -68,11 +67,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   name: item.agentName,
                   phone: item.agentPhone,
                   onTap: () => context.push(
-                    '/agents/${item.agentId!}',
-                    extra: AgentContactSnapshot(
-                      name: item.agentName,
-                      phone: item.agentPhone,
-                    ),
+                    Uri(
+                      path: '/agents/${item.agentId!}',
+                      queryParameters: {
+                        if (item.agentName != null) 'name': item.agentName,
+                        if (item.agentPhone != null) 'phone': item.agentPhone,
+                      },
+                    ).toString(),
                   ),
                 ),
               ],
@@ -115,10 +116,16 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    style: Theme.of(context).filledButtonTheme.style?.copyWith(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.error,
+                      ),
+                      foregroundColor: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.onError,
+                      ),
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
                     onPressed: _busy ? null : _cancel,
                     icon: const Icon(Icons.cancel_outlined),
@@ -448,14 +455,17 @@ class _TimelineStep extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isReached ? color : Colors.transparent,
+                    color: isReached
+                        ? color
+                        : Theme.of(context).colorScheme.surface
+                              .withValues(alpha: 0),
                     border: Border.all(color: color, width: 2),
                   ),
                   child: isReached
                       ? Icon(
                           isCurrent ? Icons.radio_button_checked : Icons.check,
                           size: 16,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         )
                       : null,
                 ),
@@ -482,7 +492,9 @@ class _TimelineStep extends StatelessWidget {
                           label,
                           style: TextStyle(
                             color: isReached
-                                ? (isCurrent ? color : Colors.black87)
+                                ? (isCurrent
+                                      ? color
+                                      : Theme.of(context).colorScheme.onSurface)
                                 : AppColors.mutedText,
                             fontSize: 17,
                             fontWeight: isCurrent
@@ -520,7 +532,7 @@ class _BookingInformation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = request.preferredDateTime.toDate();
+    final date = request.preferredDateTime;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -684,7 +696,7 @@ class _TechnicianIdentity extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 30,
-              backgroundColor: const Color(0xFFE9EEFF),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               child: Icon(
                 Icons.person,
                 color: AppColors.statusAssigned,

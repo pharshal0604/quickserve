@@ -10,8 +10,11 @@ class AdminRepository {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> watchRequests() =>
-      firestore.collection(CollectionNames.requests).limit(200).snapshots();
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchRequests() => firestore
+      .collection(CollectionNames.requests)
+      .orderBy('createdAt', descending: true)
+      .limit(200)
+      .snapshots();
 
   Future<void> sendPasswordReset(String email) {
     return auth.sendPasswordResetEmail(email: email.trim().toLowerCase());
@@ -26,6 +29,7 @@ class AdminRepository {
   Stream<QuerySnapshot<Map<String, dynamic>>> watchUsers({String? role}) {
     Query<Map<String, dynamic>> query = firestore
         .collection(CollectionNames.users)
+        .orderBy('createdAt', descending: true)
         .limit(200);
     if (role != null) query = query.where('role', isEqualTo: role);
     return query.snapshots();
@@ -67,6 +71,16 @@ class AdminRepository {
     action: AuditEvent.requestUpdated.toStoredValue(),
     note: note,
   );
+
+  Future<void> updateAgentSchedule({
+    required String agentId,
+    required String schedule,
+  }) async {
+    await firestore.collection(CollectionNames.users).doc(agentId).update({
+      'schedule': schedule.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   Future<void> _mutateRequest({
     required String requestId,
@@ -153,7 +167,7 @@ class AdminRepository {
         'targetId': requestId,
         'oldValue': {
           'status': oldStatus,
-          if (agentId != null) 'agentId': data['agentId'],
+          'agentId': ?(agentId != null ? data['agentId'] : null),
         },
         'newValue': {'status': status, 'agentId': ?agentId},
         'result': 'success',

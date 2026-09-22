@@ -10,13 +10,19 @@ import 'package:quickserve_mobile/core/error/app_exceptions.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.isAgentLogin = false});
+
+  final bool isAgentLogin;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  String get _accountType => widget.isAgentLogin ? 'Agent' : 'User';
+
+  shared.UserRole get _expectedRole =>
+      widget.isAgentLogin ? shared.UserRole.agent : shared.UserRole.customer;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -37,6 +43,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return result.isValid ? null : result.reason;
   }
 
+  Future<void> _validateSignedInRole(String uid) async {
+    final profile = await ref.read(userRepositoryProvider).getProfile(uid);
+    if (profile?.role != _expectedRole) {
+      await ref.read(authRepositoryProvider).signOut();
+      throw AuthException(
+        'wrong_role',
+        'This account is not registered as a $_accountType account.',
+      );
+    }
+  }
+
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -44,12 +61,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
     try {
-      await ref
+      final credential = await ref
           .read(authRepositoryProvider)
           .signIn(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      final user = credential.user;
+      if (user == null) {
+        throw const AuthException(
+          'missing_user',
+          'We could not load your account.',
+        );
+      }
+      await _validateSignedInRole(user.uid);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -75,6 +100,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final repository = ref.read(userRepositoryProvider);
         final profile = await repository.getProfile(user.uid);
         if (profile == null) {
+          if (widget.isAgentLogin) {
+            throw const AuthException(
+              'missing_agent_profile',
+              'This Google account is not registered as a QuickServe agent.',
+            );
+          }
           await repository.createProfile(
             uid: user.uid,
             name: user.displayName ?? 'QuickServe customer',
@@ -82,6 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             phone: user.phoneNumber ?? '',
           );
         }
+        await _validateSignedInRole(user.uid);
       }
     } catch (error) {
       if (!mounted) return;
@@ -103,9 +135,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             children: [
               Align(alignment: Alignment.centerLeft, child: const BackButton()),
-              const QuickServeBrandHeader(
+              QuickServeBrandHeader(
                 eyebrow: 'QuickServe',
-                subtitle: 'Sign in to manage your service requests.',
+                subtitle: widget.isAgentLogin
+                    ? 'Sign in to manage assigned service requests.'
+                    : 'Sign in to manage your service requests.',
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -120,16 +154,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Welcome Back',
+                        '$_accountType Login',
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Sign in to manage your service requests',
+                        widget.isAgentLogin
+                            ? 'Access requests assigned to you.'
+                            : 'Sign in to manage your service requests',
                         style: Theme.of(context).textTheme.bodyMedium
                             ?.copyWith(color: AppColors.mutedText),
                       ),
@@ -180,7 +216,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             value: _rememberMe,
                             onChanged: (value) =>
                                 setState(() => _rememberMe = value ?? false),
-                            activeColor: AppColors.primary,
+                            activeColor: Theme.of(context).colorScheme.primary,
                           ),
                           const Text('Remember me'),
                           const Spacer(),
@@ -198,15 +234,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       FilledButton(
                         onPressed: _isLoading ? null : _signIn,
                         child: _isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               )
-                            : const Text('Sign In'),
+                            : Text('Sign In as $_accountType'),
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       const _DividerLabel(label: 'OR CONTINUE WITH'),
@@ -216,22 +254,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: const _GoogleMark(),
                         label: const Text('Continue with Google'),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Don\'t have an account? ',
-                              style: TextStyle(color: AppColors.mutedText),
-                            ),
-                            TextButton(
-                              onPressed: () => context.push('/register'),
-                              child: const Text('Create Account'),
-                            ),
-                          ],
+                      if (!widget.isAgentLogin) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Don\'t have an account? ',
+                                style: TextStyle(color: AppColors.mutedText),
+                              ),
+                              TextButton(
+                                onPressed: () => context.push('/register'),
+                                child: const Text('Create Account'),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -276,7 +316,7 @@ class _GoogleMark extends StatelessWidget {
         style: TextStyle(
           fontSize: 19,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF4285F4),
+          color: AppColors.googleBlue,
         ),
       ),
     ),

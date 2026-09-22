@@ -25,7 +25,7 @@ class ServiceDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-        title: const Text('Service Details'),
+        title: Text('Service Details'),
         actions: [
           IconButton(
             onPressed: () => context.push('/notifications'),
@@ -46,16 +46,11 @@ class ServiceDetailsScreen extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Center(child: Icon(_icon, color: AppColors.primary, size: 92)),
-                Positioned(
-                  top: AppSpacing.md,
-                  right: AppSpacing.md,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white.withValues(alpha: .9),
-                    child: const Icon(
-                      Icons.favorite_border,
-                      color: AppColors.primary,
-                    ),
+                Center(
+                  child: Icon(
+                    _icon,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 92,
                   ),
                 ),
               ],
@@ -80,10 +75,10 @@ class ServiceDetailsScreen extends StatelessWidget {
                     color: AppColors.mintSurface,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Active service',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -134,8 +129,12 @@ class ServiceDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 FilledButton.icon(
-                  onPressed: () =>
-                      context.push('/requests/create', extra: service.name),
+                  onPressed: () => context.push(
+                    Uri(
+                      path: '/requests/create',
+                      queryParameters: {'service': service.name},
+                    ).toString(),
+                  ),
                   icon: const Icon(Icons.calendar_month_outlined),
                   label: const Text('Book Service Now'),
                 ),
@@ -163,13 +162,13 @@ class _FactCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.outline),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 22),
+          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(

@@ -75,4 +75,43 @@ final class UserRepository {
       throw mapUserRepoError(error);
     }
   }
+
+  /// Updates the saved addresses for [uid].
+  Future<void> updateAddresses(String uid, List<String> addresses) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'addresses': addresses,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      throw mapUserRepoError(error);
+    }
+  }
+
+  /// Updates the editable agent profile fields for [uid].
+  Future<void> updateAgentProfile({
+    required String uid,
+    required String email,
+    required String phone,
+    String? office,
+  }) async {
+    try {
+      final phoneResult = shared.validatePhone(phone.trim());
+      if (!phoneResult.isValid) {
+        throw UserRepositoryException(
+          'invalid-phone',
+          phoneResult.reason ?? 'Enter a valid phone number.',
+        );
+      }
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'email': email.trim().toLowerCase(),
+        'phone': phone.trim(),
+        if (office != null) 'office': office.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      if (error is UserRepositoryException) rethrow;
+      throw mapUserRepoError(error);
+    }
+  }
 }

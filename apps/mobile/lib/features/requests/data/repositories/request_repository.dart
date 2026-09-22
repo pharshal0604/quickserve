@@ -24,9 +24,7 @@ final class RequestRepository {
             )
             .toList();
         items.sort(
-          (a, b) => b.request.createdAt.toDate().compareTo(
-            a.request.createdAt.toDate(),
-          ),
+          (a, b) => b.request.createdAt.compareTo(a.request.createdAt),
         );
         return items;
       },
@@ -75,7 +73,7 @@ final class RequestRepository {
     required String customerId,
     required String serviceType,
     required String description,
-    required Timestamp preferredDateTime,
+    required DateTime preferredDateTime,
     required String address,
     required shared.RequestPriority priority,
   }) async {
@@ -89,7 +87,7 @@ final class RequestRepository {
       );
       final addressResult = shared.validateAddress(normalizedAddress);
       final preferredResult = shared.validatePreferredDateTime(
-        preferredDateTime.toDate(),
+        preferredDateTime,
       );
       for (final result in [
         serviceResult,
@@ -124,6 +122,15 @@ final class RequestRepository {
       final counterRef = FirebaseFirestore.instance
           .collection(shared.CollectionNames.counters)
           .doc('$year');
+      final counterSnapshot = await counterRef.get(
+        const GetOptions(source: Source.server),
+      );
+      if (!counterSnapshot.exists) {
+        throw RequestRepositoryException(
+          'counter-not-initialized',
+          'Request numbering for $year has not been initialized. Please contact an administrator.',
+        );
+      }
       final requestRef = _requests.doc();
       final historyRef = requestRef
           .collection(shared.CollectionNames.statusHistory)
@@ -150,9 +157,7 @@ final class RequestRepository {
           'agentPhone': null,
           'serviceType': normalizedService,
           'description': normalizedDescription,
-          'preferredDateTime': Timestamp.fromDate(
-            preferredDateTime.toDate().toUtc(),
-          ),
+          'preferredDateTime': Timestamp.fromDate(preferredDateTime.toUtc()),
           'address': normalizedAddress,
           'priority': priority.toStoredValue(),
           'status': shared.StatusNames.created,
@@ -229,31 +234,37 @@ final class RequestRepository {
         );
       }
 
-      final batch = FirebaseFirestore.instance.batch();
-      batch.update(requestRef, {
-        'status': shared.StatusNames.cancelled,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'cancellationReason': normalizedReason,
+      // Use a transaction to ensure the read‑modify‑write is atomic
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Update request status and cancellation reason
+        transaction.update(requestRef, {
+          'status': shared.StatusNames.cancelled,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'cancellationReason': normalizedReason,
+        });
+
+        // Record status history
+        transaction.set(historyRef, {
+          'fromStatus': request.status.toStoredValue(),
+          'toStatus': shared.StatusNames.cancelled,
+          'changedBy': customerId,
+          'changedAt': FieldValue.serverTimestamp(),
+          'note': normalizedReason,
+        });
+
+        // Create audit log entry
+        transaction.set(auditRef, {
+          'actorUserId': customerId,
+          'actorRole': shared.RoleNames.customer,
+          'action': shared.EventNames.requestUpdated,
+          'targetType': 'request',
+          'targetId': requestRef.id,
+          'oldValue': {'status': request.status.toStoredValue()},
+          'newValue': {'status': shared.StatusNames.cancelled},
+          'result': 'success',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
       });
-      batch.set(historyRef, {
-        'fromStatus': request.status.toStoredValue(),
-        'toStatus': shared.StatusNames.cancelled,
-        'changedBy': customerId,
-        'changedAt': FieldValue.serverTimestamp(),
-        'note': normalizedReason,
-      });
-      batch.set(auditRef, {
-        'actorUserId': customerId,
-        'actorRole': shared.RoleNames.customer,
-        'action': shared.EventNames.requestUpdated,
-        'targetType': 'request',
-        'targetId': requestRef.id,
-        'oldValue': <String, dynamic>{'status': request.status.toStoredValue()},
-        'newValue': <String, dynamic>{'status': shared.StatusNames.cancelled},
-        'result': 'success',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      await batch.commit();
     } catch (error) {
       throw _mapError(error, 'Could not cancel the request. Please try again.');
     }

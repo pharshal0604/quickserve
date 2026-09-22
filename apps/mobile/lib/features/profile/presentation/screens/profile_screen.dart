@@ -1,15 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared/shared.dart' as shared;
 
-import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
-import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 import 'package:quickserve_mobile/core/error/app_exceptions.dart';
+import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
+import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:quickserve_mobile/config/theme/theme_provider.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
+
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -19,7 +24,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _saving = false;
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  bool _seeded = false;
+  bool _initialized = false;
 
   @override
   void dispose() {
@@ -28,7 +33,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveProfile() async {
     final auth = ref.read(authStateProvider).value;
     if (auth == null) return;
     setState(() => _saving = true);
@@ -41,12 +46,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             phone: _phoneController.text,
           );
       ref.invalidate(userProfileProvider);
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _editing = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _editing = false;
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -65,192 +69,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
-    return HomeBackScope(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: const Text('Profile'),
-          actions: [
-            IconButton(
-              onPressed: () => context.push('/notifications'),
-              icon: const Icon(Icons.notifications_none_rounded),
-            ),
-          ],
-        ),
-        bottomNavigationBar: const CustomerBottomNav(currentIndex: 3),
-        body: profile.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) =>
-              const Center(child: Text('Could not load your profile.')),
-          data: (user) {
-            if (user == null) {
-              return const Center(child: Text('Profile not found.'));
-            }
-            if (!_seeded) {
-              _nameController.text = user.name;
-              _phoneController.text = user.phone;
-              _seeded = true;
-            }
-            final authUser = ref.watch(authStateProvider).value;
-            final photoUrl = authUser?.photoURL;
-            final initial = user.name.trim().isEmpty
-                ? '?'
-                : user.name.trim()[0].toUpperCase();
-            final roleLabel = user.role.toStoredValue().replaceFirstMapped(
-              RegExp(r'^.'),
-              (match) => match.group(0)!.toUpperCase(),
-            );
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                AppSpacing.xl,
-              ),
-              children: [
-                Center(
-                  child: CircleAvatar(
-                    radius: 42,
-                    backgroundColor: AppColors.mintSurface,
-                    backgroundImage: photoUrl == null || photoUrl.isEmpty
-                        ? null
-                        : NetworkImage(photoUrl),
-                    child: photoUrl == null || photoUrl.isEmpty
-                        ? Text(
-                            initial,
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Center(
-                  child: Text(
-                    user.name,
-                    style: Theme.of(context).textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Center(
-                  child: Text(
-                    user.email,
-                    style: const TextStyle(color: AppColors.mutedText),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Center(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _editing = !_editing),
-                    style: OutlinedButton.styleFrom(
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 28),
-                    ),
-                    child: Text(_editing ? 'Cancel' : 'Edit Profile'),
-                  ),
-                ),
-                if (_editing) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  TextField(
-                    controller: _nameController,
-                    decoration: quickServeInputDecoration(
-                      'Full Name',
-                      icon: Icons.person_outline,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: quickServeInputDecoration(
-                      'Phone Number',
-                      icon: Icons.phone_outlined,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: Text(_saving ? 'Saving...' : 'Save changes'),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-                _AccountCard(roleLabel: roleLabel, email: user.email),
-                const SizedBox(height: AppSpacing.xl),
-                const _ProfileSectionLabel('ACCOUNT MANAGEMENT'),
-                _ProfileRow(
-                  icon: Icons.history_rounded,
-                  title: 'Service History',
-                  subtitle: 'View past and current requests',
-                  onTap: () => context.go('/requests'),
-                ),
-                _ProfileRow(
-                  icon: Icons.location_on_outlined,
-                  title: 'Saved Addresses',
-                  subtitle: 'Address book is not enabled yet',
-                  onTap: () => _showUnavailable('Saved addresses'),
-                ),
-                _ProfileRow(
-                  icon: Icons.credit_card_outlined,
-                  title: 'Payment Methods',
-                  subtitle: 'Payments are not part of the current flow',
-                  onTap: () => _showUnavailable('Payment methods'),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                const _ProfileSectionLabel('PREFERENCES'),
-                _ProfileRow(
-                  icon: Icons.notifications_none,
-                  title: 'Notifications',
-                  subtitle: 'Manage request alerts',
-                  onTap: () => context.push('/notifications'),
-                  trailing: const StatusPill(label: '•', color: AppColors.gold),
-                ),
-                _ProfileRow(
-                  icon: Icons.phone_android_outlined,
-                  title: 'App Settings',
-                  subtitle: 'Theme, language, and display',
-                  onTap: () => context.push('/settings'),
-                ),
-                _ProfileRow(
-                  icon: Icons.shield_outlined,
-                  title: 'Privacy & Security',
-                  subtitle: 'Manage your data and security',
-                  onTap: () => context.push('/settings'),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                const _ProfileSectionLabel('SUPPORT'),
-                _ProfileRow(
-                  icon: Icons.help_outline_rounded,
-                  title: 'Help Center',
-                  subtitle: 'FAQs and customer support',
-                  onTap: _showSupport,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _ProfileRow(
-                  icon: Icons.logout_rounded,
-                  title: 'Sign Out',
-                  subtitle: 'End your current session',
-                  titleColor: AppColors.error,
-                  iconColor: AppColors.error,
-                  onTap: () => ref.read(authRepositoryProvider).signOut(),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                const Center(
-                  child: Text(
-                    'QuickServe Mobile',
-                    style: TextStyle(color: AppColors.outline, fontSize: 11),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+    if (profile.hasValue && profile.value != null && !_initialized) {
+      _nameController.text = profile.value!.name;
+      _phoneController.text = profile.value!.phone;
+      // We schedule the _initialized flag to be set to true so we don't mutate state during build,
+      // but Dart is single-threaded so simply assigning it here is fine since it's just a local variable.
+      _initialized = true;
+    }
+
+    return profile.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (_, _) => const Scaffold(
+        body: Center(child: Text('Could not load your profile.')),
       ),
+      data: (user) {
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Profile not found.')),
+          );
+        }
+        final authUser = ref.watch(authStateProvider).value;
+        if (user.role == shared.UserRole.agent) {
+          return _AgentProfileView(
+            user: user,
+            authUser: authUser,
+            onSettings: () => context.push('/settings'),
+            onHistory: () => context.go('/agent/history'),
+            onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+            onUnavailable: _showUnavailable,
+          );
+        }
+        return _CustomerProfileView(
+          user: user,
+          authUser: authUser,
+          editing: _editing,
+          saving: _saving,
+          nameController: _nameController,
+          phoneController: _phoneController,
+          onToggleEditing: () => setState(() => _editing = !_editing),
+          onSave: _saveProfile,
+          onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+          onNotifications: () => context.push('/notifications'),
+          onSettings: () => context.push('/settings'),
+          onUnavailable: _showUnavailable,
+        );
+      },
     );
   }
 
@@ -260,183 +125,611 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (_) => AlertDialog(
         title: Text(feature),
         content: Text(
-          '$feature are not part of the current Firebase data model, so no fake records were added.',
+          '$feature is not part of the current Firebase data model, so no fake records were added.',
         ),
         actions: const [CloseButton()],
       ),
     );
   }
+}
 
-  void _showSupport() {
-    showDialog<void>(
-      context: context,
-      builder: (_) => const AlertDialog(
-        title: Text('Help Center'),
-        content: Text(
-          'For help with a request, open its details page and share the request ID with support.',
+class _AgentProfileView extends ConsumerWidget {
+  const _AgentProfileView({
+    required this.user,
+    required this.authUser,
+    required this.onSettings,
+    required this.onHistory,
+    required this.onSignOut,
+    required this.onUnavailable,
+  });
+
+  final shared.User user;
+  final fb.User? authUser;
+  final VoidCallback onSettings;
+  final VoidCallback onHistory;
+  final VoidCallback onSignOut;
+  final void Function(String feature) onUnavailable;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final avatarUrl = authUser?.photoURL;
+    final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Agent Profile',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'App settings',
+                    onPressed: onSettings,
+                    icon: const Icon(Icons.settings_outlined, size: 20),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: _lineColor(context)),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(12, 16, 12, 22),
+                children: [
+                  Center(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 42,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer,
+                          backgroundImage:
+                              avatarUrl == null || avatarUrl.isEmpty
+                              ? null
+                              : NetworkImage(avatarUrl),
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? Text(
+                                  initial.toUpperCase(),
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        Positioned(
+                          right: -3,
+                          bottom: 1,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .scaffoldBackgroundColor,
+                                width: 3,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.check,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    user.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Field Service Agent',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Center(
+                    child: _StatusLabel(
+                      label: 'Active',
+                      icon: Icons.verified_outlined,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _AgentSection(
+                    title: 'CONTACT INFORMATION',
+                    children: [
+                      _AgentRow(
+                        icon: Icons.mail_outline_rounded,
+                        title: 'Email Address',
+                        subtitle: user.email,
+                        onTap: () => context.push('/edit-agent-profile'),
+                      ),
+                      _AgentRow(
+                        icon: Icons.phone_outlined,
+                        title: 'Phone Number',
+                        subtitle: user.phone,
+                        onTap: () => context.push('/edit-agent-profile'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _AgentSection(
+                    title: 'SECURITY & ACCESS',
+                    children: [
+                      _AgentRow(
+                        icon: Icons.lock_outline_rounded,
+                        title: 'Security Settings',
+                        subtitle: 'Manage password and account access',
+                        onTap: () => context.push('/security-settings'),
+                      ),
+                      _AgentRow(
+                        icon: Icons.phone_android_outlined,
+                        title: 'Authorized Devices',
+                        subtitle: 'Manage active sessions',
+                        onTap: () => context.push('/authorized-devices'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _AgentSection(
+                    title: 'WORKSPACE',
+                    children: [
+                      _AgentRow(
+                        icon: Icons.history_rounded,
+                        title: 'Service History',
+                        subtitle: 'View completed and cancelled work',
+                        onTap: onHistory,
+                      ),
+                      _AgentRow(
+                        icon: Icons.person_pin_outlined,
+                        title: 'Regional Office',
+                        subtitle:
+                            user.office ??
+                            'Office information is not in your profile',
+                        onTap: () => context.push('/edit-agent-profile'),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  _AgentSection(
+                    title: 'PREFERENCES',
+                    children: [const _SharedProfileSettings()],
+                  ),
+                  SizedBox(height: 20),
+                  InkWell(
+                    onTap: onSignOut,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.logout_rounded,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 20,
+                          ),
+                          SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              'Sign Out',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 8,
+                      letterSpacing: .8,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        actions: [CloseButton()],
       ),
+      bottomNavigationBar: const AgentBottomNav(currentIndex: 3),
     );
   }
 }
 
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.roleLabel, required this.email});
-  final String roleLabel;
-  final String email;
+class _AgentSection extends StatelessWidget {
+  const _AgentSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x22075B3E),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.verified_user_outlined,
-            color: AppColors.gold,
-            size: 28,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'QUICKSERVE ACCOUNT',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: .6,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  roleLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .7,
             ),
           ),
-        ],
-      ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: _lineColor(context)),
+          ),
+          child: Column(children: children),
+        ),
+      ],
     );
   }
 }
 
-class _ProfileSectionLabel extends StatelessWidget {
-  const _ProfileSectionLabel(this.label);
-  final String label;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.mutedText,
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 1,
-      ),
-    ),
-  );
-}
-
-class _ProfileRow extends StatelessWidget {
-  const _ProfileRow({
+class _AgentRow extends StatelessWidget {
+  const _AgentRow({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.trailing,
-    this.titleColor,
-    this.iconColor,
   });
+
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final Widget? trailing;
-  final Color? titleColor;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         child: Row(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primary).withValues(alpha: .08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: iconColor ?? AppColors.primary,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+            Icon(icon, size: 18, color: AppColors.mutedText),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: const TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: titleColor,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.mutedText,
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppColors.mutedText, fontSize: 10),
                   ),
                 ],
               ),
             ),
-            trailing ??
-                const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: AppColors.mutedText,
-                ),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+class _StatusLabel extends StatelessWidget {
+  const _StatusLabel({required this.label, required this.icon});
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: _lineColor(context)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.success),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomerProfileView extends ConsumerWidget {
+  const _CustomerProfileView({
+    required this.user,
+    required this.authUser,
+    required this.editing,
+    required this.saving,
+    required this.nameController,
+    required this.phoneController,
+    required this.onToggleEditing,
+    required this.onSave,
+    required this.onSignOut,
+    required this.onNotifications,
+    required this.onSettings,
+    required this.onUnavailable,
+  });
+
+  final shared.User user;
+  final fb.User? authUser;
+  final bool editing;
+  final bool saving;
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final VoidCallback onToggleEditing;
+  final VoidCallback onSave;
+  final VoidCallback onSignOut;
+  final VoidCallback onNotifications;
+  final VoidCallback onSettings;
+  final void Function(String feature) onUnavailable;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final photoUrl = authUser?.photoURL;
+    final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
+
+    return HomeBackScope(
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: const Text('Profile'),
+          actions: [
+            IconButton(
+              onPressed: onNotifications,
+              icon: const Icon(Icons.notifications_none_rounded),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const CustomerBottomNav(currentIndex: 3),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+          children: [
+            Center(
+              child: CircleAvatar(
+                radius: 42,
+                backgroundColor: AppColors.mintSurface,
+                backgroundImage: photoUrl == null || photoUrl.isEmpty
+                    ? null
+                    : NetworkImage(photoUrl),
+                child: photoUrl == null || photoUrl.isEmpty
+                    ? Text(
+                        initial.toUpperCase(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              user.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              user.email,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.mutedText),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onToggleEditing,
+              child: Text(editing ? 'Cancel' : 'Edit Profile'),
+            ),
+            if (editing) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: nameController,
+                decoration: quickServeInputDecoration('Full Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: quickServeInputDecoration('Phone Number'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: saving ? null : onSave,
+                child: Text(saving ? 'Saving...' : 'Save changes'),
+              ),
+            ],
+            const SizedBox(height: 20),
+            _CustomerRow(
+              icon: Icons.notifications_none,
+              title: 'Notifications',
+              onTap: onNotifications,
+            ),
+            _CustomerRow(
+              icon: Icons.location_on_outlined,
+              title: 'Saved Addresses',
+              onTap: () => context.push('/saved-addresses'),
+            ),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: _SharedProfileSettings(),
+            ),
+            const Divider(),
+            _CustomerRow(
+              icon: Icons.logout_rounded,
+              title: 'Sign Out',
+              onTap: onSignOut,
+              color: AppColors.error,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SharedProfileSettings extends ConsumerWidget {
+  const _SharedProfileSettings();
+
+  Future<void> _launchPrivacyPolicy() async {
+    final url = Uri.parse('https://quickserve.com/privacy');
+    if (!await launchUrl(url)) {
+      debugPrint('Could not launch $url');
+    }
+  }
+
+  Future<void> _launchSupport() async {
+    final url = Uri.parse('https://quickserve.com/support');
+    if (!await launchUrl(url)) {
+      debugPrint('Could not launch $url');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          title: const Text('Dark Theme', style: TextStyle(fontSize: 14)),
+          secondary: Icon(
+            Icons.dark_mode_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          value: isDark,
+          onChanged: (val) =>
+              ref.read(themeModeProvider.notifier).toggleTheme(),
+          contentPadding: EdgeInsets.zero,
+        ),
+        ListTile(
+          title: const Text('Privacy Policy', style: TextStyle(fontSize: 14)),
+          leading: Icon(
+            Icons.privacy_tip_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          contentPadding: EdgeInsets.zero,
+          onTap: _launchPrivacyPolicy,
+        ),
+        ListTile(
+          title: const Text('Help & Support', style: TextStyle(fontSize: 14)),
+          leading: Icon(
+            Icons.help_outline,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          contentPadding: EdgeInsets.zero,
+          onTap: _launchSupport,
+        ),
+      ],
+    );
+  }
+}
+
+class _CustomerRow extends StatelessWidget {
+  const _CustomerRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(
+        icon,
+        color: color ?? Theme.of(context).colorScheme.primary,
+      ),
+      title: Text(title, style: TextStyle(color: color)),
+      trailing: const Icon(Icons.chevron_right),
+    );
+  }
+}
+
+Color _lineColor(BuildContext context) {
+  return Theme.of(context).colorScheme.outline;
 }

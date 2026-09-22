@@ -8,6 +8,7 @@ import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
 import '../../../requests/presentation/screens/request_details_screen.dart';
+import '../../../requests/presentation/screens/requests_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({required this.repository, super.key});
@@ -41,6 +42,17 @@ class DashboardScreen extends StatelessWidget {
           })
           .take(4)
           .toList();
+      final active = docs
+          .where(
+            (doc) => ![
+              StatusNames.completed,
+              StatusNames.cancelled,
+            ].contains(doc.data()['status']),
+          )
+          .toList();
+      final completed = docs
+          .where((doc) => doc.data()['status'] == StatusNames.completed)
+          .toList();
 
       return ListView(
         padding: const EdgeInsets.all(24),
@@ -62,11 +74,6 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.file_download_outlined),
-                label: const Text('Export report'),
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -78,28 +85,49 @@ class DashboardScreen extends StatelessWidget {
                 label: 'Total requests',
                 value: docs.length,
                 icon: Icons.assignment_outlined,
+                onTap: () => _showMetricDetails(
+                  context,
+                  title: 'Total requests',
+                  description: 'All service requests currently recorded.',
+                  docs: docs,
+                  repository: repository,
+                ),
               ),
               _Metric(
                 label: 'Active requests',
-                value: docs
-                    .where(
-                      (doc) => ![
-                        StatusNames.completed,
-                        StatusNames.cancelled,
-                      ].contains(doc.data()['status']),
-                    )
-                    .length,
+                value: active.length,
                 icon: Icons.timelapse_outlined,
+                onTap: () => _showMetricDetails(
+                  context,
+                  title: 'Active requests',
+                  description: 'Requests that are not completed or cancelled.',
+                  docs: active,
+                  repository: repository,
+                ),
               ),
               _Metric(
                 label: 'Completed',
-                value: counts[StatusNames.completed] ?? 0,
+                value: completed.length,
                 icon: Icons.check_circle_outline,
+                onTap: () => _showMetricDetails(
+                  context,
+                  title: 'Completed requests',
+                  description: 'Requests that reached the completed status.',
+                  docs: completed,
+                  repository: repository,
+                ),
               ),
               _Metric(
                 label: 'Critical alerts',
                 value: critical.length,
                 icon: Icons.warning_amber_outlined,
+                onTap: () => _showMetricDetails(
+                  context,
+                  title: 'Critical alerts',
+                  description: 'High-priority active requests or requests waiting for assignment.',
+                  docs: critical,
+                  repository: repository,
+                ),
               ),
             ],
           ),
@@ -148,35 +176,152 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+void _showMetricDetails(
+  BuildContext context, {
+  required String title,
+  required String description,
+  required List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  required AdminRepository repository,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => _MetricDetailsDialog(
+      title: title,
+      description: description,
+      docs: docs,
+      repository: repository,
+    ),
+  );
+}
+
+class _MetricDetailsDialog extends StatelessWidget {
+  const _MetricDetailsDialog({
+    required this.title,
+    required this.description,
+    required this.docs,
+    required this.repository,
+  });
+
+  final String title;
+  final String description;
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final AdminRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 680,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(description),
+            const SizedBox(height: 6),
+            Text(
+              '${docs.length} matching record${docs.length == 1 ? '' : 's'}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (docs.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text('No matching request data is available.'),
+              )
+            else
+              SizedBox(
+                height: 390,
+                child: ListView.separated(
+                  itemCount: docs.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data();
+                    final status = '${data['status'] ?? 'unknown'}';
+                    final statusColor = adminStatusColor(context, status);
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                      leading: Icon(
+                        adminStatusIcon(status),
+                        color: statusColor,
+                      ),
+                      title: Text(
+                        '${data['requestCode'] ?? doc.id} · ${data['serviceType'] ?? 'Service'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${adminLabel(status)} · ${data['address'] ?? 'Address not provided'}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openRequest(context, repository, doc);
+                      },
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+}
+
 class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value, required this.icon});
+  const _Metric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.onTap,
+  });
+
   final String label;
   final int value;
   final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => SizedBox(
     width: 190,
     child: Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$value',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: .18),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$value',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
@@ -217,6 +362,7 @@ class _StatusChart extends StatelessWidget {
                       for (final status in StatusNames.values)
                         adminStatusColor(context, status),
                     ],
+                    emptyColor: Theme.of(context).colorScheme.outlineVariant,
                   ),
                   child: Center(
                     child: Column(
@@ -281,9 +427,14 @@ class _StatusChart extends StatelessWidget {
 }
 
 class _DoughnutPainter extends CustomPainter {
-  const _DoughnutPainter({required this.values, required this.colors});
+  const _DoughnutPainter({
+    required this.values,
+    required this.colors,
+    required this.emptyColor,
+  });
   final List<int> values;
   final List<Color> colors;
+  final Color emptyColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -297,7 +448,7 @@ class _DoughnutPainter extends CustomPainter {
       ..strokeWidth = 24
       ..strokeCap = StrokeCap.butt;
     if (total == 0) {
-      paint.color = Colors.white12;
+      paint.color = emptyColor.withValues(alpha: .45);
       canvas.drawArc(rect.deflate(16), 0, math.pi * 2, false, paint);
       return;
     }
@@ -313,7 +464,9 @@ class _DoughnutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DoughnutPainter oldDelegate) =>
-      oldDelegate.values != values || oldDelegate.colors != colors;
+      oldDelegate.values != values ||
+      oldDelegate.colors != colors ||
+      oldDelegate.emptyColor != emptyColor;
 }
 
 class _RecentRequests extends StatelessWidget {
@@ -344,7 +497,15 @@ class _RecentRequests extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
-                    TextButton(onPressed: () {}, child: const Text('View all')),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              RequestsScreen(repository: repository),
+                        ),
+                      ),
+                      child: const Text('View all'),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -409,7 +570,10 @@ class _CriticalAlerts extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -429,7 +593,10 @@ class _CriticalAlerts extends StatelessWidget {
             ListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.error_outline, color: Colors.amber),
+              leading: Icon(
+                Icons.error_outline,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
               title: Text(
                 '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['priority'] ?? 'Unassigned'}',
               ),

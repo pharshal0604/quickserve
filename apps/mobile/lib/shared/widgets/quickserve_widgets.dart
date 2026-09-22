@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
+import 'package:quickserve_mobile/config/theme/app_shadows.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 
 /// The pale branded header used by the authentication and onboarding pages.
@@ -47,7 +48,8 @@ class QuickServeBrandHeader extends StatelessWidget {
             bottom: 0,
             child: Icon(
               Icons.business_center_outlined,
-              color: AppColors.primary.withValues(alpha: .22),
+              color: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: .22),
               size: 28,
             ),
           ),
@@ -59,19 +61,13 @@ class QuickServeBrandHeader extends StatelessWidget {
                   width: compact ? 52 : 64,
                   height: compact ? 52 : 64,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x22075B3E),
-                        blurRadius: 14,
-                        offset: Offset(0, 7),
-                      ),
-                    ],
+                    boxShadow: AppShadows.raised,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.home_repair_service_rounded,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     size: 32,
                   ),
                 ),
@@ -80,7 +76,7 @@ class QuickServeBrandHeader extends StatelessWidget {
                   eyebrow,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     letterSpacing: -.5,
                   ),
                 ),
@@ -115,19 +111,9 @@ InputDecoration quickServeInputDecoration(
     suffixIcon: suffix,
     prefixText: prefixText,
     filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-      borderSide: const BorderSide(color: AppColors.outline),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-      borderSide: const BorderSide(color: AppColors.outline),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-    ),
+    border: null,
+    enabledBorder: null,
+    focusedBorder: null,
   );
 }
 
@@ -167,7 +153,6 @@ class CustomerBottomNav extends StatelessWidget {
         final paths = ['/home', '/services', '/requests', '/profile'];
         context.go(paths[index]);
       },
-      backgroundColor: Colors.white,
       indicatorColor: AppColors.mintSurface,
       destinations: const [
         NavigationDestination(

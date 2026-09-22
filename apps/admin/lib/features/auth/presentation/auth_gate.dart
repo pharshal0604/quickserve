@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => StreamBuilder<User?>(
-    stream: FirebaseAuth.instance.authStateChanges(),
+    stream: FirebaseAuth.instance.userChanges(),
     builder: (context, authSnapshot) {
       if (authSnapshot.connectionState == ConnectionState.waiting) {
         return const _LoadingPage();
@@ -25,11 +25,11 @@ class AuthGate extends StatelessWidget {
       if (user == null) return const LoginScreen();
       if (!user.emailVerified) return EmailVerificationPage(user: user);
 
-      return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        future: FirebaseFirestore.instance
+      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
             .collection(CollectionNames.users)
             .doc(user.uid)
-            .get(),
+            .snapshots(),
         builder: (context, profileSnapshot) {
           if (!profileSnapshot.hasData) return const _LoadingPage();
 

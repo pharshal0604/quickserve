@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 
 /// Displays the password rules and their current state.
@@ -49,7 +50,7 @@ class PasswordRequirements extends StatelessWidget {
                   rule.$2 ? Icons.check_circle_outline : Icons.cancel_outlined,
                   size: iconSize,
                   color: rule.$2
-                      ? Colors.green.shade700
+                      ? AppColors.success
                       : Theme.of(context).colorScheme.error,
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -58,7 +59,7 @@ class PasswordRequirements extends StatelessWidget {
                     rule.$1,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: rule.$2
-                          ? Colors.green.shade700
+                          ? AppColors.success
                           : Theme.of(context).colorScheme.error,
                     ),
                   ),

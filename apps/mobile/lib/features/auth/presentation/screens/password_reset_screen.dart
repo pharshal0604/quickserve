@@ -84,7 +84,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -118,11 +118,11 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                             color: AppColors.mintSurface,
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(
                                 Icons.check_circle,
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               SizedBox(width: AppSpacing.sm),
                               Expanded(
@@ -138,12 +138,14 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                       FilledButton(
                         onPressed: _isSending ? null : _sendResetLink,
                         child: _isSending
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               )
                             : const Text('Send Reset Link  →'),
@@ -156,10 +158,13 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      const Row(
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.shield_outlined, color: AppColors.primary),
+                          Icon(
+                            Icons.shield_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(

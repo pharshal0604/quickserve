@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:quickserve_mobile/features/agent/presentation/screens/agent_home/agent_home_screen.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
@@ -33,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
             );
           }
           return user.role == shared.UserRole.agent
-              ? _AgentDashboard(name: user.name)
+              ? const AgentHomeScreen()
               : _CustomerDashboard(name: user.name);
         },
       ),
@@ -106,8 +107,8 @@ class _CustomerDashboard extends ConsumerWidget {
                             firstName.isEmpty
                                 ? '?'
                                 : firstName[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppColors.primary,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.w800,
                             ),
                           )
@@ -115,38 +116,6 @@ class _CustomerDashboard extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            InkWell(
-              onTap: () => context.go('/services'),
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.outline),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, color: AppColors.mutedText),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'Browse services',
-                        style: TextStyle(color: AppColors.mutedText),
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.mutedText,
-                    ),
-                  ],
-                ),
-              ),
             ),
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(
@@ -181,26 +150,26 @@ class _CustomerDashboard extends ConsumerWidget {
                         itemCount: items.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(width: AppSpacing.sm),
-                        itemBuilder: (context, index) => _ServiceCategory(
-                          service: items[index],
-                          onTap: () => context.push(
-                            '/services/detail',
-                            extra: items[index],
-                          ),
-                        ),
+                        itemBuilder: (context, index) {
+                          final s = items[index];
+                          return _ServiceCategory(
+                            service: s,
+                            onTap: () => context.push(
+                              Uri(
+                                path: '/services/detail',
+                                queryParameters: {
+                                  'name': s.name,
+                                  'desc': s.description,
+                                },
+                              ).toString(),
+                            ),
+                          );
+                        },
                       ),
                     ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            if (services.valueOrNull != null &&
-                services.valueOrNull!.isNotEmpty)
-              _FeaturedServiceCard(
-                service: services.valueOrNull!.first,
-                onTap: () => context.push(
-                  '/services/detail',
-                  extra: services.valueOrNull!.first,
-                ),
-              ),
+
             const SizedBox(height: AppSpacing.xl),
             _ActiveRequestsSection(
               items: active ?? const [],
@@ -248,7 +217,7 @@ class _ServiceCategory extends StatelessWidget {
         width: 94,
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.outline),
         ),
@@ -258,7 +227,7 @@ class _ServiceCategory extends StatelessWidget {
             CircleAvatar(
               radius: 23,
               backgroundColor: AppColors.mintSurface,
-              child: Icon(icon, color: AppColors.primary),
+              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(height: 7),
             Text(
@@ -266,67 +235,8 @@ class _ServiceCategory extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeaturedServiceCard extends StatelessWidget {
-  const _FeaturedServiceCard({required this.service, required this.onTap});
-  final shared.Service service;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.home_repair_service_rounded,
-              color: AppColors.gold,
-              size: 46,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Available service',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    service.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    service.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white70, height: 1.3),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white),
           ],
         ),
       ),
@@ -366,7 +276,9 @@ class _ActiveRequestsSection extends StatelessWidget {
             const Spacer(),
             StatusPill(
               label: '${items.length} Ongoing',
-              color: items.isEmpty ? AppColors.mutedText : AppColors.primary,
+              color: items.isEmpty
+                  ? AppColors.mutedText
+                  : Theme.of(context).colorScheme.primary,
             ),
           ],
         ),
@@ -374,9 +286,12 @@ class _ActiveRequestsSection extends StatelessWidget {
         if (items.isEmpty)
           Card(
             child: ListTile(
-              leading: const CircleAvatar(
+              leading: CircleAvatar(
                 backgroundColor: AppColors.mintSurface,
-                child: Icon(Icons.bolt_outlined, color: AppColors.primary),
+                child: Icon(
+                  Icons.bolt_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               title: const Text('No active requests'),
               subtitle: const Text('Your new requests will appear here.'),
@@ -391,9 +306,12 @@ class _ActiveRequestsSection extends StatelessWidget {
               child: Card(
                 child: ListTile(
                   onTap: () => context.push('/requests/${item.id}'),
-                  leading: const CircleAvatar(
+                  leading: CircleAvatar(
                     backgroundColor: AppColors.mintSurface,
-                    child: Icon(Icons.bolt_outlined, color: AppColors.primary),
+                    child: Icon(
+                      Icons.bolt_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                   title: Text(
                     item.request.serviceType,
@@ -417,160 +335,6 @@ class _ActiveRequestsSection extends StatelessWidget {
   }
 }
 
-class _AgentDashboard extends ConsumerWidget {
-  const _AgentDashboard({required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authStateProvider).value;
-    final requests = auth == null
-        ? null
-        : ref.watch(_agentHomeRequestsProvider(auth.uid));
-    final items =
-        requests?.valueOrNull ??
-        const <({String id, shared.Request request})>[];
-    final active = items
-        .where(
-          (item) =>
-              !shared.isTerminalStatus(item.request.status.toStoredValue()),
-        )
-        .length;
-    final completed = items
-        .where(
-          (item) =>
-              item.request.status.toStoredValue() ==
-              shared.StatusNames.completed,
-        )
-        .length;
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Agent dashboard',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                      ),
-                      Text(
-                        'Welcome back, $name',
-                        style: const TextStyle(color: AppColors.mutedText),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => ref.read(authRepositoryProvider).signOut(),
-                  icon: const Icon(Icons.logout),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Row(
-              children: [
-                _Metric(
-                  label: 'Assigned',
-                  value: '${items.length}',
-                  icon: Icons.assignment_outlined,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _Metric(
-                  label: 'Active',
-                  value: '$active',
-                  icon: Icons.timelapse,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _Metric(
-                  label: 'Completed',
-                  value: '$completed',
-                  icon: Icons.task_alt,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const SectionHeader(title: 'Assigned requests'),
-            if (requests?.isLoading ?? false)
-              const Center(child: CircularProgressIndicator())
-            else if (items.isEmpty)
-              const Text(
-                'No assigned requests yet.',
-                style: TextStyle(color: AppColors.mutedText),
-              )
-            else
-              ...items
-                  .take(5)
-                  .map(
-                    (item) => Card(
-                      child: ListTile(
-                        onTap: () => context.push('/requests/${item.id}'),
-                        leading: const Icon(
-                          Icons.assignment_outlined,
-                          color: AppColors.primary,
-                        ),
-                        title: Text(item.request.serviceType),
-                        subtitle: Text(
-                          '${item.request.requestCode} · ${item.request.status.toStoredValue()}',
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                      ),
-                    ),
-                  ),
-            const SizedBox(height: AppSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: () => context.push('/agent/requests'),
-              icon: const Icon(Icons.list_alt_outlined),
-              label: const Text('View all assigned requests'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value, required this.icon});
-  final String label;
-  final String value;
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppColors.primary),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.mutedText, fontSize: 12),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
 final _homeServicesProvider = StreamProvider<List<shared.Service>>((ref) {
   return ref.watch(serviceRepositoryProvider).watchActiveServices();
 });
@@ -579,10 +343,4 @@ final _homeRequestsProvider =
     StreamProvider.family<List<({String id, shared.Request request})>, String>(
       (ref, uid) =>
           ref.watch(requestRepositoryProvider).watchCustomerRequests(uid),
-    );
-
-final _agentHomeRequestsProvider =
-    StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) =>
-          ref.watch(agentRepositoryProvider).watchAssignedRequests(uid),
     );

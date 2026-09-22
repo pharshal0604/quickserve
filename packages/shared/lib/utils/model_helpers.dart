@@ -22,6 +22,29 @@ Map<String, dynamic> readMap(Map<String, dynamic> map, String field) {
   throw SharedParseException('Field $field is missing or has the wrong type.');
 }
 
+/// Reads a DateTime from a serialized model map, dynamically handling Firestore Timestamp.
+DateTime readDateTime(Map<String, dynamic> map, String field) {
+  final value = map[field];
+  if (value is DateTime) return value;
+  if (value != null) {
+    try {
+      return (value as dynamic).toDate() as DateTime;
+    } catch (_) {}
+  }
+  throw SharedParseException('Field $field is missing or not a valid date.');
+}
+
+/// Reads an optional DateTime from a serialized model map.
+DateTime? readNullableDateTime(Map<String, dynamic> map, String field) {
+  final value = map[field];
+  if (value == null) return null;
+  if (value is DateTime) return value;
+  try {
+    return (value as dynamic).toDate() as DateTime;
+  } catch (_) {}
+  throw SharedParseException('Field $field has the wrong type.');
+}
+
 /// Compares nested map and list values for structural equality.
 bool deepEquals(Object? left, Object? right) {
   if (identical(left, right)) return true;

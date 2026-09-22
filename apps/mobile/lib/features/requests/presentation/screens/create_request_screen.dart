@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -153,7 +152,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
             customerId: authUser.uid,
             serviceType: _serviceType!,
             description: _descriptionController.text,
-            preferredDateTime: Timestamp.fromDate(_preferredDateTime!),
+            preferredDateTime: _preferredDateTime!,
             address: _addressController.text,
             priority: _priority,
           );
@@ -196,15 +195,15 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
               children: [
                 Text(
                   'Step ${_step + 1} of 3',
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 LinearProgressIndicator(
                   value: (_step + 1) / 3,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   backgroundColor: AppColors.mintSurface,
                   borderRadius: BorderRadius.circular(99),
                 ),
@@ -244,12 +243,14 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                             ? null
                             : (_step == 2 ? _submit : _next),
                         child: _isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               )
                             : Text(
@@ -272,8 +273,10 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     children: [
       Text(
         'What do you need help with?',
-        style: Theme.of(context).textTheme.headlineSmall
-            ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.primary),
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       const Text(
@@ -300,7 +303,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
             ? null
             : (value) => setState(() => _serviceType = value),
       ),
-      const SizedBox(height: AppSpacing.md),
+      SizedBox(height: AppSpacing.md),
       TextFormField(
         controller: _descriptionController,
         maxLines: 5,
@@ -321,8 +324,10 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     children: [
       Text(
         'When and where?',
-        style: Theme.of(context).textTheme.headlineSmall
-            ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.primary),
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       const Text(
@@ -377,8 +382,10 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     children: [
       Text(
         'Review your request',
-        style: Theme.of(context).textTheme.headlineSmall
-            ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.primary),
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       const Text(
@@ -403,9 +410,12 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
           color: AppColors.mintSurface,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.lock_outline, color: AppColors.primary),
+            Icon(
+              Icons.lock_outline,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(

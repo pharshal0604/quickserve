@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
@@ -12,27 +13,85 @@ class AgentDetailsScreen extends StatelessWidget {
     required this.repository,
     required this.userId,
     required this.data,
+    this.onBack,
     super.key,
   });
 
   final AdminRepository repository;
   final String userId;
   final Map<String, dynamic> data;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      leading: const BackButton(),
+      leading: IconButton(
+        tooltip: 'Back to agents',
+        onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+        icon: const Icon(Icons.arrow_back),
+      ),
       title: const Text('Agent profile'),
       actions: [
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: () async {
+            final email = data['email'] as String?;
+            final phone = data['phone'] as String?;
+            if (email != null && email.isNotEmpty) {
+              final uri = Uri.parse('mailto:$email');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            } else if (phone != null && phone.isNotEmpty) {
+              final uri = Uri.parse('sms:$phone');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No contact info available.')),
+                );
+              }
+            }
+          },
           icon: const Icon(Icons.mail_outline, size: 17),
           label: const Text('Message'),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            final controller = TextEditingController(text: data['schedule'] as String? ?? '');
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Update Schedule'),
+                content: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Mon-Fri 9AM-5PM',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      await repository.updateAgentSchedule(
+                        agentId: userId,
+                        schedule: controller.text,
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Schedule updated')),
+                        );
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            );
+          },
           icon: const Icon(Icons.calendar_month_outlined, size: 17),
           label: const Text('Update schedule'),
         ),
@@ -59,11 +118,10 @@ class AgentDetailsScreen extends StatelessWidget {
         final successRate = requests.isEmpty
             ? 0
             : ((completed / requests.length) * 100).round();
-        final tenure = _tenure(data['createdAt']);
         return ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            _ProfileHeader(data: data, tenure: tenure),
+            _ProfileHeader(data: data),
             const SizedBox(height: 18),
             Wrap(
               spacing: 12,
@@ -78,11 +136,6 @@ class AgentDetailsScreen extends StatelessWidget {
                   icon: Icons.check_circle_outline,
                   label: 'Success rate',
                   value: '$successRate%',
-                ),
-                _Kpi(
-                  icon: Icons.workspace_premium_outlined,
-                  label: 'Years tenure',
-                  value: tenure,
                 ),
               ],
             ),
@@ -138,9 +191,8 @@ class AgentDetailsScreen extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.data, required this.tenure});
+  const _ProfileHeader({required this.data});
   final Map<String, dynamic> data;
-  final String tenure;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -173,7 +225,6 @@ class _ProfileHeader extends StatelessWidget {
                   spacing: 8,
                   children: [
                     Chip(label: Text('${data['status'] ?? 'active'}')),
-                    Chip(label: Text('★ ${data['rating'] ?? '—'}')),
                   ],
                 ),
               ],
@@ -264,6 +315,7 @@ class _PerformanceCard extends StatelessWidget {
             child: CustomPaint(
               painter: _TrendPainter(
                 color: Theme.of(context).colorScheme.primary,
+                gridColor: Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
           ),
@@ -275,7 +327,10 @@ class _PerformanceCard extends StatelessWidget {
                 'Completed $completed',
               ),
               const SizedBox(width: 18),
-              _legend(Colors.amber, 'Active $active'),
+              _legend(
+                Theme.of(context).colorScheme.tertiary,
+                'Active $active',
+              ),
               const Spacer(),
               Text(
                 '$total total',
@@ -302,13 +357,14 @@ class _PerformanceCard extends StatelessWidget {
 }
 
 class _TrendPainter extends CustomPainter {
-  const _TrendPainter({required this.color});
+  const _TrendPainter({required this.color, required this.gridColor});
   final Color color;
+  final Color gridColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     final grid = Paint()
-      ..color = Colors.white12
+      ..color = gridColor.withValues(alpha: .45)
       ..strokeWidth = 1;
     for (var i = 1; i < 5; i++) {
       final y = size.height * i / 5;
@@ -329,7 +385,7 @@ class _TrendPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
-      oldDelegate.color != color;
+      oldDelegate.color != color || oldDelegate.gridColor != gridColor;
 }
 
 class _WorkloadCard extends StatelessWidget {
@@ -367,7 +423,7 @@ class _WorkloadCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: .13),
+                color: Theme.of(context).colorScheme.tertiaryContainer,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -464,10 +520,4 @@ class _RecentJobs extends StatelessWidget {
       ),
     ),
   );
-}
-
-String _tenure(dynamic value) {
-  if (value is! Timestamp) return '—';
-  final days = DateTime.now().difference(value.toDate()).inDays;
-  return '${(days / 365.25).toStringAsFixed(1)} yrs';
 }

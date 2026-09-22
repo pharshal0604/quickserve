@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
-import 'package:quickserve_mobile/features/agent/presentation/screens/agent_requests_screen.dart';
+import 'package:quickserve_mobile/features/agent/presentation/screens/assigned_requests/assigned_requests_screen.dart';
+import 'package:quickserve_mobile/features/agent/presentation/screens/history/agent_history_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/create_request_screen.dart';
 import 'package:quickserve_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/login_screen.dart';
@@ -12,8 +13,11 @@ import 'package:quickserve_mobile/features/requests/presentation/screens/my_requ
 import 'package:quickserve_mobile/features/profile/presentation/screens/agent_profile_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/notifications_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/profile_screen.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/saved_addresses_screen.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/edit_agent_profile_screen.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/security_settings_screen.dart';
+import 'package:quickserve_mobile/features/profile/presentation/screens/authorized_devices_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_details_screen.dart';
-import 'package:quickserve_mobile/features/profile/presentation/screens/settings_screen.dart';
 import 'package:quickserve_mobile/features/services/presentation/screens/services_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/password_reset_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/register_screen.dart';
@@ -48,6 +52,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
+        path: '/agent-login',
+        builder: (context, state) => const LoginScreen(isAgentLogin: true),
+      ),
+      GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
       ),
@@ -62,20 +70,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/services/detail',
-        builder: (context, state) =>
-            ServiceDetailsScreen(service: state.extra as shared.Service),
+        builder: (context, state) => ServiceDetailsScreen(
+          service: shared.Service(
+            name: state.uri.queryParameters['name'] ?? '',
+            description: state.uri.queryParameters['desc'] ?? '',
+            active: true,
+            createdAt: DateTime.now(),
+          ),
+        ),
       ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
-        path: '/notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        path: '/saved-addresses',
+        builder: (context, state) => const SavedAddressesScreen(),
       ),
       GoRoute(
-        path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
+        path: '/edit-agent-profile',
+        builder: (context, state) => const EditAgentProfileScreen(),
+      ),
+      GoRoute(
+        path: '/security-settings',
+        builder: (context, state) => const SecuritySettingsScreen(),
+      ),
+      GoRoute(
+        path: '/authorized-devices',
+        builder: (context, state) => const AuthorizedDevicesScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/requests',
@@ -83,8 +109,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/requests/create',
-        builder: (context, state) =>
-            CreateRequestScreen(initialService: state.extra as String?),
+        builder: (context, state) => CreateRequestScreen(
+          initialService: state.uri.queryParameters['service'],
+        ),
       ),
       GoRoute(
         path: '/request-success/:requestId',
@@ -96,11 +123,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AgentRequestsScreen(),
       ),
       GoRoute(
+        path: '/agent/history',
+        builder: (context, state) => const AgentHistoryScreen(),
+      ),
+      GoRoute(
         path: '/agents/:agentId',
         builder: (context, state) => AgentProfileScreen(
-          snapshot: state.extra is AgentContactSnapshot
-              ? state.extra as AgentContactSnapshot
-              : null,
+          snapshot: AgentContactSnapshot(
+            name: state.uri.queryParameters['name'],
+            phone: state.uri.queryParameters['phone'],
+          ),
         ),
       ),
       GoRoute(
@@ -123,16 +155,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         const publicPaths = {
           '/splash',
           '/login',
+          '/agent-login',
           '/register',
           '/password-reset',
         };
-        return publicPaths.contains(path) ? null : '/login';
+        return publicPaths.contains(path) ? null : '/splash';
       }
 
       if (registering && path == '/register') return null;
 
-      const authPaths = {'/splash', '/login', '/register', '/password-reset'};
+      const authPaths = {
+        '/splash',
+        '/login',
+        '/agent-login',
+        '/register',
+        '/password-reset',
+      };
+
       if (authPaths.contains(path)) return '/home';
+
+      final userProfile = ref.read(userProfileProvider).value;
+      if (userProfile != null) {
+        if (userProfile.role == shared.UserRole.agent) {
+          if (path.startsWith('/create-request') ||
+              path.startsWith('/services')) {
+            return '/home';
+          }
+        } else if (userProfile.role == shared.UserRole.customer) {
+          if (path.startsWith('/agent')) {
+            return '/home';
+          }
+        }
+      }
+
       return null;
     },
   );

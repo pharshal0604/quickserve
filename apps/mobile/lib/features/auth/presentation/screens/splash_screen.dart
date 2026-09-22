@@ -18,10 +18,16 @@ class SplashScreen extends StatelessWidget {
             const QuickServeBrandHeader(
               eyebrow: 'QuickServe',
               subtitle: 'Reliable help, right when you need it.',
+              compact: true,
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.xxl,
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -30,7 +36,7 @@ class SplashScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -43,14 +49,15 @@ class SplashScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     FilledButton.icon(
-                      onPressed: () => context.push('/register'),
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text('Get Started'),
+                      onPressed: () => context.push('/login'),
+                      icon: const Icon(Icons.person_outline_rounded),
+                      label: const Text('User Login'),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    OutlinedButton(
-                      onPressed: () => context.push('/login'),
-                      child: const Text('I already have an account'),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/agent-login'),
+                      icon: const Icon(Icons.engineering_outlined),
+                      label: const Text('Agent Login'),
                     ),
                   ],
                 ),

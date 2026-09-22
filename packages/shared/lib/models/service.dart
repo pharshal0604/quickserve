@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:shared/utils/model_helpers.dart';
 
 /// A QuickServe service catalog entry stored in `services/{serviceId}`.
@@ -18,7 +16,7 @@ class Service {
       name: readRequired<String>(map, 'name'),
       description: readRequired<String>(map, 'description'),
       active: readRequired<bool>(map, 'active'),
-      createdAt: readRequired<Timestamp>(map, 'createdAt'),
+      createdAt: readDateTime(map, 'createdAt'),
     );
   }
 
@@ -32,7 +30,7 @@ class Service {
   final bool active;
 
   /// The service creation timestamp.
-  final Timestamp createdAt;
+  final DateTime createdAt;
 
   /// Converts this service to Firestore field names and values.
   Map<String, dynamic> toMap() => {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:quickserve_admin/core/network/admin_repository.dart';
 
+import '../../../config/theme/admin_theme.dart';
 import '../../../core/validators/auth_validators.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -102,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xfff6f8f7),
+    backgroundColor: AdminTheme.lightBackground,
     body: LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 860;
@@ -142,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
   );
 
   Widget _loginBrandPanel(BuildContext context) => Container(
-    color: const Color(0xff07120f),
+    color: AdminTheme.sidebar,
     padding: const EdgeInsets.all(56),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,16 +155,16 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xffb9f36b),
+                color: AdminTheme.accent,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.bolt, color: Color(0xff07120f), size: 28),
+              child: const Icon(Icons.bolt, color: AdminTheme.sidebar, size: 28),
             ),
             const SizedBox(width: 12),
             const Text(
               'QUICKSERVE',
               style: TextStyle(
-                color: Colors.white,
+                color: AdminTheme.darkTextPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.5,
@@ -175,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const Text(
           'Admin Portal',
           style: TextStyle(
-            color: Color(0xffb9f36b),
+            color: AdminTheme.accent,
             fontSize: 15,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
@@ -185,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const Text(
           'Manage your platform\nwith precision.',
           style: TextStyle(
-            color: Colors.white,
+            color: AdminTheme.darkTextPrimary,
             fontSize: 42,
             height: 1.1,
             fontWeight: FontWeight.w700,
@@ -195,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'Monitor requests, coordinate service agents, and keep every customer experience on track.',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: .68),
+            color: AdminTheme.darkTextSecondary.withValues(alpha: .68),
             fontSize: 16,
             height: 1.6,
           ),
@@ -214,9 +215,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _loginFeature(IconData icon, String label) => Row(
     children: [
-      Icon(icon, color: const Color(0xffb9f36b), size: 18),
+      Icon(icon, color: AdminTheme.accent, size: 18),
       const SizedBox(width: 8),
-      Text(label, style: TextStyle(color: Colors.white.withValues(alpha: .72))),
+      Text(label, style: TextStyle(color: AdminTheme.darkTextSecondary.withValues(alpha: .72))),
     ],
   );
 
@@ -226,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
       const Text(
         'Welcome back',
         style: TextStyle(
-          color: Color(0xff12372d),
+          color: AdminTheme.ink,
           fontSize: 32,
           fontWeight: FontWeight.w800,
         ),
@@ -235,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Text(
         'Sign in to your administrator account.',
         style: TextStyle(
-          color: Colors.black.withValues(alpha: .58),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .58),
           fontSize: 15,
         ),
       ),
@@ -278,19 +279,12 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       if (error != null) ...[
         const SizedBox(height: 4),
-        Text(error!, style: const TextStyle(color: Color(0xffb3261e))),
+        Text(error!, style: TextStyle(color: AdminTheme.error)),
       ],
       const SizedBox(height: 20),
       SizedBox(
         height: 52,
         child: FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xff12372d),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
           onPressed: busy ? null : submit,
           child: Text(busy ? 'Signing in...' : 'Sign in'),
         ),
@@ -302,13 +296,6 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: busy ? null : signInWithGoogle,
           icon: const _GoogleMark(),
           label: const Text('Continue with Google'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xff12372d),
-            side: BorderSide(color: Colors.black.withValues(alpha: .16)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
         ),
       ),
       const SizedBox(height: 28),
@@ -316,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
         'Administrator access only',
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: Colors.black.withValues(alpha: .45),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .45),
           fontSize: 12,
         ),
       ),
@@ -331,7 +318,7 @@ class _GoogleMark extends StatelessWidget {
   Widget build(BuildContext context) => const Text(
     'G',
     style: TextStyle(
-      color: Color(0xff4285f4),
+      color: AdminTheme.googleBlue,
       fontSize: 20,
       fontWeight: FontWeight.w800,
     ),

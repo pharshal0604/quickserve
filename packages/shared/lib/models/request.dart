@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -33,7 +31,7 @@ class Request {
       agentPhone: readNullable<String>(map, 'agentPhone'),
       serviceType: readRequired<String>(map, 'serviceType'),
       description: readRequired<String>(map, 'description'),
-      preferredDateTime: readRequired<Timestamp>(map, 'preferredDateTime'),
+      preferredDateTime: readDateTime(map, 'preferredDateTime'),
       address: readRequired<String>(map, 'address'),
       priority: RequestPriority.fromStoredValue(
         readRequired<String>(map, 'priority'),
@@ -41,8 +39,8 @@ class Request {
       status: RequestStatus.fromStoredValue(
         readRequired<String>(map, 'status'),
       ),
-      createdAt: readRequired<Timestamp>(map, 'createdAt'),
-      updatedAt: readRequired<Timestamp>(map, 'updatedAt'),
+      createdAt: readDateTime(map, 'createdAt'),
+      updatedAt: readDateTime(map, 'updatedAt'),
       cancellationReason: readNullable<String>(map, 'cancellationReason'),
     );
   }
@@ -69,7 +67,7 @@ class Request {
   final String description;
 
   /// The customer's preferred service timestamp.
-  final Timestamp preferredDateTime;
+  final DateTime preferredDateTime;
 
   /// The service address.
   final String address;
@@ -81,10 +79,10 @@ class Request {
   final RequestStatus status;
 
   /// The request creation timestamp.
-  final Timestamp createdAt;
+  final DateTime createdAt;
 
   /// The request last-update timestamp.
-  final Timestamp updatedAt;
+  final DateTime updatedAt;
 
   /// The cancellation reason, or null when not cancelled.
   final String? cancellationReason;
