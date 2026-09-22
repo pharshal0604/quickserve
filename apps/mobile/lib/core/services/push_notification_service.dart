@@ -56,7 +56,10 @@ class PushNotificationService {
         },
         SetOptions(merge: true),
       );
-      log('Saved FCM token for user $userId');
+      log('=============================================');
+      log('YOUR FCM TOKEN:');
+      log(token);
+      log('=============================================');
     } catch (e) {
       log('Failed to save FCM token: $e');
     }

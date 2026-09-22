@@ -226,14 +226,16 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name',
           'phone',
-          'updatedAt'
+          'updatedAt',
+          'fcmTokens'
         ])
         && unchanged('role')
         && unchanged('email')
         && unchanged('createdAt')
         && request.resource.data.name is string
         && request.resource.data.phone is string
-        && hasValidTimestamp('updatedAt');
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt']) || hasValidTimestamp('updatedAt'))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['fcmTokens']) || request.resource.data.fcmTokens is list);
 
       allow delete: if false;
     }
@@ -504,3 +506,4 @@ service cloud.firestore {
     }
   }
 }
+
