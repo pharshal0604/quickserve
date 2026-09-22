@@ -14,7 +14,7 @@ import 'package:quickserve_mobile/features/profile/presentation/screens/agent_pr
 import 'package:quickserve_mobile/features/profile/presentation/screens/notifications_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/saved_addresses_screen.dart';
-import 'package:quickserve_mobile/features/profile/presentation/screens/edit_agent_profile_screen.dart';
+
 import 'package:quickserve_mobile/features/profile/presentation/screens/security_settings_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/authorized_devices_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_details_screen.dart';
@@ -87,10 +87,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/saved-addresses',
         builder: (context, state) => const SavedAddressesScreen(),
       ),
-      GoRoute(
-        path: '/edit-agent-profile',
-        builder: (context, state) => const EditAgentProfileScreen(),
-      ),
+
       GoRoute(
         path: '/security-settings',
         builder: (context, state) => const SecuritySettingsScreen(),

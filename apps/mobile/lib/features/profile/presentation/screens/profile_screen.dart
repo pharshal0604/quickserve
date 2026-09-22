@@ -95,8 +95,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           return _AgentProfileView(
             user: user,
             authUser: authUser,
+            editing: _editing,
+            saving: _saving,
+            phoneController: _phoneController,
+            onToggleEditing: () => setState(() => _editing = !_editing),
+            onSave: _saveProfile,
             onSettings: () => context.push('/settings'),
-            onHistory: () => context.go('/agent/history'),
             onSignOut: () => ref.read(authRepositoryProvider).signOut(),
             onUnavailable: _showUnavailable,
           );
@@ -137,16 +141,24 @@ class _AgentProfileView extends ConsumerWidget {
   const _AgentProfileView({
     required this.user,
     required this.authUser,
+    required this.editing,
+    required this.saving,
+    required this.phoneController,
+    required this.onToggleEditing,
+    required this.onSave,
     required this.onSettings,
-    required this.onHistory,
     required this.onSignOut,
     required this.onUnavailable,
   });
 
   final shared.User user;
   final fb.User? authUser;
+  final bool editing;
+  final bool saving;
+  final TextEditingController phoneController;
+  final VoidCallback onToggleEditing;
+  final VoidCallback onSave;
   final VoidCallback onSettings;
-  final VoidCallback onHistory;
   final VoidCallback onSignOut;
   final void Function(String feature) onUnavailable;
 
@@ -235,19 +247,25 @@ class _AgentProfileView extends ConsumerWidget {
           Center(
             child: _StatusLabel(label: 'Active', icon: Icons.verified_outlined),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: onToggleEditing,
+            child: Text(editing ? 'Cancel' : 'Edit Profile'),
+          ),
+          if (editing) ...[
+            const SizedBox(height: 14),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: quickServeInputDecoration('Phone Number'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: saving ? null : onSave,
+              child: Text(saving ? 'Saving...' : 'Save changes'),
+            ),
+          ],
           const SizedBox(height: 20),
-          // ── Action rows ─────────────────────────────────────────
-          _CustomerRow(
-            icon: Icons.mail_outline_rounded,
-            title: 'Email Address',
-            onTap: () => context.push('/edit-agent-profile'),
-          ),
-          _CustomerRow(
-            icon: Icons.phone_outlined,
-            title: 'Phone Number',
-            onTap: () => context.push('/edit-agent-profile'),
-          ),
-          const Divider(),
           _CustomerRow(
             icon: Icons.lock_outline_rounded,
             title: 'Security Settings',
@@ -257,17 +275,6 @@ class _AgentProfileView extends ConsumerWidget {
             icon: Icons.phone_android_outlined,
             title: 'Authorized Devices',
             onTap: () => context.push('/authorized-devices'),
-          ),
-          const Divider(),
-          _CustomerRow(
-            icon: Icons.history_rounded,
-            title: 'Service History',
-            onTap: onHistory,
-          ),
-          _CustomerRow(
-            icon: Icons.person_pin_outlined,
-            title: 'Regional Office',
-            onTap: () => context.push('/edit-agent-profile'),
           ),
           const Divider(),
           const Padding(
