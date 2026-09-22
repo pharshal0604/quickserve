@@ -173,31 +173,85 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
-        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: widget.repository.watchUsers(role: RoleNames.agent),
-          builder: (context, snapshot) {
-            final agents = snapshot.data?.docs ?? const [];
-            return SizedBox(
-              height: 360,
-              child: ListView(
+        child: FractionallySizedBox(
+          heightFactor: 0.65,
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: widget.repository.watchUsers(role: RoleNames.agent),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error loading agents', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                );
+              }
+              final agents = snapshot.data?.docs ?? const [];
+              return Column(
                 children: [
-                  const ListTile(title: Text('Reassign service agent')),
-                  for (final doc in agents)
-                    ListTile(
-                      leading: CircleAvatar(
-                        child: Text(adminInitial(doc.data()['name'])),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Assign Service Agent',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  if (agents.isEmpty)
+                    const Expanded(
+                      child: Center(
+                        child: Text('No service agents found.'),
                       ),
-                      title: Text('${doc.data()['name'] ?? doc.id}'),
-                      subtitle: Text(
-                        '${doc.data()['phone'] ?? doc.data()['email'] ?? 'No contact'}',
+                    )
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: agents.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final doc = agents[index];
+                          final data = doc.data();
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            leading: CircleAvatar(
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                              child: Text(adminInitial(data['name'])),
+                            ),
+                            title: Text(
+                              '${data['name'] ?? doc.id}',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              '${data['phone'] ?? data['email'] ?? 'No contact'}',
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            onTap: () => Navigator.pop(context, doc.id),
+                          );
+                        },
                       ),
-                      onTap: () => Navigator.pop(context, doc.id),
                     ),
                 ],
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

@@ -29,7 +29,6 @@ class AdminRepository {
   Stream<QuerySnapshot<Map<String, dynamic>>> watchUsers({String? role}) {
     Query<Map<String, dynamic>> query = firestore
         .collection(CollectionNames.users)
-        .orderBy('createdAt', descending: true)
         .limit(200);
     if (role != null) query = query.where('role', isEqualTo: role);
     return query.snapshots();

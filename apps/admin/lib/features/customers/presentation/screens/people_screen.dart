@@ -30,11 +30,87 @@ class PeopleScreen extends StatefulWidget {
   State<PeopleScreen> createState() => _PeopleScreenState();
 }
 
+class _PeopleDataSource extends DataTableSource {
+  _PeopleDataSource(this.docs, this.context, this.widget);
+
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final BuildContext context;
+  final PeopleScreen widget;
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= docs.length) return null;
+    final doc = docs[index];
+    final data = doc.data();
+
+    return DataRow(
+      onSelectChanged: (_) {
+        final onDetails = widget.onDetails;
+        if (onDetails != null) {
+          onDetails((userId: doc.id, data: data));
+          return;
+        }
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                widget.detailsBuilder?.call(context, doc.id, data) ??
+                PersonDetailsScreen(
+                  repository: widget.repository,
+                  userId: doc.id,
+                  role: widget.role,
+                  data: data,
+                ),
+          ),
+        );
+      },
+      cells: [
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                child: Text(
+                  adminInitial(data['name']),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text('${data['name'] ?? doc.id}', style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+        DataCell(Text('${data['email'] ?? 'No email'}')),
+        DataCell(Text('${data['phone'] ?? 'No phone'}')),
+        DataCell(
+          Chip(
+            label: Text('${data['status'] ?? 'active'}'),
+            labelStyle: const TextStyle(fontSize: 11),
+            padding: EdgeInsets.zero,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get rowCount => docs.length;
+
+  @override
+  int get selectedRowCount => 0;
+}
+
 class _PeopleScreenState extends State<PeopleScreen> {
   String search = '';
   String stateFilter = 'all';
-  int page = 0;
-  static const pageSize = 25;
+  int _rowsPerPage = PaginatedDataTable.defaultRowsPerPage;
+  int _sortColumnIndex = 0;
+  bool _sortAscending = true;
 
   @override
   Widget build(
@@ -58,11 +134,21 @@ class _PeopleScreenState extends State<PeopleScreen> {
         return (needle.isEmpty || text.contains(needle)) &&
             (stateFilter == 'all' || accountState == stateFilter);
       }).toList();
-      final start = page * pageSize;
-      final end = (start + pageSize).clamp(0, filtered.length);
-      final docs = start >= filtered.length
-          ? const <QueryDocumentSnapshot<Map<String, dynamic>>>[]
-          : filtered.sublist(start, end);
+
+      if (_sortColumnIndex == 0) {
+        filtered.sort((a, b) {
+          final aName = (a.data()['name'] ?? '').toString().toLowerCase();
+          final bName = (b.data()['name'] ?? '').toString().toLowerCase();
+          return _sortAscending ? aName.compareTo(bName) : bName.compareTo(aName);
+        });
+      } else if (_sortColumnIndex == 1) {
+        filtered.sort((a, b) {
+          final aEmail = (a.data()['email'] ?? '').toString().toLowerCase();
+          final bEmail = (b.data()['email'] ?? '').toString().toLowerCase();
+          return _sortAscending ? aEmail.compareTo(bEmail) : bEmail.compareTo(aEmail);
+        });
+      }
+
       final title = widget.role == RoleNames.customer
           ? 'Customers'
           : 'Service Agents';
@@ -80,42 +166,44 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Showing ${filtered.length} matching records',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     SizedBox(
-                      width: 360,
+                      width: 320,
                       child: TextField(
                         maxLength: 100,
                         decoration: const InputDecoration(
                           labelText: 'Search by name, email, phone, or ID',
                           counterText: '',
+                          prefixIcon: Icon(Icons.search),
                         ),
                         onChanged: (value) => setState(() {
                           search = value;
-                          page = 0;
                         }),
                       ),
                     ),
                     DropdownButton<String>(
                       value: stateFilter,
+                      underline: const SizedBox(),
                       items: const [
                         DropdownMenuItem(
                           value: 'all',
@@ -136,94 +224,58 @@ class _PeopleScreenState extends State<PeopleScreen> {
                       ],
                       onChanged: (value) => setState(() {
                         stateFilter = value ?? 'all';
-                        page = 0;
                       }),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Expanded(
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: snapshot.hasError
-                    ? Center(
-                        child: Text('Unable to load $title: ${snapshot.error}'),
-                      )
-                    : docs.isEmpty
-                    ? const Center(
-                        child: Text('No records match the current filters.'),
-                      )
-                    : ListView.separated(
-                        itemCount: docs.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final doc = docs[index];
-                          final data = doc.data();
-                          return ListTile(
-                            leading: CircleAvatar(
-                              child: Text(adminInitial(data['name'])),
+              child: snapshot.hasError
+                  ? Center(
+                      child: Text('Unable to load $title: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    )
+                  : ListView(
+                      children: [
+                        PaginatedDataTable(
+                          source: _PeopleDataSource(filtered, context, widget),
+                          header: const Text('Directory'),
+                          rowsPerPage: _rowsPerPage,
+                          onRowsPerPageChanged: (value) {
+                            setState(() {
+                              _rowsPerPage = value ?? PaginatedDataTable.defaultRowsPerPage;
+                            });
+                          },
+                          availableRowsPerPage: const [10, 25, 50, 100],
+                          sortColumnIndex: _sortColumnIndex,
+                          sortAscending: _sortAscending,
+                          showCheckboxColumn: false,
+                          columns: [
+                            DataColumn(
+                              label: const Text('Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onSort: (columnIndex, ascending) => setState(() {
+                                _sortColumnIndex = columnIndex;
+                                _sortAscending = ascending;
+                              }),
                             ),
-                            title: Text('${data['name'] ?? doc.id}'),
-                            subtitle: Text(
-                              '${data['email'] ?? 'No email'}\n'
-                              '${data['phone'] ?? 'No phone'}',
+                            DataColumn(
+                              label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                              onSort: (columnIndex, ascending) => setState(() {
+                                _sortColumnIndex = columnIndex;
+                                _sortAscending = ascending;
+                              }),
                             ),
-                            isThreeLine: true,
-                            trailing: Wrap(
-                              spacing: 8,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Chip(
-                                  label: Text('${data['status'] ?? 'active'}'),
-                                ),
-                                const Icon(Icons.chevron_right),
-                              ],
+                            const DataColumn(
+                              label: Text('Phone', style: TextStyle(fontWeight: FontWeight.bold)),
                             ),
-                            onTap: () {
-                              final onDetails = widget.onDetails;
-                              if (onDetails != null) {
-                                onDetails((userId: doc.id, data: data));
-                                return;
-                              }
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      widget.detailsBuilder?.call(
-                                        context,
-                                        doc.id,
-                                        data,
-                                      ) ??
-                                      PersonDetailsScreen(
-                                        repository: widget.repository,
-                                        userId: doc.id,
-                                        role: widget.role,
-                                        data: data,
-                                      ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text('Page ${page + 1}'),
-                IconButton(
-                  onPressed: page == 0 ? null : () => setState(() => page--),
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                IconButton(
-                  onPressed: docs.length < pageSize
-                      ? null
-                      : () => setState(() => page++),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
+                            const DataColumn(
+                              label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
