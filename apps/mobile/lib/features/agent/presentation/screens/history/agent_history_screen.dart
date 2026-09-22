@@ -55,24 +55,24 @@ class _AgentHistoryScreenState extends ConsumerState<AgentHistoryScreen> {
                 AppSpacing.md,
                 AppSpacing.sm,
               ),
-              child: SizedBox(
-                height: 38,
-                child: TextField(
-                  onChanged: (value) => setState(() => _query = value),
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
-                  decoration: InputDecoration(
-                    hintText: 'Search by ID, customer, or service...',
-                    hintStyle: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 12,
-                    ),
-                    prefixIcon: const Icon(Icons.search, size: 16),
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 34,
-                      minHeight: 34,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                    // Fill, borders, and focus colors come from inputDecorationTheme.
+              child: TextField(
+                onChanged: (value) => setState(() => _query = value),
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: 'Search by ID, customer, or service...',
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  // Fill, borders, and focus colors come from inputDecorationTheme.
                 ),
               ),
             ),
@@ -264,24 +264,23 @@ class _HistoryFilterChip extends StatelessWidget {
 
     return Material(
       color: background,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 13, color: foreground),
+                Icon(icon, size: 16, color: foreground),
                 const SizedBox(width: 4),
               ],
               Text(
                 label,
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: foreground,
-                  fontSize: 10,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

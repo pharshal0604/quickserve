@@ -193,15 +193,20 @@ class _AssignedRequestsBody extends StatelessWidget {
         TextField(
           controller: controller,
           onChanged: onSearchChanged,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12),
+          style: Theme.of(context).textTheme.bodyMedium,
           decoration: InputDecoration(
             hintText: 'Search by ID, name or service...',
-            hintStyle: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(fontSize: 12),
-            prefixIcon: const Icon(Icons.search, size: 17),
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            prefixIcon: const Icon(Icons.search, size: 20),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 40,
+            ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 0,
+              horizontal: 16,
+              vertical: 12,
             ),
           ),
         ),
@@ -320,7 +325,7 @@ class _Pill extends StatelessWidget {
       onTap: () => onTap(value),
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected
               ? Theme.of(context).colorScheme.primary
@@ -334,7 +339,7 @@ class _Pill extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: selected
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).colorScheme.onSurfaceVariant,

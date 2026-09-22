@@ -156,324 +156,143 @@ class _AgentProfileView extends ConsumerWidget {
     final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Agent Profile',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'App settings',
-                    onPressed: onSettings,
-                    icon: const Icon(Icons.settings_outlined, size: 20),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: _lineColor(context)),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 16, 12, 22),
-                children: [
-                  Center(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        CircleAvatar(
-                          radius: 42,
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer,
-                          backgroundImage:
-                              avatarUrl == null || avatarUrl.isEmpty
-                              ? null
-                              : NetworkImage(avatarUrl),
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  initial.toUpperCase(),
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        Positioned(
-                          right: -3,
-                          bottom: 1,
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .scaffoldBackgroundColor,
-                                width: 3,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.check,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              size: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    user.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    'Field Service Agent',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  Center(
-                    child: _StatusLabel(
-                      label: 'Active',
-                      icon: Icons.verified_outlined,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  _AgentSection(
-                    title: 'CONTACT INFORMATION',
-                    children: [
-                      _AgentRow(
-                        icon: Icons.mail_outline_rounded,
-                        title: 'Email Address',
-                        subtitle: user.email,
-                        onTap: () => context.push('/edit-agent-profile'),
-                      ),
-                      _AgentRow(
-                        icon: Icons.phone_outlined,
-                        title: 'Phone Number',
-                        subtitle: user.phone,
-                        onTap: () => context.push('/edit-agent-profile'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _AgentSection(
-                    title: 'SECURITY & ACCESS',
-                    children: [
-                      _AgentRow(
-                        icon: Icons.lock_outline_rounded,
-                        title: 'Security Settings',
-                        subtitle: 'Manage password and account access',
-                        onTap: () => context.push('/security-settings'),
-                      ),
-                      _AgentRow(
-                        icon: Icons.phone_android_outlined,
-                        title: 'Authorized Devices',
-                        subtitle: 'Manage active sessions',
-                        onTap: () => context.push('/authorized-devices'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _AgentSection(
-                    title: 'WORKSPACE',
-                    children: [
-                      _AgentRow(
-                        icon: Icons.history_rounded,
-                        title: 'Service History',
-                        subtitle: 'View completed and cancelled work',
-                        onTap: onHistory,
-                      ),
-                      _AgentRow(
-                        icon: Icons.person_pin_outlined,
-                        title: 'Regional Office',
-                        subtitle:
-                            user.office ??
-                            'Office information is not in your profile',
-                        onTap: () => context.push('/edit-agent-profile'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  _AgentSection(
-                    title: 'PREFERENCES',
-                    children: [const _SharedProfileSettings()],
-                  ),
-                  SizedBox(height: 20),
-                  InkWell(
-                    onTap: onSignOut,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 18,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.logout_rounded,
-                            color: Theme.of(context).colorScheme.error,
-                            size: 20,
-                          ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 8,
-                      letterSpacing: .8,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            tooltip: 'App settings',
+            onPressed: onSettings,
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
       ),
       bottomNavigationBar: const AgentBottomNav(currentIndex: 3),
-    );
-  }
-}
-
-class _AgentSection extends StatelessWidget {
-  const _AgentSection({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: .7,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: _lineColor(context)),
-          ),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-}
-
-class _AgentRow extends StatelessWidget {
-  const _AgentRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: AppColors.mutedText),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+        children: [
+          // ── Avatar ─────────────────────────────────────────────
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 42,
+                  backgroundColor: AppColors.mintSurface,
+                  backgroundImage: avatarUrl == null || avatarUrl.isEmpty
+                      ? null
+                      : NetworkImage(avatarUrl),
+                  child: avatarUrl == null || avatarUrl.isEmpty
+                      ? Text(
+                          initial.toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  right: -3,
+                  bottom: 1,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        width: 3,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: 13,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.mutedText, fontSize: 10),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(
-              Icons.chevron_right,
-              size: 18,
+          ),
+          const SizedBox(height: 12),
+          // ── Name & role ─────────────────────────────────────────
+          Text(
+            user.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            user.email,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.mutedText),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: _StatusLabel(label: 'Active', icon: Icons.verified_outlined),
+          ),
+          const SizedBox(height: 20),
+          // ── Action rows ─────────────────────────────────────────
+          _CustomerRow(
+            icon: Icons.mail_outline_rounded,
+            title: 'Email Address',
+            onTap: () => context.push('/edit-agent-profile'),
+          ),
+          _CustomerRow(
+            icon: Icons.phone_outlined,
+            title: 'Phone Number',
+            onTap: () => context.push('/edit-agent-profile'),
+          ),
+          const Divider(),
+          _CustomerRow(
+            icon: Icons.lock_outline_rounded,
+            title: 'Security Settings',
+            onTap: () => context.push('/security-settings'),
+          ),
+          _CustomerRow(
+            icon: Icons.phone_android_outlined,
+            title: 'Authorized Devices',
+            onTap: () => context.push('/authorized-devices'),
+          ),
+          const Divider(),
+          _CustomerRow(
+            icon: Icons.history_rounded,
+            title: 'Service History',
+            onTap: onHistory,
+          ),
+          _CustomerRow(
+            icon: Icons.person_pin_outlined,
+            title: 'Regional Office',
+            onTap: () => context.push('/edit-agent-profile'),
+          ),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _SharedProfileSettings(),
+          ),
+          const Divider(),
+          _CustomerRow(
+            icon: Icons.logout_rounded,
+            title: 'Sign Out',
+            color: Theme.of(context).colorScheme.error,
+            onTap: onSignOut,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 8,
+              letterSpacing: .8,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

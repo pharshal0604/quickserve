@@ -207,7 +207,7 @@ class _AgentHomeContent extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               SectionHeader(
                 title: 'Upcoming Tasks',
-                action: 'View All â†’',
+                action: 'View all',
                 onTap: () => context.go('/agent/requests'),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -226,10 +226,6 @@ class _AgentHomeContent extends StatelessWidget {
                 ...upcoming
                     .take(3)
                     .map((item) => _UpcomingTaskCard(item: item)),
-              const SizedBox(height: AppSpacing.lg),
-              _AvailabilityCard(
-                onTap: () => _showComingSoon(context, 'Availability'),
-              ),
             ],
           ),
         ),
@@ -454,37 +450,6 @@ class _UpcomingTaskCard extends StatelessWidget {
               part.isEmpty ? part : part[0].toUpperCase() + part.substring(1),
         )
         .join(' ');
-  }
-}
-
-class _AvailabilityCard extends StatelessWidget {
-  const _AvailabilityCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.mintSurface,
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          child: const Icon(Icons.check),
-        ),
-        title: Text(
-          'Ready for your next shift?',
-          style: Theme.of(context).textTheme.titleSmall
-              ?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        subtitle: const Text(
-          'Keep your availability up to date for new requests.',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-      ),
-    );
   }
 }
 
