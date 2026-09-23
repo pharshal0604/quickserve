@@ -7,6 +7,9 @@ import 'package:quickserve_mobile/config/theme/theme_provider.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:quickserve_mobile/core/services/push_notification_service.dart';
 
+/// Global key to show SnackBars across the app
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 /// The root application widget for QuickServe mobile.
 class QuickServeApp extends ConsumerWidget {
   /// Creates the root application widget.
@@ -28,6 +31,7 @@ class QuickServeApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       title: 'QuickServe',
       theme: AppTheme.light(),

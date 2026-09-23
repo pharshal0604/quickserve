@@ -1,7 +1,9 @@
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quickserve_mobile/app.dart';
 
 final pushNotificationServiceProvider = Provider<PushNotificationService>((ref) {
   return PushNotificationService();
@@ -37,8 +39,39 @@ class PushNotificationService {
         // 4. Handle foreground messages
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
           log('Received FCM message in foreground: ${message.messageId}');
-          // In a real app, you might show a local notification here
-          // using flutter_local_notifications if desired.
+          
+          final notification = message.notification;
+          if (notification != null) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+                backgroundColor: const Color(0xFF2C3E50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                duration: const Duration(seconds: 5),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (notification.title != null)
+                      Text(
+                        notification.title!,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    if (notification.body != null)
+                      Text(notification.body!),
+                  ],
+                ),
+                action: SnackBarAction(
+                  label: 'View',
+                  textColor: const Color(0xFF1ABC9C),
+                  onPressed: () {
+                    // Could use router here to navigate to specific request if data contains requestId
+                  },
+                ),
+              ),
+            );
+          }
         });
       } else {
         log('User declined or has not accepted FCM permission');

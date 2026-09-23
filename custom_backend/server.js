@@ -35,6 +35,16 @@ app.get('/', (req, res) => {
 // Helper to send push notification to a specific user by UID
 async function sendNotificationToUser(userId, title, body, data = {}) {
   try {
+    // 1. Save to in-app notification history (Firestore)
+    await admin.firestore().collection('users').doc(userId).collection('notifications').add({
+      title,
+      body,
+      data,
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // 2. Send actual push notification via FCM
     const userDoc = await admin.firestore().collection('users').doc(userId).get();
     if (!userDoc.exists) return null;
 
