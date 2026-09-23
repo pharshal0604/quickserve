@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared/shared.dart' as shared;
 
@@ -265,6 +269,14 @@ final class RequestRepository {
           'timestamp': FieldValue.serverTimestamp(),
         });
       });
+
+      // Trigger notification via Render backend
+      _sendNotification(
+        requestId: requestId,
+        status: shared.StatusNames.cancelled,
+        customerId: customerId,
+        agentId: request.agentId,
+      );
     } catch (error) {
       throw _mapError(error, 'Could not cancel the request. Please try again.');
     }
@@ -284,4 +296,32 @@ RequestRepositoryException _mapError(Object error, String message) {
     return RequestRepositoryException(error.code, safeMessage);
   }
   return RequestRepositoryException('request-operation-failed', message);
+}
+
+void _sendNotification({
+  required String requestId,
+  required String status,
+  required String customerId,
+  String? agentId,
+}) async {
+  try {
+    final doc = await FirebaseFirestore.instance.collection(shared.CollectionNames.requests).doc(requestId).get();
+    if (!doc.exists) return;
+    final data = doc.data()!;
+    final agentName = data['agentName'] as String?;
+    final serviceName = data['serviceType'] as String?;
+
+    await http.post(
+      Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-status-change'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'requestId': requestId,
+        'status': status,
+        'customerId': customerId,
+        'agentId': agentId,
+        'agentName': agentName,
+        'serviceName': serviceName,
+      }),
+    ).timeout(const Duration(seconds: 3));
+  } catch (_) {}
 }

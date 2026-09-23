@@ -90,12 +90,40 @@ class AdminRepository {
     required String requestId,
     required String status,
     String? note,
-  }) => _mutateRequest(
-    requestId: requestId,
-    status: status,
-    action: AuditEvent.requestUpdated.toStoredValue(),
-    note: note,
-  );
+  }) async {
+    await _mutateRequest(
+      requestId: requestId,
+      status: status,
+      action: AuditEvent.requestUpdated.toStoredValue(),
+      note: note,
+    );
+
+    // Trigger notification via Render backend
+    try {
+      final doc = await firestore.collection(CollectionNames.requests).doc(requestId).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        final customerId = data['customerId'];
+        final agentId = data['agentId'];
+        final agentName = data['agentName'];
+        final serviceName = data['serviceType'];
+
+        final url = Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-status-change');
+        await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'requestId': requestId,
+            'status': status,
+            'customerId': customerId,
+            'agentId': agentId,
+            'agentName': agentName,
+            'serviceName': serviceName,
+          }),
+        ).timeout(const Duration(seconds: 3));
+      }
+    } catch (_) {}
+  }
 
   Future<void> updateAgentSchedule({
     required String agentId,

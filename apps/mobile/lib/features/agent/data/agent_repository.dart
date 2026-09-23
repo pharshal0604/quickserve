@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/core/error/app_exceptions.dart';
@@ -153,6 +155,13 @@ final class AgentRepository {
           'timestamp': FieldValue.serverTimestamp(),
         });
       });
+
+      // Trigger notification via Render backend
+      _sendNotification(
+        requestId: requestId,
+        status: nextStatus,
+        agentId: agentId,
+      );
     } catch (error) {
       if (error is RequestRepositoryException) rethrow;
       if (error is FirebaseException) {
@@ -172,4 +181,32 @@ final class AgentRepository {
       );
     }
   }
+}
+
+void _sendNotification({
+  required String requestId,
+  required String status,
+  required String agentId,
+}) async {
+  try {
+    final doc = await FirebaseFirestore.instance.collection(shared.CollectionNames.requests).doc(requestId).get();
+    if (!doc.exists) return;
+    final data = doc.data()!;
+    final customerId = data['customerId'] as String?;
+    final agentName = data['agentName'] as String?;
+    final serviceName = data['serviceType'] as String?;
+
+    await http.post(
+      Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-status-change'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'requestId': requestId,
+        'status': status,
+        'agentId': agentId,
+        'customerId': customerId,
+        'agentName': agentName,
+        'serviceName': serviceName,
+      }),
+    ).timeout(const Duration(seconds: 3));
+  } catch (_) {}
 }
