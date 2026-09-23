@@ -74,8 +74,8 @@ class AdminRepository {
         final customerId = data['customerId'];
         final agentName = data['agentName'];
         if (customerId != null && agentName != null) {
-          // Replace with production Render URL when deployed
-          final url = Uri.parse('http://localhost:3000/api/notify-assignment');
+          // Live Render custom backend URL
+          final url = Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-assignment');
           await http.post(
             url,
             headers: {'Content-Type': 'application/json'},
