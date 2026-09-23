@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared/shared.dart';
@@ -49,16 +51,40 @@ class AdminRepository {
           .limit(50)
           .snapshots();
 
+
+
+
   Future<void> assignRequest({
     required String requestId,
     required String agentId,
-  }) => _mutateRequest(
-    requestId: requestId,
-    status: StatusNames.assigned,
-    agentId: agentId,
-    action: AuditEvent.requestAssigned.toStoredValue(),
-    note: 'Assigned by administrator',
-  );
+  }) async {
+    await _mutateRequest(
+      requestId: requestId,
+      status: StatusNames.assigned,
+      agentId: agentId,
+      action: AuditEvent.requestAssigned.toStoredValue(),
+      note: 'Assigned by administrator',
+    );
+    
+    // Trigger the Render custom backend
+    try {
+      final doc = await firestore.collection(CollectionNames.requests).doc(requestId).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        final customerId = data['customerId'];
+        final agentName = data['agentName'];
+        if (customerId != null && agentName != null) {
+          // Replace with production Render URL when deployed
+          final url = Uri.parse('http://localhost:3000/api/notify-assignment');
+          await http.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'customerId': customerId, 'agentName': agentName}),
+          ).timeout(const Duration(seconds: 3));
+        }
+      }
+    } catch (_) {}
+  }
 
   Future<void> updateStatus({
     required String requestId,
