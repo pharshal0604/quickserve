@@ -112,6 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             email: user.email ?? '',
             phone: user.phoneNumber ?? '',
           );
+          ref.invalidate(userProfileProvider);
         }
         await _validateSignedInRole(user.uid);
       }
