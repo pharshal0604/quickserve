@@ -167,139 +167,137 @@ class _AgentProfileView extends ConsumerWidget {
     final avatarUrl = authUser?.photoURL;
     final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            tooltip: 'App settings',
-            onPressed: onSettings,
-            icon: const Icon(Icons.settings_outlined),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const AgentBottomNav(currentIndex: 3),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-        children: [
-          // ── Avatar ─────────────────────────────────────────────
-          Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CircleAvatar(
-                  radius: 42,
-                  backgroundColor: AppColors.mintSurface,
-                  backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-                      ? null
-                      : NetworkImage(avatarUrl),
-                  child: avatarUrl == null || avatarUrl.isEmpty
-                      ? Text(
-                          initial.toUpperCase(),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        )
-                      : null,
-                ),
-                Positioned(
-                  right: -3,
-                  bottom: 1,
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        width: 3,
+    return HomeBackScope(
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          centerTitle: true,
+          title: const Text('Profile'),
+        ),
+        bottomNavigationBar: const AgentBottomNav(currentIndex: 3),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+          children: [
+            // ── Avatar ─────────────────────────────────────────────
+            Center(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 42,
+                    backgroundColor: AppColors.mintSurface,
+                    backgroundImage: avatarUrl == null || avatarUrl.isEmpty
+                        ? null
+                        : NetworkImage(avatarUrl),
+                    child: avatarUrl == null || avatarUrl.isEmpty
+                        ? Text(
+                            initial.toUpperCase(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    right: -3,
+                    bottom: 1,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          width: 3,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        size: 13,
                       ),
                     ),
-                    child: Icon(
-                      Icons.check,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      size: 13,
-                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // ── Name & role ─────────────────────────────────────────
-          Text(
-            user.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            user.email,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.mutedText),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: _StatusLabel(label: 'Active', icon: Icons.verified_outlined),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: onToggleEditing,
-            child: Text(editing ? 'Cancel' : 'Edit Profile'),
-          ),
-          if (editing) ...[
-            const SizedBox(height: 14),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: quickServeInputDecoration('Phone Number'),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-            FilledButton(
-              onPressed: saving ? null : onSave,
-              child: Text(saving ? 'Saving...' : 'Save changes'),
+            // ── Name & role ─────────────────────────────────────────
+            Text(
+              user.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              user.email,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.mutedText),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: _StatusLabel(
+                label: 'Active',
+                icon: Icons.verified_outlined,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onToggleEditing,
+              child: Text(editing ? 'Cancel' : 'Edit Profile'),
+            ),
+            if (editing) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: quickServeInputDecoration('Phone Number'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: saving ? null : onSave,
+                child: Text(saving ? 'Saving...' : 'Save changes'),
+              ),
+            ],
+            const SizedBox(height: 20),
+            _CustomerRow(
+              icon: Icons.lock_outline_rounded,
+              title: 'Security Settings',
+              onTap: () => context.push('/security-settings'),
+            ),
+            _CustomerRow(
+              icon: Icons.phone_android_outlined,
+              title: 'Authorized Devices',
+              onTap: () => context.push('/authorized-devices'),
+            ),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SharedProfileSettings(),
+            ),
+            const Divider(),
+            _CustomerRow(
+              icon: Icons.logout_rounded,
+              title: 'Sign Out',
+              color: Theme.of(context).colorScheme.error,
+              onTap: onSignOut,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 8,
+                letterSpacing: .8,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
-          const SizedBox(height: 20),
-          _CustomerRow(
-            icon: Icons.lock_outline_rounded,
-            title: 'Security Settings',
-            onTap: () => context.push('/security-settings'),
-          ),
-          _CustomerRow(
-            icon: Icons.phone_android_outlined,
-            title: 'Authorized Devices',
-            onTap: () => context.push('/authorized-devices'),
-          ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: _SharedProfileSettings(),
-          ),
-          const Divider(),
-          _CustomerRow(
-            icon: Icons.logout_rounded,
-            title: 'Sign Out',
-            color: Theme.of(context).colorScheme.error,
-            onTap: onSignOut,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 8,
-              letterSpacing: .8,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -374,12 +372,6 @@ class _CustomerProfileView extends ConsumerWidget {
           automaticallyImplyLeading: false,
           centerTitle: true,
           title: const Text('Profile'),
-          actions: [
-            IconButton(
-              onPressed: onNotifications,
-              icon: const Icon(Icons.notifications_none_rounded),
-            ),
-          ],
         ),
         bottomNavigationBar: const CustomerBottomNav(currentIndex: 3),
         body: ListView(

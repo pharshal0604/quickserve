@@ -134,9 +134,15 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                       style: TextStyle(color: mutedColor),
                     ),
                     const Spacer(),
+                    Icon(
+                      Icons.flag_outlined,
+                      size: 15,
+                      color: mutedColor,
+                    ),
+                    const SizedBox(width: 4),
                     Text(
-                      request.priority.toStoredValue(),
-                      style: TextStyle(color: mutedColor),
+                      request.priority.name[0].toUpperCase() + request.priority.name.substring(1),
+                      style: TextStyle(color: mutedColor, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

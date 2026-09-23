@@ -1,3 +1,4 @@
+import 'package:shared/entities/counter_entity.dart';
 import 'package:shared/utils/model_helpers.dart';
 
 /// A yearly request-code counter stored in `counters/{year}`.
@@ -25,4 +26,14 @@ class Counter {
 
   @override
   int get hashCode => lastRequestNumber.hashCode;
+
+  /// Converts this model to a pure-Dart domain entity.
+  CounterEntity toEntity() => CounterEntity(
+    lastRequestNumber: lastRequestNumber,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory Counter.fromEntity(CounterEntity entity) => Counter(
+    lastRequestNumber: entity.lastRequestNumber,
+  );
 }

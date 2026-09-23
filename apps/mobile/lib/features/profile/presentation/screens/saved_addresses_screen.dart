@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
@@ -104,8 +105,27 @@ class _SavedAddressesScreenState extends ConsumerState<SavedAddressesScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Saved Addresses')),
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+          title: const Text('Saved Addresses'),
+        ),
       body: profile.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error loading addresses: $e')),
@@ -171,6 +191,7 @@ class _SavedAddressesScreenState extends ConsumerState<SavedAddressesScreen> {
               child: const Icon(Icons.add),
             )
           : null,
+      ),
     );
   }
 }

@@ -1,114 +1,122 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
+import 'package:quickserve_admin/injection_container.dart';
 
-class RequestDetailsScreen extends StatefulWidget {
+class RequestDetailsScreen extends ConsumerStatefulWidget {
   const RequestDetailsScreen({
-    required this.repository,
     required this.requestId,
-    required this.data,
     super.key,
   });
 
-  final AdminRepository repository;
   final String requestId;
-  final Map<String, dynamic> data;
 
   @override
-  State<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
+  ConsumerState<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
 }
 
-class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
-  late String status;
+class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
+  String? status;
   String? agentId;
   bool saving = false;
   String? error;
 
   @override
-  void initState() {
-    super.initState();
-    status = widget.data['status'] as String? ?? StatusNames.created;
-    agentId = widget.data['agentId'] as String?;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final code = '${widget.data['requestCode'] ?? widget.requestId}';
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: _RequestHeader(
-          code: code,
-          status: status,
-          data: widget.data,
-          onBack: () => Navigator.of(context).pop(),
-          onStatusTap: _showStatusPicker,
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Request actions',
-            onSelected: (value) {
-              if (value == 'status') _showStatusPicker();
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'status', child: Text('Update status')),
-            ],
+    return StreamBuilder<List<({String id, RequestEntity request})>>(
+      stream: ref.watch(watchRequestsProvider).call(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        
+        final docIndex = snapshot.data!.indexWhere((doc) => doc.id == widget.requestId);
+        if (docIndex == -1) {
+          return const Scaffold(body: Center(child: Text('Request not found')));
+        }
+        
+        final doc = snapshot.data![docIndex];
+        final request = doc.request;
+        final String currentStatus = status ?? request.status.toStoredValue();
+        final currentAgentId = agentId ?? request.agentId;
+        
+        final code = request.requestCode;
+        
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            titleSpacing: 0,
+            title: _RequestHeader(
+              code: code,
+              status: currentStatus,
+              request: request,
+              onBack: () => Navigator.of(context).pop(),
+              onStatusTap: () => _showStatusPicker(currentStatus),
+            ),
+            actions: [
+              PopupMenuButton<String>(
+                tooltip: 'Request actions',
+                onSelected: (value) {
+                  if (value == 'status') _showStatusPicker(currentStatus);
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'status', child: Text('Update status')),
+                ],
           ),
           const SizedBox(width: 12),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: constraints.maxWidth >= 980
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 7, child: _mainColumn(context)),
-                    const SizedBox(width: 16),
-                    SizedBox(width: 330, child: _sideColumn(context)),
-                  ],
-                )
-              : Column(
-                  children: [
-                    _mainColumn(context),
-                    const SizedBox(height: 16),
-                    _sideColumn(context),
-                  ],
-                ),
-        ),
-      ),
+            ],
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+              child: constraints.maxWidth >= 980
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: _mainColumn(context, request)),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 330, child: _sideColumn(context, request, currentStatus, currentAgentId)),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _mainColumn(context, request),
+                        const SizedBox(height: 16),
+                        _sideColumn(context, request, currentStatus, currentAgentId),
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _mainColumn(BuildContext context) => Column(
+  Widget _mainColumn(BuildContext context, RequestEntity request) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _ServiceOverviewCard(data: widget.data),
+      _ServiceOverviewCard(request: request),
       const SizedBox(height: 16),
-      _TimelineCard(repository: widget.repository, requestId: widget.requestId),
+      _TimelineCard(requestId: widget.requestId),
     ],
   );
 
-  Widget _sideColumn(BuildContext context) => Column(
+  Widget _sideColumn(BuildContext context, RequestEntity request, String currentStatus, String? currentAgentId) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _CustomerInformationCard(
-        repository: widget.repository,
-        userId: widget.data['customerId'] as String?,
+        userId: request.customerId,
       ),
       const SizedBox(height: 16),
       _AgentInformationCard(
-        repository: widget.repository,
-        userId: agentId,
-        assignedAt: widget.data['updatedAt'],
-        enabled: status == StatusNames.created && !saving,
-        onReassign: _showAgentPicker,
+        userId: currentAgentId,
+        assignedAt: request.updatedAt,
+        enabled: currentStatus == StatusNames.created && !saving,
+        onReassign: () => _showAgentPicker(currentStatus),
         onContact: () => ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Agent contact actions are not connected yet.'),
@@ -125,11 +133,11 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     ],
   );
 
-  Future<void> _showStatusPicker() async {
+  Future<void> _showStatusPicker(String currentStatus) async {
     final options = [
-      status,
+      currentStatus,
       ...StatusNames.values.where(
-        (value) => value != status && canTransition(status, value),
+        (value) => value != currentStatus && canTransition(currentStatus, value),
       ),
     ];
     final next = await showModalBottomSheet<String>(
@@ -146,7 +154,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   color: adminStatusColor(context, value),
                 ),
                 title: Text(adminLabel(value)),
-                trailing: value == status ? const Icon(Icons.check) : null,
+                trailing: value == currentStatus ? const Icon(Icons.check) : null,
                 onTap: () => Navigator.pop(context, value),
               ),
           ],
@@ -154,13 +162,13 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
     );
     if (next != null && mounted) {
-      await widget.repository.updateStatus(requestId: widget.requestId, status: next);
+      await ref.read(updateRequestStatusProvider).call(widget.requestId, next);
       if (mounted) setState(() => status = next);
     }
   }
 
-  Future<void> _showAgentPicker() async {
-    if (status != StatusNames.created) {
+  Future<void> _showAgentPicker(String currentStatus) async {
+    if (currentStatus != StatusNames.created) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -180,8 +188,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       builder: (context) => SafeArea(
         child: FractionallySizedBox(
           heightFactor: 0.65,
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: widget.repository.watchUsers(role: RoleNames.agent),
+          child: StreamBuilder<List<({String id, UserEntity user})>>(
+            stream: ref.watch(watchAgentsProvider).call(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -191,7 +199,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                   child: Text('Error loading agents', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 );
               }
-              final agents = snapshot.data?.docs ?? const [];
+              final agents = snapshot.data ?? [];
               return Column(
                 children: [
                   const SizedBox(height: 12),
@@ -223,20 +231,20 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                         separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final doc = agents[index];
-                          final data = doc.data();
+                          final user = doc.user;
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                             leading: CircleAvatar(
                               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                               foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                              child: Text(adminInitial(data['name'])),
+                              child: Text(adminInitial(user.name)),
                             ),
                             title: Text(
-                              '${data['name'] ?? doc.id}',
+                              user.name,
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(
-                              '${data['phone'] ?? data['email'] ?? 'No contact'}',
+                              user.phone,
                               style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ),
                             trailing: Icon(
@@ -262,10 +270,7 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       error = null;
     });
     try {
-      await widget.repository.assignRequest(
-        requestId: widget.requestId,
-        agentId: selected,
-      );
+      await ref.read(assignRequestProvider).call(widget.requestId, selected);
       if (mounted) setState(() => status = StatusNames.assigned);
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -279,14 +284,14 @@ class _RequestHeader extends StatelessWidget {
   const _RequestHeader({
     required this.code,
     required this.status,
-    required this.data,
+    required this.request,
     required this.onBack,
     required this.onStatusTap,
   });
 
   final String code;
   final String status;
-  final Map<String, dynamic> data;
+  final RequestEntity request;
   final VoidCallback onBack;
   final VoidCallback onStatusTap;
 
@@ -308,7 +313,7 @@ class _RequestHeader extends StatelessWidget {
       const SizedBox(width: 14),
       Flexible(
         child: Text(
-          'Placed on ${_date(data['createdAt'])} · ${_time(data['preferredDateTime'])}',
+          'Placed on ${_date(request.createdAt)} · ${_time(request.preferredDateTime)}',
           style: Theme.of(context).textTheme.bodySmall
               ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           overflow: TextOverflow.ellipsis,
@@ -319,13 +324,13 @@ class _RequestHeader extends StatelessWidget {
 }
 
 class _ServiceOverviewCard extends StatelessWidget {
-  const _ServiceOverviewCard({required this.data});
-  final Map<String, dynamic> data;
+  const _ServiceOverviewCard({required this.request});
+  final RequestEntity request;
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = data['imageUrl'] ?? data['attachmentUrl'];
-    final priority = '${data['priority'] ?? 'medium'}';
+    const String? imageUrl = null; // No imageUrl in RequestEntity
+    final priority = request.priority.name;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -333,7 +338,7 @@ class _ServiceOverviewCard extends StatelessWidget {
           final image = SizedBox(
             width: constraints.maxWidth >= 620 ? 150 : double.infinity,
             height: constraints.maxWidth >= 620 ? 140 : 170,
-            child: imageUrl is String && imageUrl.isNotEmpty
+            child: imageUrl != null && imageUrl.isNotEmpty
                 ? Image.network(imageUrl, fit: BoxFit.cover)
                 : Container(
                     color: Theme.of(context).colorScheme.primaryContainer,
@@ -357,26 +362,26 @@ class _ServiceOverviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${data['serviceType'] ?? 'Service request'}',
+                  request.serviceType,
                   style: Theme.of(context).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Category: ${adminLabel('${data['serviceType'] ?? 'service'}')}',
+                  'Category: ${adminLabel(request.serviceType)}',
                 ),
                 const SizedBox(height: 12),
                 _InfoLine(
                   icon: Icons.location_on_outlined,
                   label: 'Location',
-                  value: '${data['address'] ?? 'Address not provided'}',
+                  value: request.address,
                 ),
                 const SizedBox(height: 10),
                 _InfoLine(
                   icon: Icons.notes_outlined,
                   label: 'Customer instructions',
                   value:
-                      '${data['description'] ?? 'No instructions provided.'}',
+                      request.description,
                 ),
               ],
             ),
@@ -395,13 +400,12 @@ class _ServiceOverviewCard extends StatelessWidget {
   }
 }
 
-class _TimelineCard extends StatelessWidget {
-  const _TimelineCard({required this.repository, required this.requestId});
-  final AdminRepository repository;
+class _TimelineCard extends ConsumerWidget {
+  const _TimelineCard({required this.requestId});
   final String requestId;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context, WidgetRef ref) => Card(
     child: Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
       child: Column(
@@ -433,32 +437,30 @@ class _TimelineCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: repository.watchHistory(requestId),
+          StreamBuilder<List<({String id, StatusHistoryEntity history})>>(
+            stream: ref.watch(watchRequestHistoryProvider).call(requestId),
             builder: (context, historySnapshot) {
-              final history = historySnapshot.data?.docs ?? const [];
-              if (history.isEmpty) {
+              final history = historySnapshot.data ;
+              if ((history ?? []).isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(16),
                   child: Text('No status history recorded yet.'),
                 );
               }
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: repository.watchUsers(),
+              return StreamBuilder<List<({String id, UserEntity user})>>(
+                stream: ref.watch(watchUsersProvider).call(),
                 builder: (context, usersSnapshot) {
-                  final users = <String, Map<String, dynamic>>{
-                    for (final doc in usersSnapshot.data?.docs ?? const [])
-                      doc.id: doc.data(),
+                  final users = <String, UserEntity>{
+                    for (final doc in usersSnapshot.data ?? [])
+                      doc.id: doc.user,
                   };
                   return Column(
                     children: [
-                      for (var index = 0; index < history.length; index++)
+                      for (var index = 0; index < (history ?? []).length; index++)
                         _TimelineRow(
-                          data: history[index].data(),
-                          actor: adminUserLabel(
-                            users[history[index].data()['changedBy']],
-                          ),
-                          isLast: index == history.length - 1,
+                          historyEntity: (history ?? [])[index].history,
+                          actor: users[(history ?? [])[index].history.changedBy]?.name,
+                          isLast: index == (history ?? []).length - 1,
                         ),
                     ],
                   );
@@ -482,18 +484,18 @@ class _TimelineCard extends StatelessWidget {
 
 class _TimelineRow extends StatelessWidget {
   const _TimelineRow({
-    required this.data,
+    required this.historyEntity,
     required this.actor,
     required this.isLast,
   });
-  final Map<String, dynamic> data;
-  final String actor;
+  final StatusHistoryEntity historyEntity;
+  final String? actor;
   final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    final toStatus = '${data['toStatus'] ?? 'unknown'}';
-    final fromStatus = data['fromStatus'] as String?;
+    final toStatus = historyEntity.toStatus;
+    final fromStatus = historyEntity.fromStatus;
     final title = fromStatus == null || fromStatus.isEmpty
         ? adminLabel(toStatus)
         : '${adminLabel(fromStatus)} → ${adminLabel(toStatus)}';
@@ -546,14 +548,14 @@ class _TimelineRow extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      _timestamp(data['changedAt']),
+                      _timestamp(historyEntity.changedAt),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${data['note'] ?? 'Status updated'}',
+                  historyEntity.note ?? 'Status updated',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 2),
@@ -570,75 +572,42 @@ class _TimelineRow extends StatelessWidget {
   }
 }
 
-class _CustomerInformationCard extends StatelessWidget {
+class _CustomerInformationCard extends ConsumerWidget {
   const _CustomerInformationCard({
-    required this.repository,
     required this.userId,
   });
-  final AdminRepository repository;
   final String? userId;
 
   @override
-  Widget build(BuildContext context) => _UserInformationCard(
-    repository: repository,
+  Widget build(BuildContext context, WidgetRef ref) => _UserInformationCard(
     userId: userId,
     title: 'Customer Information',
     icon: Icons.person_outline,
     roleLabel: 'Customer',
     actionLabel: 'View Complete Profile',
+    isCustomer: true,
   );
 }
 
-class _AgentInformationCard extends StatefulWidget {
+class _AgentInformationCard extends ConsumerWidget {
   const _AgentInformationCard({
-    required this.repository,
     required this.userId,
     required this.assignedAt,
     required this.enabled,
     required this.onReassign,
     required this.onContact,
   });
-  final AdminRepository repository;
   final String? userId;
-  final dynamic assignedAt;
+  final DateTime? assignedAt;
   final bool enabled;
   final VoidCallback onReassign;
   final VoidCallback onContact;
 
   @override
-  State<_AgentInformationCard> createState() => _AgentInformationCardState();
-}
-
-class _AgentInformationCardState extends State<_AgentInformationCard> {
-  late Future<DocumentSnapshot<Map<String, dynamic>>>? _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _fetch();
-  }
-
-  @override
-  void didUpdateWidget(_AgentInformationCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.userId != oldWidget.userId) {
-      _future = _fetch();
-    }
-  }
-
-  Future<DocumentSnapshot<Map<String, dynamic>>>? _fetch() {
-    if (widget.userId == null) return null;
-    return widget.repository.firestore
-        .collection(CollectionNames.users)
-        .doc(widget.userId)
-        .get();
-  }
-
-  @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context, WidgetRef ref) => Card(
     child: Padding(
       padding: const EdgeInsets.all(16),
-      child: widget.userId == null
+      child: userId == null
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -651,16 +620,16 @@ class _AgentInformationCardState extends State<_AgentInformationCard> {
                 const Text('No service agent assigned.'),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: widget.enabled ? widget.onReassign : null,
+                  onPressed: enabled ? onReassign : null,
                   child: const Text('Assign Service Agent'),
                 ),
               ],
             )
-          : FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              future: _future,
+          : FutureBuilder<({String id, UserEntity user})?>(
+              future: ref.watch(getAgentDetailsProvider).call(userId!),
               builder: (context, snapshot) {
-                final data = snapshot.data?.data() ?? const <String, dynamic>{};
-                final name = '${data['name'] ?? widget.userId}';
+                final user = snapshot.data?.user;
+                final name = user?.name ?? userId!;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -696,29 +665,29 @@ class _AgentInformationCardState extends State<_AgentInformationCard> {
                     _InfoLine(
                       icon: Icons.mail_outline,
                       label: 'Email address',
-                      value: '${data['email'] ?? 'No email'}',
+                      value: user?.email ?? 'No email',
                     ),
                     const SizedBox(height: 10),
                     _InfoLine(
                       icon: Icons.phone_outlined,
                       label: 'Phone number',
-                      value: '${data['phone'] ?? 'No phone'}',
+                      value: user?.phone ?? 'No phone',
                     ),
                     const SizedBox(height: 10),
                     _InfoLine(
                       icon: Icons.calendar_today_outlined,
                       label: 'Assigned on',
-                      value: _date(widget.assignedAt),
+                      value: _date(assignedAt),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
-                      onPressed: widget.onContact,
+                      onPressed: onContact,
                       icon: const Icon(Icons.phone_outlined, size: 15),
                       label: const Text('Contact Agent'),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: widget.enabled ? widget.onReassign : null,
+                      onPressed: enabled ? onReassign : null,
                       child: const Text('Reassign Agent'),
                     ),
                   ],
@@ -729,61 +698,32 @@ class _AgentInformationCardState extends State<_AgentInformationCard> {
   );
 }
 
-class _UserInformationCard extends StatefulWidget {
+class _UserInformationCard extends ConsumerWidget {
   const _UserInformationCard({
-    required this.repository,
     required this.userId,
     required this.title,
     required this.icon,
     required this.roleLabel,
     required this.actionLabel,
+    this.isCustomer = true,
   });
-  final AdminRepository repository;
   final String? userId;
   final String title;
   final IconData icon;
   final String roleLabel;
   final String actionLabel;
+  final bool isCustomer;
 
   @override
-  State<_UserInformationCard> createState() => _UserInformationCardState();
-}
-
-class _UserInformationCardState extends State<_UserInformationCard> {
-  late Future<DocumentSnapshot<Map<String, dynamic>>>? _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _fetch();
-  }
-
-  @override
-  void didUpdateWidget(_UserInformationCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.userId != oldWidget.userId) {
-      _future = _fetch();
-    }
-  }
-
-  Future<DocumentSnapshot<Map<String, dynamic>>>? _fetch() {
-    if (widget.userId == null) return null;
-    return widget.repository.firestore
-        .collection(CollectionNames.users)
-        .doc(widget.userId)
-        .get();
-  }
-
-  @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context, WidgetRef ref) => Card(
     child: Padding(
       padding: const EdgeInsets.all(16),
-      child: widget.userId == null
+      child: userId == null
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.title,
+                  title,
                   style: Theme.of(context).textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
@@ -791,16 +731,18 @@ class _UserInformationCardState extends State<_UserInformationCard> {
                 const Text('No profile assigned.'),
               ],
             )
-          : FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              future: _future,
+          : FutureBuilder<({String id, UserEntity user})?>(
+              future: isCustomer 
+                  ? ref.watch(getCustomerDetailsProvider).call(userId!) 
+                  : ref.watch(getAgentDetailsProvider).call(userId!),
               builder: (context, snapshot) {
-                final data = snapshot.data?.data() ?? const <String, dynamic>{};
-                final name = '${data['name'] ?? widget.userId}';
+                final user = snapshot.data?.user;
+                final name = user?.name ?? userId!;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      widget.title,
+                      title,
                       style: Theme.of(context).textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
@@ -825,28 +767,28 @@ class _UserInformationCardState extends State<_UserInformationCard> {
                     const SizedBox(height: 5),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: _RoleBadge(label: widget.roleLabel),
+                      child: _RoleBadge(label: roleLabel),
                     ),
                     const SizedBox(height: 14),
                     _InfoLine(
                       icon: Icons.mail_outline,
                       label: 'Email address',
-                      value: '${data['email'] ?? 'No email'}',
+                      value: user?.email ?? 'No email',
                     ),
                     const SizedBox(height: 10),
                     _InfoLine(
                       icon: Icons.phone_outlined,
                       label: 'Phone number',
-                      value: '${data['phone'] ?? 'No phone'}',
+                      value: user?.phone ?? 'No phone',
                     ),
                     const SizedBox(height: 10),
                     _InfoLine(
                       icon: Icons.calendar_today_outlined,
                       label: 'Member since',
-                      value: _date(data['createdAt']),
+                      value: _date(user?.createdAt),
                     ),
                     const SizedBox(height: 14),
-                    OutlinedButton(onPressed: null, child: Text(widget.actionLabel)),
+                    OutlinedButton(onPressed: null, child: Text(actionLabel)),
                   ],
                 );
               },

@@ -1,8 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
-
 import '../../../config/theme/admin_theme.dart';
 import '../../../core/validators/auth_validators.dart';
 
@@ -33,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      await AdminRepository().sendPasswordReset(value);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: value);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

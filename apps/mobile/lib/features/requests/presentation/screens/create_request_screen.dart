@@ -367,7 +367,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         items: shared.RequestPriority.values
             .map(
               (priority) =>
-                  DropdownMenuItem(value: priority, child: Text(priority.name)),
+                  DropdownMenuItem(value: priority, child: Text(priority.name[0].toUpperCase() + priority.name.substring(1))),
             )
             .toList(),
         onChanged: (value) {

@@ -36,32 +36,40 @@ class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
 
     final requests = ref.watch(_assignedRequestsProvider(user.uid));
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      bottomNavigationBar: const AgentBottomNav(currentIndex: 1),
-      body: SafeArea(
-        child: requests.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => Center(
-            child: TextButton(
-              onPressed: () =>
-                  ref.invalidate(_assignedRequestsProvider(user.uid)),
-              child: const Text('Retry requests'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        bottomNavigationBar: const AgentBottomNav(currentIndex: 1),
+        body: SafeArea(
+          child: requests.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => Center(
+              child: TextButton(
+                onPressed: () =>
+                    ref.invalidate(_assignedRequestsProvider(user.uid)),
+                child: const Text('Retry requests'),
+              ),
             ),
-          ),
-          data: (items) => _AssignedRequestsBody(
-            items: _filteredItems(items),
-            totalCount: items.length,
-            controller: _searchController,
-            filter: _filter,
-            sortByPriority: _sortByPriority,
-            busyRequestId: _busyRequestId,
-            onSearchChanged: (_) => setState(() {}),
-            onFilterChanged: (value) => setState(() => _filter = value),
-            onSortChanged: () =>
-                setState(() => _sortByPriority = !_sortByPriority),
-            onOpen: (item) => context.push('/requests/${item.id}'),
-            onAction: (item) => _performAction(item, user.uid),
+            data: (items) => _AssignedRequestsBody(
+              items: _filteredItems(items),
+              totalCount: items.length,
+              controller: _searchController,
+              filter: _filter,
+              sortByPriority: _sortByPriority,
+              busyRequestId: _busyRequestId,
+              onSearchChanged: (_) => setState(() {}),
+              onFilterChanged: (value) => setState(() => _filter = value),
+              onSortChanged: () =>
+                  setState(() => _sortByPriority = !_sortByPriority),
+              onOpen: (item) => context.push('/requests/${item.id}'),
+              onAction: (item) => _performAction(item, user.uid),
+            ),
           ),
         ),
       ),
@@ -216,7 +224,7 @@ class _AssignedRequestsBody extends StatelessWidget {
         Row(
           children: [
             Text(
-              '$totalCount REQUESTS FOUND',
+              ' $totalCount - REQUESTS ',
               style: Theme.of(context).textTheme.labelSmall
                   ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: .5),
             ),
@@ -254,13 +262,11 @@ class _AssignedRequestsBody extends StatelessWidget {
             onPressed: null,
             icon: const SizedBox.shrink(),
             label: Text(
-              'Load More Requests   â€º',
+              'Load More Requests',
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
         ),
-        const SizedBox(height: 26),
-        const _HelpCard(),
       ],
     ),
   );
@@ -371,8 +377,7 @@ class _RequestCard extends StatelessWidget {
     final actionLabel = switch (status) {
       shared.StatusNames.assigned => 'Accept Request',
       shared.StatusNames.accepted => 'Start Work',
-      shared.StatusNames.inProgress => 'View Dashboard',
-      _ => 'View Dashboard',
+      _ => '',
     };
     final activeAction =
         status == shared.StatusNames.assigned ||
@@ -382,7 +387,7 @@ class _RequestCard extends StatelessWidget {
         onTap: onOpen,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -395,23 +400,19 @@ class _RequestCard extends StatelessWidget {
                       children: [
                         Text(
                           request.requestCode,
-                          style: Theme.of(context).textTheme.labelSmall
+                          style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
-                                fontSize: 8,
                                 fontWeight: FontWeight.w800,
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant,
                               ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 6),
                         Text(
                           request.serviceType,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
@@ -419,7 +420,7 @@ class _RequestCard extends StatelessWidget {
                   _StatusBadge(status: status, color: statusColor),
                 ],
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: 12),
               _RequestMeta(
                 icon: Icons.person_outline,
                 value: request.customerId.isEmpty
@@ -431,64 +432,38 @@ class _RequestCard extends StatelessWidget {
                 value: request.address,
                 secondary: true,
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   _RequestMetaInline(
                     icon: Icons.calendar_today_outlined,
                     value: _date(request.preferredDateTime),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   _RequestMetaInline(
                     icon: Icons.access_time,
                     value: _time(request.preferredDateTime),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Divider(height: 1, color: Theme.of(context).dividerColor),
-              const SizedBox(height: 9),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 30,
-                      child: activeAction
-                          ? FilledButton(
-                              onPressed: busy ? null : onAction,
-                              child: busy
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(actionLabel),
-                            )
-                          : OutlinedButton(
-                              onPressed: busy ? null : onAction,
-                              child: busy
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(actionLabel),
-                            ),
-                    ),
+              if (activeAction) ...[
+                const SizedBox(height: 16),
+                Divider(height: 1, color: Theme.of(context).dividerColor),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: busy ? null : onAction,
+                    child: busy
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(actionLabel),
                   ),
-                  IconButton(
-                    onPressed: onOpen,
-                    icon: const Icon(Icons.more_vert, size: 18),
-                    tooltip: 'Open request',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 28),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
@@ -512,7 +487,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
       color: color.withValues(alpha: .14),
       borderRadius: BorderRadius.circular(12),
@@ -520,15 +495,12 @@ class _StatusBadge extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.access_time, size: 10, color: color),
-        const SizedBox(width: 3),
+        Icon(Icons.access_time, size: 14, color: color),
+        const SizedBox(width: 6),
         Text(
           _label(status),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: color,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.w700),
         ),
       ],
     ),
@@ -556,12 +528,12 @@ class _RequestMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 3),
+    padding: const EdgeInsets.only(bottom: 6),
     child: Row(
       children: [
         Icon(
           icon,
-          size: 13,
+          size: 16,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 6),
@@ -597,43 +569,12 @@ class _RequestMetaInline extends StatelessWidget {
         size: 12,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
-      const SizedBox(width: 4),
+      const SizedBox(width: 8),
       Text(
         value,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 9),
       ),
     ],
-  );
-}
-
-class _HelpCard extends StatelessWidget {
-  const _HelpCard();
-
-  @override
-  Widget build(BuildContext context) => Card(
-    color: Theme.of(context).colorScheme.surface,
-    child: ListTile(
-      dense: true,
-      leading: CircleAvatar(
-        radius: 13,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        child: Icon(
-          Icons.help_outline,
-          size: 15,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
-      title: Text(
-        'Need help with a task?',
-        style: Theme.of(context).textTheme.labelSmall
-            ?.copyWith(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        'Read dispatch guidelines',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 9),
-      ),
-      trailing: const Icon(Icons.keyboard_arrow_down, size: 18),
-    ),
   );
 }
 

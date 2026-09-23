@@ -1,3 +1,4 @@
+import 'package:shared/entities/user_entity.dart';
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -87,4 +88,30 @@ class User {
   @override
   int get hashCode =>
       Object.hash(role, name, email, phone, office, schedule, createdAt, updatedAt);
+
+  /// Converts this model to a pure-Dart domain entity.
+  UserEntity toEntity() => UserEntity(
+    role: role,
+    name: name,
+    email: email,
+    phone: phone,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    addresses: addresses,
+    office: office,
+    schedule: schedule,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory User.fromEntity(UserEntity entity) => User(
+    role: entity.role,
+    name: entity.name,
+    email: entity.email,
+    phone: entity.phone,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+    addresses: entity.addresses,
+    office: entity.office,
+    schedule: entity.schedule,
+  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_radius.dart';
@@ -137,6 +138,7 @@ abstract final class AppTheme {
         selectionHandleColor: accent,
       ),
       appBarTheme: AppBarTheme(
+        systemOverlayStyle: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -224,7 +226,7 @@ abstract final class AppTheme {
         selectedColor: accent,
         labelStyle: TextStyle(
           fontSize: 12,
-          color: dark ? AppColors.lightTextPrimary : primaryText,
+          color: primaryText,
         ),
         secondaryLabelStyle: TextStyle(
           color: dark ? AppColors.lightTextPrimary : Colors.white,

@@ -1,3 +1,4 @@
+import 'package:shared/entities/status_history_entity.dart';
 import 'package:shared/utils/model_helpers.dart';
 
 /// An append-only request lifecycle record.
@@ -59,4 +60,22 @@ class StatusHistory {
   @override
   int get hashCode =>
       Object.hash(fromStatus, toStatus, changedBy, changedAt, note);
+
+  /// Converts this model to a pure-Dart domain entity.
+  StatusHistoryEntity toEntity() => StatusHistoryEntity(
+    fromStatus: fromStatus,
+    toStatus: toStatus,
+    changedBy: changedBy,
+    changedAt: changedAt,
+    note: note,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory StatusHistory.fromEntity(StatusHistoryEntity entity) => StatusHistory(
+    fromStatus: entity.fromStatus,
+    toStatus: entity.toStatus,
+    changedBy: entity.changedBy,
+    changedAt: entity.changedAt,
+    note: entity.note,
+  );
 }

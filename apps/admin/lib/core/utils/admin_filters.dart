@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared/shared.dart';
 
 class AdminRequestFilters {
@@ -34,34 +33,32 @@ class AdminRequestFilters {
     page: (page ?? this.page).clamp(0, 1000000),
   );
 
-  bool matches(Map<String, dynamic> data) {
+  bool matches(RequestEntity request) {
     final needle = search.trim().toLowerCase();
     final searchable = [
-      data['requestCode'],
-      data['customerId'],
-      data['agentId'],
-      data['serviceType'],
-      data['description'],
-      data['address'],
+      request.requestCode,
+      request.customerId,
+      request.agentId,
+      request.serviceType,
+      request.description,
+      request.address,
     ].join(' ').toLowerCase();
     return (needle.isEmpty || searchable.contains(needle)) &&
         (status == 'all' ||
-            StatusNames.values.contains(status) && data['status'] == status) &&
+            StatusNames.values.contains(status) && request.status.toStoredValue() == status) &&
         (priority == 'all' ||
             PriorityNames.values.contains(priority) &&
-                data['priority'] == priority) &&
-        (serviceType == 'all' || data['serviceType'] == serviceType);
+                request.priority.name == priority) &&
+        (serviceType == 'all' || request.serviceType == serviceType);
   }
 
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> apply(
-    Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> input,
+  List<({String id, RequestEntity request})> apply(
+    Iterable<({String id, RequestEntity request})> input,
   ) {
-    final result = input.where((doc) => matches(doc.data())).toList()
+    final result = input.where((doc) => matches(doc.request)).toList()
       ..sort((a, b) {
-        final aTime =
-            (a.data()['updatedAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
-        final bTime =
-            (b.data()['updatedAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+        final aTime = a.request.updatedAt.millisecondsSinceEpoch ;
+        final bTime = b.request.updatedAt.millisecondsSinceEpoch ;
         return bTime.compareTo(aTime);
       });
     final start = page * pageSize;

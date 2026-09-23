@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
@@ -73,9 +74,28 @@ class _SecuritySettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Security Settings')),
-      body: ListView(
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+          title: const Text('Security Settings'),
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           const Text(
@@ -125,6 +145,7 @@ class _SecuritySettingsScreenState
             ),
         ],
       ),
+    ),
     );
   }
 }

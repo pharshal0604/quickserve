@@ -1,34 +1,33 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
-import 'package:quickserve_admin/core/network/admin_repository_service_extensions.dart';
+import 'package:quickserve_admin/injection_container.dart';
 
-class ServicesScreen extends StatefulWidget {
-  const ServicesScreen({required this.repository, super.key});
-  final AdminRepository repository;
+class ServicesScreen extends ConsumerStatefulWidget {
+  const ServicesScreen({super.key});
   @override
-  State<ServicesScreen> createState() => _ServicesScreenState();
+  ConsumerState<ServicesScreen> createState() => _ServicesScreenState();
 }
 
-class _ServicesScreenState extends State<ServicesScreen> {
+class _ServicesScreenState extends ConsumerState<ServicesScreen> {
   String search = '';
   String filter = 'all';
 
   @override
   Widget build(BuildContext context) =>
-      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: widget.repository.watchServices(),
+      StreamBuilder<List<({String id, ServiceEntity service})>>(
+        stream: ref.watch(watchServicesProvider).call(),
         builder: (context, snapshot) {
-          final docs = (snapshot.data?.docs ?? const []).where((doc) {
-            final data = doc.data();
+          final docs = (snapshot.data ?? const []).where((doc) {
+            final data = doc.service;
             final needle = search.trim().toLowerCase();
             final matchesText =
                 needle.isEmpty ||
-                '${data['name'] ?? ''} ${data['description'] ?? ''}'
+                '${data.name} ${data.description}'
                     .toLowerCase()
                     .contains(needle);
-            final active = data['active'] == true;
+            final active = data.active;
             return matchesText &&
                 (filter == 'all' ||
                     filter == 'active' && active ||
@@ -140,14 +139,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _edit(
     BuildContext context, [
-    QueryDocumentSnapshot<Map<String, dynamic>>? doc,
+    ({String id, ServiceEntity service})? doc,
   ]) async {
-    final data = doc?.data() ?? const <String, dynamic>{};
-    final name = TextEditingController(text: data['name'] as String? ?? '');
+    final data = doc?.service;
+    final name = TextEditingController(text: data?.name );
     final description = TextEditingController(
-      text: data['description'] as String? ?? '',
+      text: data?.description ,
     );
-    var active = data['active'] as bool? ?? true;
+    var active = data?.active ?? true;
     final result =
         await showDialog<({String name, String description, bool active})>(
           context: context,
@@ -198,18 +197,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
     if (result == null || !mounted) return;
     try {
       if (doc == null) {
-        await widget.repository.createService(
-          name: result.name,
-          description: result.description,
-          active: result.active,
-        );
+        await ref.read(createServiceProvider).call(result.name, result.description, result.active);
       } else {
-        await widget.repository.updateService(
-          serviceId: doc.id,
-          name: result.name,
-          description: result.description,
-          active: result.active,
-        );
+        await ref.read(updateServiceProvider).call(doc.id, result.name, result.description, result.active);
       }
     } catch (e) {
       if (!context.mounted) return;
@@ -220,12 +210,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
 class _ServiceCard extends StatelessWidget {
   const _ServiceCard({required this.doc, required this.onEdit});
-  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final ({String id, ServiceEntity service}) doc;
   final VoidCallback onEdit;
   @override
   Widget build(BuildContext context) {
-    final data = doc.data();
-    final active = data['active'] == true;
+    final data = doc.service;
+    final active = data.active;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -244,12 +234,12 @@ class _ServiceCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              '${data['name'] ?? doc.id}',
+              data.name,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              '${data['description'] ?? 'No description'}',
+              data.description,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

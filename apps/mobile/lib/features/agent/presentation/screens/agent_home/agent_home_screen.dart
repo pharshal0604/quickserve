@@ -68,6 +68,11 @@ class _AgentHomeContent extends StatelessWidget {
     final completed = items
         .where((item) => item.request.status == shared.RequestStatus.completed)
         .length;
+    final cancelled = items
+        .where((item) => item.request.status == shared.RequestStatus.cancelled)
+        .length;
+    final resolved = completed + cancelled;
+    final efficiency = resolved == 0 ? 1.0 : completed / resolved;
     final upcoming =
         items
             .where(
@@ -87,11 +92,6 @@ class _AgentHomeContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       bottomNavigationBar: const AgentBottomNav(currentIndex: 0),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/agent/requests'),
-        tooltip: 'View tasks',
-        child: const Icon(Icons.navigation_outlined),
-      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {},
@@ -171,36 +171,28 @@ class _AgentHomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              const _PerformanceCard(),
+              _PerformanceCard(efficiency: efficiency),
               const SizedBox(height: AppSpacing.lg),
               SectionHeader(title: 'Quick Access'),
               const SizedBox(height: AppSpacing.sm),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _QuickAction(
-                    label: 'Schedule',
-                    icon: Icons.calendar_month_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                    onTap: () => context.go('/agent/requests'),
+                  Expanded(
+                    child: _QuickAction(
+                      label: 'Schedule',
+                      icon: Icons.calendar_month_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                      onTap: () => context.go('/agent/requests'),
+                    ),
                   ),
-                  _QuickAction(
-                    label: 'Messages',
-                    icon: Icons.chat_bubble_outline_rounded,
-                    color: colorScheme.secondary,
-                    onTap: () => context.push('/notifications'),
-                  ),
-                  _QuickAction(
-                    label: 'Inventory',
-                    icon: Icons.apps_outlined,
-                    color: AppColors.warning,
-                    onTap: () => _showComingSoon(context, 'Inventory'),
-                  ),
-                  _QuickAction(
-                    label: 'Map View',
-                    icon: Icons.navigation_outlined,
-                    color: AppColors.success,
-                    onTap: () => _showComingSoon(context, 'Map view'),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: _QuickAction(
+                      label: 'Messages',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      color: colorScheme.secondary,
+                      onTap: () => context.push('/notifications'),
+                    ),
                   ),
                 ],
               ),
@@ -240,11 +232,6 @@ class _AgentHomeContent extends StatelessWidget {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  static void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature will be available in the agent tools.')),
-    );
-  }
 }
 
 class _MetricCard extends StatelessWidget {
@@ -310,7 +297,8 @@ class _MetricCard extends StatelessWidget {
 }
 
 class _PerformanceCard extends StatelessWidget {
-  const _PerformanceCard();
+  const _PerformanceCard({required this.efficiency});
+  final double efficiency;
 
   @override
   Widget build(BuildContext context) {
@@ -330,17 +318,19 @@ class _PerformanceCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 Text(
-                  '88%',
+                  '%',
                   style: Theme.of(context).textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            const LinearProgressIndicator(value: .88, minHeight: 7),
+            LinearProgressIndicator(value: efficiency, minHeight: 7),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Your completion rate is 5% higher than last week. Great job!',
+              efficiency >= 0.8
+                  ? 'Your completion rate is looking great! Keep up the good work.'
+                  : 'Your completion rate needs improvement. Review any cancelled requests.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -367,34 +357,29 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        width: 64,
-        child: Column(
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(
-                  icon,
-                  color: Theme.of(context).colorScheme.onPrimary,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(fontSize: 11),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,3 +1,9 @@
+export 'entities/audit_log_entity.dart';
+export 'entities/counter_entity.dart';
+export 'entities/request_entity.dart';
+export 'entities/service_entity.dart';
+export 'entities/status_history_entity.dart';
+export 'entities/user_entity.dart';
 export 'constants/constants.dart';
 export 'constants/enums.dart';
 export 'constants/status_colors.dart';

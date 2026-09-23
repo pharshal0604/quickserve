@@ -1,63 +1,78 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:quickserve_admin/injection_container.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
-class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({required this.repository, super.key});
-  final AdminRepository repository;
+class ActivityScreen extends ConsumerStatefulWidget {
+  const ActivityScreen({super.key});
 
   @override
-  State<ActivityScreen> createState() => _ActivityScreenState();
+  ConsumerState<ActivityScreen> createState() => _ActivityScreenState();
 }
 
-class _ActivityScreenState extends State<ActivityScreen> {
+class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   String search = '';
   String result = 'all';
 
   @override
   Widget build(
     BuildContext context,
-  ) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: widget.repository.watchAuditLogs(),
+  ) => StreamBuilder<List<({String id, AuditLogEntity log})>>(
+    stream: ref.watch(watchAuditLogsProvider).call(),
     builder: (context, snapshot) {
-      final all =
-          snapshot.data?.docs ??
-          const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+      final all = snapshot.data ?? const [];
       final filtered = all.where((doc) {
-        final data = doc.data();
+        final data = doc.log;
         final needle = search.trim().toLowerCase();
         final searchable = [
-          data['action'],
-          data['actorUserId'],
-          data['targetId'],
-          data['targetType'],
+          data.action.name,
+          data.actorUserId,
+          data.targetId,
+          data.targetType,
         ].join(' ').toLowerCase();
         return (needle.isEmpty || searchable.contains(needle)) &&
-            (result == 'all' || data['result'] == result);
+            (result == 'all' || data.result == result);
       }).toList();
 
-      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: widget.repository.watchUsers(),
+      return StreamBuilder<List<({String id, UserEntity user})>>(
+        stream: ref.watch(watchUsersProvider).call(),
         builder: (context, usersSnapshot) {
-          final usersById = <String, Map<String, dynamic>>{
-            for (final doc in usersSnapshot.data?.docs ?? const [])
-              doc.id: doc.data(),
+          final usersById = <String, UserEntity>{
+            for (final doc in usersSnapshot.data ?? const [])
+              doc.id: doc.user,
           };
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Text(
-                'Audit & Activity',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Review administrative actions, authorization failures, and database events.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Audit & Activity',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Review administrative actions, authorization failures, and database events.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/activity/notifications'),
+                    icon: const Icon(Icons.notifications_none),
+                    label: const Text('System Notifications'),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               Card(
@@ -133,8 +148,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
 class _ActivityTable extends StatelessWidget {
   const _ActivityTable({required this.docs, required this.usersById});
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
-  final Map<String, Map<String, dynamic>> usersById;
+  final List<({String id, AuditLogEntity log})> docs;
+  final Map<String, UserEntity> usersById;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -160,18 +175,18 @@ class _ActivityTable extends StatelessWidget {
             for (final doc in docs)
               DataRow(
                 cells: [
-                  DataCell(Text(_timestamp(doc.data()['timestamp']))),
+                  DataCell(Text(_timestamp(doc.log.timestamp))),
                   DataCell(
                     _ActorCell(
-                      data: usersById[doc.data()['actorUserId']],
-                      id: '${doc.data()['actorUserId'] ?? '—'}',
+                      user: usersById[doc.log.actorUserId],
+                      id: doc.log.actorUserId,
                     ),
                   ),
                   DataCell(
                     SizedBox(
                       width: 160,
                       child: Text(
-                        adminLabel('${doc.data()['action'] ?? 'event'}'),
+                        adminLabel(doc.log.action.name),
                       ),
                     ),
                   ),
@@ -179,22 +194,22 @@ class _ActivityTable extends StatelessWidget {
                     SizedBox(
                       width: 160,
                       child: Text(
-                        '${doc.data()['targetType'] ?? '—'} · ${doc.data()['targetId'] ?? '—'}',
+                        '${doc.log.targetType} · ${doc.log.targetId}',
                       ),
                     ),
                   ),
                   DataCell(
-                    _ResultBadge('${doc.data()['result'] ?? 'unknown'}'),
+                    _ResultBadge(doc.log.result),
                   ),
                   DataCell(
                     IconButton(
                       tooltip: 'View activity event',
                       onPressed: () => _showDetails(
                         context,
-                        doc.data(),
+                        doc.log,
                         actor: _actorLabel(
-                          usersById[doc.data()['actorUserId']],
-                          '${doc.data()['actorUserId'] ?? 'Unknown actor'}',
+                          usersById[doc.log.actorUserId],
+                          doc.log.actorUserId,
                         ),
                       ),
                       icon: const Icon(Icons.more_horiz),
@@ -210,46 +225,30 @@ class _ActivityTable extends StatelessWidget {
 
   void _showDetails(
     BuildContext context,
-    Map<String, dynamic> data, {
+    AuditLogEntity log, {
     required String actor,
   }) {
     showDialog<void>(
       context: context,
-      builder: (context) => _AuditDetailsDialog(data: data, actor: actor),
+      builder: (context) => _AuditDetailsDialog(log: log, actor: actor),
     );
   }
 }
 
 class _AuditDetailsDialog extends StatelessWidget {
-  const _AuditDetailsDialog({required this.data, required this.actor});
+  const _AuditDetailsDialog({required this.log, required this.actor});
 
-  final Map<String, dynamic> data;
+  final AuditLogEntity log;
   final String actor;
-
-  static const _preferredFields = [
-    'newValue',
-    'timestamp',
-    'targetType',
-    'oldValue',
-    'result',
-    'actorUserId',
-    'actorRole',
-    'action',
-    'targetId',
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final fields = <String>[
-      ..._preferredFields.where(data.containsKey),
-      ...data.keys.where((key) => !_preferredFields.contains(key)),
-    ];
-    final action = '${data['action'] ?? 'activity event'}';
-    final result = '${data['result'] ?? 'unknown'}';
-    final targetType = '${data['targetType'] ?? 'record'}';
-    final targetId = '${data['targetId'] ?? 'Unknown'}';
-    final oldStatus = _mapValue(data['oldValue'], 'status');
-    final newStatus = _mapValue(data['newValue'], 'status');
+    final action = log.action.name;
+    final result = log.result;
+    final targetType = log.targetType;
+    final targetId = log.targetId;
+    final oldStatus = _mapValue(log.oldValue, 'status');
+    final newStatus = _mapValue(log.newValue, 'status');
     final hasStatusChange = oldStatus != null && newStatus != null;
 
     return AlertDialog(
@@ -269,7 +268,7 @@ class _AuditDetailsDialog extends StatelessWidget {
                 oldStatus: oldStatus,
                 newStatus: newStatus,
                 hasStatusChange: hasStatusChange,
-                timestamp: data['timestamp'],
+                timestamp: log.timestamp,
               ),
               const SizedBox(height: 14),
               ExpansionTile(
@@ -281,13 +280,23 @@ class _AuditDetailsDialog extends StatelessWidget {
                 ),
                 subtitle: const Text('Original audit record values'),
                 children: [
-                  for (final field in fields) ...[
-                    _AuditDetailRow(
-                      label: field,
-                      value: _formatAuditValue(data[field]),
-                    ),
-                    if (field != fields.last) const Divider(height: 20),
-                  ],
+                  _AuditDetailRow(label: 'actorUserId', value: log.actorUserId),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'actorRole', value: log.actorRole.name),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'action', value: log.action.name),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'targetType', value: log.targetType),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'targetId', value: log.targetId),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'oldValue', value: _formatAuditValue(log.oldValue)),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'newValue', value: _formatAuditValue(log.newValue)),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'result', value: log.result),
+                  const Divider(height: 20),
+                  _AuditDetailRow(label: 'timestamp', value: log.timestamp.toString()),
                 ],
               ),
             ],
@@ -328,7 +337,7 @@ class _AuditSummaryCard extends StatelessWidget {
   final String? oldStatus;
   final String? newStatus;
   final bool hasStatusChange;
-  final dynamic timestamp;
+  final DateTime timestamp;
 
   @override
   Widget build(BuildContext context) {
@@ -404,11 +413,11 @@ class _SummaryLine extends StatelessWidget {
   }
 }
 
-String _actorLabel(Map<String, dynamic>? data, String fallback) {
-  final name = data?['name'];
-  if (name is String && name.trim().isNotEmpty) return name.trim();
-  final email = data?['email'];
-  if (email is String && email.trim().isNotEmpty) return email.trim();
+String _actorLabel(UserEntity? user, String fallback) {
+  final name = user?.name;
+  if (name != null && name.trim().isNotEmpty) return name.trim();
+  final email = user?.email;
+  if (email != null && email.trim().isNotEmpty) return email.trim();
   return fallback;
 }
 
@@ -417,16 +426,13 @@ String? _mapValue(dynamic value, String key) {
   return null;
 }
 
-String dataTimestamp(dynamic value) {
-  if (value is Timestamp) {
-    final date = value.toDate().toLocal();
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$day/$month/${date.year} at $hour:$minute';
-  }
-  return '';
+String dataTimestamp(DateTime date) {
+  final local = date.toLocal();
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '$day/$month/${local.year} at $hour:$minute';
 }
 
 class _AuditDetailRow extends StatelessWidget {
@@ -454,9 +460,6 @@ class _AuditDetailRow extends StatelessWidget {
 
 String _formatAuditValue(dynamic value) {
   if (value == null) return '—';
-  if (value is Timestamp) {
-    return 'Timestamp(seconds=${value.seconds}, nanoseconds=${value.nanoseconds})';
-  }
   if (value is Map) {
     final entries = value.entries
         .map((entry) => '${entry.key}: ${_formatAuditValue(entry.value)}')
@@ -470,13 +473,13 @@ String _formatAuditValue(dynamic value) {
 }
 
 class _ActorCell extends StatelessWidget {
-  const _ActorCell({required this.data, required this.id});
-  final Map<String, dynamic>? data;
+  const _ActorCell({required this.user, required this.id});
+  final UserEntity? user;
   final String id;
 
   @override
   Widget build(BuildContext context) {
-    final name = adminUserLabel(data);
+    final name = user?.name ?? 'Profile unavailable';
     return SizedBox(
       width: 180,
       child: Row(
@@ -525,10 +528,7 @@ class _ResultBadge extends StatelessWidget {
   }
 }
 
-String _timestamp(dynamic value) {
-  if (value is Timestamp) {
-    final date = value.toDate().toLocal();
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}\n${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
-  return '—';
+String _timestamp(DateTime date) {
+  final local = date.toLocal();
+  return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}\n${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
 }

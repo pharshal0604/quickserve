@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quickserve_admin/main.dart';
 
-class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({
-    required this.darkMode,
-    required this.textScale,
-    required this.onThemeChanged,
-    required this.onTextScaleChanged,
-    super.key,
-  });
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
   
-  final bool darkMode;
-  final double textScale;
-  final ValueChanged<bool> onThemeChanged;
-  final ValueChanged<double> onTextScaleChanged;
-
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool compactTables = false;
   bool showHints = true;
   bool autoRefresh = true;
 
   @override
-  Widget build(BuildContext context) => ListView(
+  Widget build(BuildContext context) {
+    final darkMode = ref.watch(darkModeProvider);
+    final textScale = ref.watch(textScaleProvider);
+
+    return ListView(
     padding: const EdgeInsets.all(24),
     children: [
       Row(
@@ -54,11 +49,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           children: [
             SwitchListTile(
-              value: widget.darkMode,
-              onChanged: widget.onThemeChanged,
+              value: darkMode,
+              onChanged: (val) => ref.read(darkModeProvider.notifier).state = val,
               title: const Text('Dark Mode'),
               subtitle: const Text('Switch between light and dark themes.'),
-              secondary: Icon(widget.darkMode ? Icons.dark_mode : Icons.light_mode),
+              secondary: Icon(darkMode ? Icons.dark_mode : Icons.light_mode),
             ),
             const Divider(height: 1),
             Padding(
@@ -79,17 +74,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      Text('${(widget.textScale * 100).toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('${(textScale * 100).toInt()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Slider(
-                    value: widget.textScale,
+                    value: textScale,
                     min: 0.8,
                     max: 1.5,
                     divisions: 7,
-                    label: '${(widget.textScale * 100).toInt()}%',
-                    onChanged: widget.onTextScaleChanged,
+                    label: '${(textScale * 100).toInt()}%',
+                    onChanged: (val) => ref.read(textScaleProvider.notifier).state = val,
                   ),
                 ],
               ),
@@ -158,4 +153,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     ],
   );
+  }
 }

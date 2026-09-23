@@ -23,7 +23,7 @@ class ServiceDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
+        automaticallyImplyLeading: false,
         centerTitle: true,
         title: Text('Service Details'),
         actions: [

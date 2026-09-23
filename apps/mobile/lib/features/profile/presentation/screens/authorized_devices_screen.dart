@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 
 class AuthorizedDevicesScreen extends StatelessWidget {
@@ -6,9 +7,28 @@ class AuthorizedDevicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Authorized Devices')),
-      body: ListView(
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+          title: const Text('Authorized Devices'),
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Padding(
@@ -67,6 +87,7 @@ class AuthorizedDevicesScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

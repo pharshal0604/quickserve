@@ -1,44 +1,44 @@
 import 'dart:math' as math;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
+import 'package:quickserve_admin/injection_container.dart';
 
 import '../../../requests/presentation/screens/request_details_screen.dart';
 import '../../../requests/presentation/screens/requests_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({required this.repository, super.key});
-
-  final AdminRepository repository;
+class DashboardScreen extends ConsumerWidget {
+  const DashboardScreen({super.key});
 
   @override
   Widget build(
     BuildContext context,
-  ) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: repository.watchRequests(),
+    WidgetRef ref,
+  ) => StreamBuilder<List<({String id, RequestEntity request})>>(
+    stream: ref.watch(watchRequestsProvider).call(),
     builder: (context, snapshot) {
-      final docs = snapshot.data?.docs ?? const [];
+      final docs = snapshot.data ?? [];
       final counts = <String, int>{
         for (final status in StatusNames.values)
-          status: docs.where((doc) => doc.data()['status'] == status).length,
+          status: docs.where((doc) => doc.request.status.toStoredValue() == status).length,
       };
       final recent = [...docs]
-        ..sort((a, b) => _updatedAt(b).compareTo(_updatedAt(a)));
+        ..sort((a, b) => b.request.updatedAt.compareTo(a.request.updatedAt));
       final critical = recent
           .where((doc) {
-            final data = doc.data();
+            final request = doc.request;
             final active = ![
               StatusNames.completed,
               StatusNames.cancelled,
-            ].contains(data['status']);
+            ].contains(request.status.toStoredValue());
             return active &&
-                (data['priority'] == PriorityNames.high ||
-                    (data['status'] == StatusNames.created &&
-                        data['agentId'] == null));
+                (request.priority.name == PriorityNames.high ||
+                    (request.status.toStoredValue() == StatusNames.created &&
+                        request.agentId == null));
           })
           .take(4)
           .toList();
@@ -47,11 +47,11 @@ class DashboardScreen extends StatelessWidget {
             (doc) => ![
               StatusNames.completed,
               StatusNames.cancelled,
-            ].contains(doc.data()['status']),
+            ].contains(doc.request.status.toStoredValue()),
           )
           .toList();
       final completed = docs
-          .where((doc) => doc.data()['status'] == StatusNames.completed)
+          .where((doc) => doc.request.status.toStoredValue() == StatusNames.completed)
           .toList();
 
       return ListView(
@@ -90,7 +90,6 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Total requests',
                   description: 'All service requests currently recorded.',
                   docs: docs,
-                  repository: repository,
                 ),
               ),
               _Metric(
@@ -102,7 +101,6 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Active requests',
                   description: 'Requests that are not completed or cancelled.',
                   docs: active,
-                  repository: repository,
                 ),
               ),
               _Metric(
@@ -114,7 +112,6 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Completed requests',
                   description: 'Requests that reached the completed status.',
                   docs: completed,
-                  repository: repository,
                 ),
               ),
               _Metric(
@@ -126,38 +123,14 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Critical alerts',
                   description: 'High-priority active requests or requests waiting for assignment.',
                   docs: critical,
-                  repository: repository,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final chart = _StatusChart(counts: counts, total: docs.length);
-              final alerts = _CriticalAlerts(
-                docs: critical,
-                repository: repository,
-              );
-              return constraints.maxWidth >= 900
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: chart),
-                        const SizedBox(width: 16),
-                        Expanded(child: alerts),
-                      ],
-                    )
-                  : Column(
-                      children: [chart, const SizedBox(height: 16), alerts],
-                    );
-            },
-          ),
+          _StatusChart(counts: counts, total: docs.length),
           const SizedBox(height: 20),
-          _RecentRequests(
-            docs: recent.take(6).toList(),
-            repository: repository,
-          ),
+          _RecentRequests(docs: recent.take(6).toList()),
           if (snapshot.hasError)
             Padding(
               padding: const EdgeInsets.only(top: 16),
@@ -167,21 +140,13 @@ class DashboardScreen extends StatelessWidget {
       );
     },
   );
-
-  static DateTime _updatedAt(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-    final value = doc.data()['updatedAt'];
-    return value is Timestamp
-        ? value.toDate()
-        : DateTime.fromMillisecondsSinceEpoch(0);
-  }
 }
 
 void _showMetricDetails(
   BuildContext context, {
   required String title,
   required String description,
-  required List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-  required AdminRepository repository,
+  required List<({String id, RequestEntity request})> docs,
 }) {
   showDialog<void>(
     context: context,
@@ -189,7 +154,6 @@ void _showMetricDetails(
       title: title,
       description: description,
       docs: docs,
-      repository: repository,
     ),
   );
 }
@@ -199,13 +163,11 @@ class _MetricDetailsDialog extends StatelessWidget {
     required this.title,
     required this.description,
     required this.docs,
-    required this.repository,
   });
 
   final String title;
   final String description;
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
-  final AdminRepository repository;
+  final List<({String id, RequestEntity request})> docs;
 
   @override
   Widget build(BuildContext context) {
@@ -239,8 +201,8 @@ class _MetricDetailsDialog extends StatelessWidget {
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final doc = docs[index];
-                    final data = doc.data();
-                    final status = '${data['status'] ?? 'unknown'}';
+                    final request = doc.request;
+                    final status = request.status.toStoredValue();
                     final statusColor = adminStatusColor(context, status);
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(vertical: 4),
@@ -249,19 +211,19 @@ class _MetricDetailsDialog extends StatelessWidget {
                         color: statusColor,
                       ),
                       title: Text(
-                        '${data['requestCode'] ?? doc.id} · ${data['serviceType'] ?? 'Service'}',
+                        '${request.requestCode} · ${request.serviceType}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        '${adminLabel(status)} · ${data['address'] ?? 'Address not provided'}',
+                        '${adminLabel(status)} · ${request.address}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.pop(context);
-                        _openRequest(context, repository, doc);
+                        _openRequest(context, doc);
                       },
                     );
                   },
@@ -407,7 +369,7 @@ class _StatusChart extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${counts[status] ?? 0}',
+                              '${counts[status]}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -469,19 +431,17 @@ class _DoughnutPainter extends CustomPainter {
       oldDelegate.emptyColor != emptyColor;
 }
 
-class _RecentRequests extends StatelessWidget {
-  const _RecentRequests({required this.docs, required this.repository});
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
-  final AdminRepository repository;
+class _RecentRequests extends ConsumerWidget {
+  const _RecentRequests({required this.docs});
+  final List<({String id, RequestEntity request})> docs;
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: repository.watchUsers(role: RoleNames.customer),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<List<({String id, UserEntity user})>>(
+      stream: ref.watch(watchCustomersProvider).call(),
       builder: (context, usersSnapshot) {
         final usersById = {
-          for (final doc in usersSnapshot.data?.docs ?? const [])
-            doc.id: doc.data(),
+          for (final doc in usersSnapshot.data ?? const []) doc.id: doc.user,
         };
         return Card(
           child: Padding(
@@ -500,8 +460,7 @@ class _RecentRequests extends StatelessWidget {
                     TextButton(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) =>
-                              RequestsScreen(repository: repository),
+                          builder: (_) => const RequestsScreen(),
                         ),
                       ),
                       child: const Text('View all'),
@@ -513,8 +472,11 @@ class _RecentRequests extends StatelessWidget {
                 for (final doc in docs)
                   Builder(
                     builder: (context) {
-                      final status = '${doc.data()['status'] ?? 'unknown'}';
+                      final status = doc.request.status.toStoredValue();
                       final statusColor = adminStatusColor(context, status);
+                      final customer = usersById[doc.request.customerId];
+                      final customerName =
+                          customer?.name ?? doc.request.customerId;
                       return ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
@@ -523,15 +485,12 @@ class _RecentRequests extends StatelessWidget {
                           color: statusColor,
                         ),
                         title: Text(
-                          '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['serviceType'] ?? 'Service'}',
+                          '${doc.request.requestCode} · ${doc.request.serviceType}',
                         ),
                         subtitle: Text.rich(
                           TextSpan(
                             children: [
-                              TextSpan(
-                                text:
-                                    '${adminUserLabel(usersById[doc.data()['customerId']])} · ',
-                              ),
+                              TextSpan(text: '$customerName · '),
                               TextSpan(
                                 text: adminLabel(status),
                                 style: TextStyle(
@@ -543,7 +502,7 @@ class _RecentRequests extends StatelessWidget {
                           ),
                         ),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _openRequest(context, repository, doc),
+                        onTap: () => _openRequest(context, doc),
                       );
                     },
                   ),
@@ -556,75 +515,11 @@ class _RecentRequests extends StatelessWidget {
   }
 }
 
-class _CriticalAlerts extends StatelessWidget {
-  const _CriticalAlerts({required this.docs, required this.repository});
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
-  final AdminRepository repository;
-
-  @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Critical alerts',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Text(
-                '${docs.length}',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (docs.isEmpty) const Text('No critical alerts right now.'),
-          for (final doc in docs)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.error_outline,
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              title: Text(
-                '${doc.data()['requestCode'] ?? doc.id} · ${doc.data()['priority'] ?? 'Unassigned'}',
-              ),
-              subtitle: Text(
-                doc.data()['status'] == StatusNames.created
-                    ? 'Waiting for agent assignment'
-                    : 'High-priority request',
-              ),
-              onTap: () => _openRequest(context, repository, doc),
-            ),
-        ],
-      ),
-    ),
-  );
-}
-
 void _openRequest(
   BuildContext context,
-  AdminRepository repository,
-  QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ({String id, RequestEntity request}) doc,
 ) {
   Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => RequestDetailsScreen(
-        repository: repository,
-        requestId: doc.id,
-        data: doc.data(),
-      ),
-    ),
+    MaterialPageRoute(builder: (_) => RequestDetailsScreen(requestId: doc.id)),
   );
 }

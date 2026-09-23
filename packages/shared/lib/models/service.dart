@@ -1,3 +1,4 @@
+import 'package:shared/entities/service_entity.dart';
 import 'package:shared/utils/model_helpers.dart';
 
 /// A QuickServe service catalog entry stored in `services/{serviceId}`.
@@ -51,4 +52,20 @@ class Service {
 
   @override
   int get hashCode => Object.hash(name, description, active, createdAt);
+
+  /// Converts this model to a pure-Dart domain entity.
+  ServiceEntity toEntity() => ServiceEntity(
+    name: name,
+    description: description,
+    active: active,
+    createdAt: createdAt,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory Service.fromEntity(ServiceEntity entity) => Service(
+    name: entity.name,
+    description: entity.description,
+    active: entity.active,
+    createdAt: entity.createdAt,
+  );
 }

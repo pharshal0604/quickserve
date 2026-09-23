@@ -1,45 +1,42 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
 import 'package:quickserve_admin/core/utils/admin_filters.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
+import 'package:quickserve_admin/injection_container.dart';
 
 import 'request_details_screen.dart';
 
-class RequestsScreen extends StatefulWidget {
-  const RequestsScreen({required this.repository, super.key});
-
-  final AdminRepository repository;
+class RequestsScreen extends ConsumerStatefulWidget {
+  const RequestsScreen({super.key});
 
   @override
-  State<RequestsScreen> createState() => _RequestsScreenState();
+  ConsumerState<RequestsScreen> createState() => _RequestsScreenState();
 }
 
-class _RequestsScreenState extends State<RequestsScreen> {
+class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   AdminRequestFilters filters = const AdminRequestFilters();
 
   @override
   Widget build(
     BuildContext context,
-  ) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: widget.repository.watchRequests(),
+  ) => StreamBuilder<List<({String id, RequestEntity request})>>(
+    stream: ref.watch(watchRequestsProvider).call(),
     builder: (context, snapshot) {
-      final all =
-          snapshot.data?.docs ??
-          const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+      final all = snapshot.data ?? [];
       final docs = filters.apply(all);
       final totalMatches = all
-          .where((doc) => filters.matches(doc.data()))
+          .where((doc) => filters.matches(doc.request))
           .length;
 
-      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: widget.repository.watchUsers(role: RoleNames.customer),
+      return StreamBuilder<List<({String id, UserEntity user})>>(
+        stream: ref.watch(watchCustomersProvider).call(),
         builder: (context, usersSnapshot) {
-          final usersById = <String, Map<String, dynamic>>{
-            for (final doc in usersSnapshot.data?.docs ?? const [])
-              doc.id: doc.data(),
+          final usersById = <String, UserEntity>{
+            for (final doc in usersSnapshot.data ?? [])
+              doc.id: doc.user,
           };
           return Padding(
             padding: const EdgeInsets.all(24),
@@ -89,9 +86,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             onOpen: (doc) => Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => RequestDetailsScreen(
-                                  repository: widget.repository,
                                   requestId: doc.id,
-                                  data: doc.data(),
                                 ),
                               ),
                             ),
@@ -146,9 +141,9 @@ class _RequestsTable extends StatelessWidget {
     required this.onOpen,
   });
 
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
-  final Map<String, Map<String, dynamic>> usersById;
-  final ValueChanged<QueryDocumentSnapshot<Map<String, dynamic>>> onOpen;
+  final List<({String id, RequestEntity request})> docs;
+  final Map<String, UserEntity> usersById;
+  final ValueChanged<({String id, RequestEntity request})> onOpen;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -177,20 +172,20 @@ class _RequestsTable extends StatelessWidget {
                   onSelectChanged: (_) => onOpen(doc),
                   cells: [
                     DataCell(
-                      _RequestCell(data: doc.data(), requestId: doc.id),
+                      _RequestCell(request: doc.request, requestId: doc.id),
                       onTap: () => onOpen(doc),
                     ),
                     DataCell(
-                      _CustomerCell(data: usersById[doc.data()['customerId']]),
+                      _CustomerCell(user: usersById[doc.request.customerId]),
                     ),
                     DataCell(
                       Text(
-                        adminLabel('${doc.data()['serviceType'] ?? 'Service'}'),
+                        adminLabel(doc.request.serviceType),
                       ),
                     ),
-                    DataCell(Text(_dateTime(doc.data()['preferredDateTime']))),
+                    DataCell(Text(_dateTime(doc.request.preferredDateTime))),
                     DataCell(
-                      _StatusBadge('${doc.data()['status'] ?? 'unknown'}'),
+                      _StatusBadge(doc.request.status.toStoredValue()),
                     ),
                   ],
                 ),
@@ -203,9 +198,9 @@ class _RequestsTable extends StatelessWidget {
 }
 
 class _RequestCell extends StatelessWidget {
-  const _RequestCell({required this.data, required this.requestId});
+  const _RequestCell({required this.request, required this.requestId});
 
-  final Map<String, dynamic> data;
+  final RequestEntity request;
   final String requestId;
 
   @override
@@ -216,12 +211,12 @@ class _RequestCell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${data['requestCode'] ?? requestId}',
+          request.requestCode,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 4),
         Text(
-          '${data['address'] ?? 'Address not provided'}',
+          request.address,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.bodySmall,
@@ -232,13 +227,13 @@ class _RequestCell extends StatelessWidget {
 }
 
 class _CustomerCell extends StatelessWidget {
-  const _CustomerCell({required this.data});
+  const _CustomerCell({required this.user});
 
-  final Map<String, dynamic>? data;
+  final UserEntity? user;
 
   @override
   Widget build(BuildContext context) {
-    final name = adminUserLabel(data);
+    final name = user?.name ?? 'Unknown Customer';
     return SizedBox(
       width: 170,
       child: Row(

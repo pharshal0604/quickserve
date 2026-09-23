@@ -34,9 +34,28 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     final isCustomer =
         profile?.role.toStoredValue() == shared.RoleNames.customer;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Request Details')),
-      body: request.when(
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+          title: const Text('Request Details'),
+        ),
+        body: request.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) =>
             const _Message('Could not load this request.'),
@@ -137,6 +156,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
           );
         },
       ),
+    ),
     );
   }
 

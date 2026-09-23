@@ -112,8 +112,10 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
   ) {
     final request = item.request;
     final status = request.status.toStoredValue();
-    return Card(
-      child: ListTile(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Card(
+        child: ListTile(
         onTap: () => context.push('/requests/${item.id}'),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -131,6 +133,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
         isThreeLine: true,
         trailing: StatusPill(label: status, color: _requestStatusColor(status)),
       ),
+    ),
     );
   }
 

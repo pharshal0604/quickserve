@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
-import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 
-final _notificationsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return const Stream.empty();
+final _notificationsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+      final user = ref.watch(authStateProvider).value;
+      if (user == null) return const Stream.empty();
 
-  return FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('notifications')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
-});
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => {'id': doc.id, ...doc.data()})
+                .toList(),
+          );
+    });
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -32,8 +36,6 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  int _tabIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider).value;
@@ -42,56 +44,37 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+        ),
         centerTitle: true,
         title: const Text(
           'Notifications',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings_outlined, size: 19),
-          ),
-        ],
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 34,
-            child: Row(
-              children: [
-                _NotificationTab(
-                  label: 'All',
-                  selected: _tabIndex == 0,
-                  onTap: () => setState(() => _tabIndex = 0),
-                ),
-                _NotificationTab(
-                  label: 'Unread',
-                  selected: _tabIndex == 1,
-                  onTap: () => setState(() => _tabIndex = 1),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: Theme.of(context).colorScheme.outline),
           Expanded(
             child: notificationsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Error: $e')),
               data: (notifications) {
-                final filtered = _tabIndex == 1
-                    ? notifications.where((n) => n['isRead'] != true).toList()
-                    : notifications;
+                final filtered = notifications;
 
                 if (filtered.isEmpty) {
                   return Center(
                     child: Text(
                       'No notifications found.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.mutedText,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: AppColors.mutedText),
                     ),
                   );
                 }
@@ -100,25 +83,35 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   itemCount: filtered.length,
                   separatorBuilder: (context, index) => Divider(
                     height: 1,
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    color: Theme.of(context).colorScheme.outline
+                        .withValues(alpha: 0.5),
                   ),
                   itemBuilder: (context, index) {
                     final note = filtered[index];
                     final isRead = note['isRead'] == true;
-                    
+
                     return ListTile(
-                      tileColor: isRead ? null : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                      tileColor: isRead
+                          ? null
+                          : Theme.of(context).colorScheme.primary
+                                .withValues(alpha: 0.05),
                       leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer,
                         child: Icon(
                           Icons.notifications,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimaryContainer,
                         ),
                       ),
                       title: Text(
                         note['title'] ?? 'Notification',
                         style: TextStyle(
-                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                          fontWeight: isRead
+                              ? FontWeight.normal
+                              : FontWeight.bold,
                         ),
                       ),
                       subtitle: Text(note['body'] ?? ''),
@@ -148,46 +141,3 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 }
 
-class _NotificationTab extends StatelessWidget {
-  const _NotificationTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: selected
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).textTheme.bodySmall?.color,
-              fontSize: 10,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

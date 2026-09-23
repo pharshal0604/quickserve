@@ -1,122 +1,124 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:quickserve_admin/injection_container.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
-class PersonDetailsScreen extends StatelessWidget {
-  const PersonDetailsScreen({
-    required this.repository,
-    required this.userId,
-    required this.role,
-    required this.data,
-    super.key,
-  });
+class PersonDetailsScreen extends ConsumerWidget {
+  const PersonDetailsScreen({required this.customerId, super.key});
 
-  final AdminRepository repository;
-  final String userId;
-  final String role;
-  final Map<String, dynamic> data;
+  final String customerId;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     appBar: AppBar(
       leading: const BackButton(),
-      title: Text(
-        role == RoleNames.customer ? 'Customer profile' : 'Agent profile',
-      ),
+      title: const Text('Customer profile'),
     ),
-    body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: repository.watchRequests(),
+    body: StreamBuilder<List<({String id, RequestEntity request})>>(
+      stream: ref.watch(watchRequestsProvider).call(),
       builder: (context, snapshot) {
-        final requests = (snapshot.data?.docs ?? const []).where((doc) {
-          final item = doc.data();
-          return role == RoleNames.customer
-              ? item['customerId'] == userId
-              : item['agentId'] == userId;
+        final requests = (snapshot.data ?? const []).where((doc) {
+          final item = doc.request;
+          return item.customerId == customerId;
         }).toList();
         final active = requests
             .where(
               (doc) => ![
                 StatusNames.completed,
                 StatusNames.cancelled,
-              ].contains(doc.data()['status']),
+              ].contains(doc.request.status.toStoredValue()),
             )
             .toList();
         final completed = requests
-            .where((doc) => doc.data()['status'] == StatusNames.completed)
+            .where(
+              (doc) =>
+                  doc.request.status.toStoredValue() == StatusNames.completed,
+            )
             .toList();
 
-        return ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final profile = _ProfileCard(
-                  data: data,
-                  userId: userId,
-                  role: role,
-                );
-                final summary = _ProfileSummary(
-                  requests: requests,
-                  active: active,
-                  completed: completed,
-                );
-                return constraints.maxWidth >= 900
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(width: 320, child: profile),
-                          const SizedBox(width: 20),
-                          Expanded(child: summary),
-                        ],
-                      )
-                    : Column(
-                        children: [
-                          profile,
-                          const SizedBox(height: 16),
-                          summary,
-                        ],
-                      );
-              },
-            ),
-            const SizedBox(height: 20),
-            DefaultTabController(
-              length: 2,
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const TabBar(
-                      tabs: [
-                        Tab(text: 'Service History'),
-                        Tab(text: 'Activity Log'),
+        return FutureBuilder<({String id, UserEntity user})?>(
+          future: ref.watch(getCustomerDetailsProvider).call(customerId),
+          builder: (context, userSnapshot) {
+            final user = userSnapshot.data?.user;
+            if (user == null &&
+                userSnapshot.connectionState != ConnectionState.waiting) {
+              return const Center(child: Text('Customer not found'));
+            }
+            if (user == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final profile = _ProfileCard(
+                      user: user,
+                      userId: customerId,
+                      role: RoleNames.customer,
+                    );
+                    final summary = _ProfileSummary(
+                      requests: requests,
+                      active: active,
+                      completed: completed,
+                    );
+                    return constraints.maxWidth >= 900
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(width: 320, child: profile),
+                              const SizedBox(width: 20),
+                              Expanded(child: summary),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              profile,
+                              const SizedBox(height: 16),
+                              summary,
+                            ],
+                          );
+                  },
+                ),
+                const SizedBox(height: 20),
+                DefaultTabController(
+                  length: 2,
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const TabBar(
+                          tabs: [
+                            Tab(text: 'Service History'),
+                            Tab(text: 'Activity Log'),
+                          ],
+                        ),
+                        SizedBox(
+                          height: 430,
+                          child: TabBarView(
+                            children: [
+                              _RequestTable(
+                                title: 'Recent service history',
+                                docs: completed,
+                              ),
+                              _ActivityPlaceholder(userId: customerId),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    SizedBox(
-                      height: 430,
-                      child: TabBarView(
-                        children: [
-                          _RequestTable(
-                            title: 'Recent service history',
-                            docs: completed,
-                          ),
-                          _ActivityPlaceholder(
-                            repository: repository,
-                            userId: userId,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            _RequestTable(title: 'Active requests', docs: active),
-          ],
+                const SizedBox(height: 20),
+                _RequestTable(title: 'Active requests', docs: active),
+              ],
+            );
+          },
         );
       },
     ),
@@ -125,23 +127,21 @@ class PersonDetailsScreen extends StatelessWidget {
 
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard({
-    required this.data,
+    required this.user,
     required this.userId,
     required this.role,
   });
 
-  final Map<String, dynamic> data;
+  final UserEntity user;
   final String userId;
   final String role;
 
   @override
   Widget build(BuildContext context) {
-    final name = '${data['name'] ?? userId}';
-    final status = '${data['status'] ?? 'active'}';
+    final name = user.name;
+    const status = 'active';
     final scheme = Theme.of(context).colorScheme;
-    final statusColor = status == 'active'
-        ? scheme.tertiary
-        : scheme.outline;
+    final statusColor = status == 'active' ? scheme.tertiary : scheme.outline;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(22),
@@ -180,14 +180,8 @@ class _ProfileCard extends StatelessWidget {
               ),
             ),
             const Divider(height: 30),
-            _ContactLine(
-              icon: Icons.mail_outline,
-              value: '${data['email'] ?? 'No email'}',
-            ),
-            _ContactLine(
-              icon: Icons.phone_outlined,
-              value: '${data['phone'] ?? 'No phone'}',
-            ),
+            _ContactLine(icon: Icons.mail_outline, value: user.email),
+            _ContactLine(icon: Icons.phone_outlined, value: user.phone),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -234,9 +228,9 @@ class _ProfileSummary extends StatelessWidget {
     required this.active,
     required this.completed,
   });
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> requests;
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> active;
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> completed;
+  final List<({String id, RequestEntity request})> requests;
+  final List<({String id, RequestEntity request})> active;
+  final List<({String id, RequestEntity request})> completed;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -324,7 +318,7 @@ class _MetricCard extends StatelessWidget {
 class _RequestTable extends StatelessWidget {
   const _RequestTable({required this.title, required this.docs});
   final String title;
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final List<({String id, RequestEntity request})> docs;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -341,9 +335,7 @@ class _RequestTable extends StatelessWidget {
               child: Text('No requests in this section.'),
             ),
           if (docs.isNotEmpty)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
+            LayoutBuilder(builder: (context, constraints) { return SingleChildScrollView(scrollDirection: Axis.horizontal, child: ConstrainedBox(constraints: BoxConstraints(minWidth: constraints.maxWidth), child: DataTable(
                 headingRowHeight: 46,
                 dataRowMinHeight: 60,
                 dataRowMaxHeight: 70,
@@ -359,26 +351,23 @@ class _RequestTable extends StatelessWidget {
                       cells: [
                         DataCell(
                           Text(
-                            '${doc.data()['requestCode'] ?? doc.id}',
+                            doc.request.requestCode,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
+                        DataCell(Text(adminLabel(doc.request.serviceType))),
+                        DataCell(Text(_date(doc.request.preferredDateTime))),
                         DataCell(
-                          Text(
-                            adminLabel(
-                              '${doc.data()['serviceType'] ?? 'Service'}',
-                            ),
-                          ),
-                        ),
-                        DataCell(Text(_date(doc.data()['preferredDateTime']))),
-                        DataCell(
-                          _StatusBadge('${doc.data()['status'] ?? 'unknown'}'),
+                          _StatusBadge(doc.request.status.toStoredValue()),
                         ),
                       ],
                     ),
                 ],
               ),
             ),
+          );
+        },
+      ),
         ],
       ),
     ),
@@ -410,46 +399,44 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _ActivityPlaceholder extends StatelessWidget {
-  const _ActivityPlaceholder({required this.repository, required this.userId});
-  final AdminRepository repository;
+class _ActivityPlaceholder extends ConsumerWidget {
+  const _ActivityPlaceholder({required this.userId});
   final String userId;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: repository.watchAuditLogs(),
-    builder: (context, snapshot) {
-      final docs = (snapshot.data?.docs ?? const []).where((doc) {
-        final data = doc.data();
-        return data['actorUserId'] == userId || data['targetId'] == userId;
-      }).toList();
-      if (docs.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('No activity is recorded for this profile yet.'),
-        );
-      }
-      return ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: docs.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final data = docs[index].data();
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const CircleAvatar(child: Icon(Icons.history, size: 18)),
-            title: Text(adminLabel('${data['action'] ?? 'event'}')),
-            subtitle: Text(
-              '${data['targetType'] ?? 'Target'} · ${data['targetId'] ?? '—'}',
-            ),
-            trailing: Text(_dateTime(data['timestamp'])),
+  Widget build(BuildContext context, WidgetRef ref) =>
+      StreamBuilder<List<({String id, AuditLogEntity log})>>(
+        stream: ref.watch(watchAuditLogsProvider).call(),
+        builder: (context, snapshot) {
+          final docs = (snapshot.data ?? const []).where((doc) {
+            final data = doc.log;
+            return data.actorUserId == userId || data.targetId == userId;
+          }).toList();
+          if (docs.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('No activity is recorded for this profile yet.'),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: docs.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final data = docs[index].log;
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  child: Icon(Icons.history, size: 18),
+                ),
+                title: Text(adminLabel('${data.action}')),
+                subtitle: Text('${data.targetType} · ${data.targetId}'),
+                trailing: Text(_dateTime(data.timestamp)),
+              );
+            },
           );
         },
       );
-    },
-  );
 }
 
 String _dateTime(dynamic value) {

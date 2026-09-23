@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
@@ -44,8 +45,27 @@ class AgentProfileScreen extends StatelessWidget {
     final initial = displayName[0].toUpperCase();
     final displayPhone = phone?.isNotEmpty == true ? phone! : 'Not provided';
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Technician Profile')),
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+          title: const Text('Technician Profile'),
+        ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -102,6 +122,7 @@ class AgentProfileScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

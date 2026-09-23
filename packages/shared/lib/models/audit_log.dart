@@ -1,3 +1,4 @@
+import 'package:shared/entities/audit_log_entity.dart';
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -98,5 +99,31 @@ class AuditLog {
     deepHash(newValue),
     result,
     timestamp,
+  );
+
+  /// Converts this model to a pure-Dart domain entity.
+  AuditLogEntity toEntity() => AuditLogEntity(
+    actorUserId: actorUserId,
+    actorRole: actorRole,
+    action: action,
+    targetType: targetType,
+    targetId: targetId,
+    oldValue: oldValue,
+    newValue: newValue,
+    result: result,
+    timestamp: timestamp,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory AuditLog.fromEntity(AuditLogEntity entity) => AuditLog(
+    actorUserId: entity.actorUserId,
+    actorRole: entity.actorRole,
+    action: entity.action,
+    targetType: entity.targetType,
+    targetId: entity.targetId,
+    oldValue: entity.oldValue,
+    newValue: entity.newValue,
+    result: entity.result,
+    timestamp: entity.timestamp,
   );
 }

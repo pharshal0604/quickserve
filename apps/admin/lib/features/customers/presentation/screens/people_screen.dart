@@ -1,39 +1,37 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:quickserve_admin/injection_container.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
 import 'person_details_screen.dart';
 
-class PeopleScreen extends StatefulWidget {
+class PeopleScreen extends ConsumerStatefulWidget {
   const PeopleScreen({
-    required this.repository,
     required this.role,
     this.detailsBuilder,
     this.onDetails,
     super.key,
   });
 
-  final AdminRepository repository;
   final String role;
-  final ValueChanged<({String userId, Map<String, dynamic> data})>? onDetails;
+  final ValueChanged<({String userId, UserEntity user})>? onDetails;
   final Widget Function(
     BuildContext context,
     String userId,
-    Map<String, dynamic> data,
+    UserEntity user,
   )?
   detailsBuilder;
 
   @override
-  State<PeopleScreen> createState() => _PeopleScreenState();
+  ConsumerState<PeopleScreen> createState() => _PeopleScreenState();
 }
 
 class _PeopleDataSource extends DataTableSource {
   _PeopleDataSource(this.docs, this.context, this.widget);
 
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
+  final List<({String id, UserEntity user})> docs;
   final BuildContext context;
   final PeopleScreen widget;
 
@@ -41,24 +39,21 @@ class _PeopleDataSource extends DataTableSource {
   DataRow? getRow(int index) {
     if (index >= docs.length) return null;
     final doc = docs[index];
-    final data = doc.data();
+    final user = doc.user;
 
     return DataRow(
       onSelectChanged: (_) {
         final onDetails = widget.onDetails;
         if (onDetails != null) {
-          onDetails((userId: doc.id, data: data));
+          onDetails((userId: doc.id, user: user));
           return;
         }
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) =>
-                widget.detailsBuilder?.call(context, doc.id, data) ??
+                widget.detailsBuilder?.call(context, doc.id, user) ??
                 PersonDetailsScreen(
-                  repository: widget.repository,
-                  userId: doc.id,
-                  role: widget.role,
-                  data: data,
+                  customerId: doc.id,
                 ),
           ),
         );
@@ -73,20 +68,20 @@ class _PeopleDataSource extends DataTableSource {
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                 foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                 child: Text(
-                  adminInitial(data['name']),
+                  adminInitial(user.name),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 12),
-              Text('${data['name'] ?? doc.id}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
         ),
-        DataCell(Text('${data['email'] ?? 'No email'}')),
-        DataCell(Text('${data['phone'] ?? 'No phone'}')),
+        DataCell(Text(user.email)),
+        DataCell(Text(user.phone)),
         DataCell(
           Chip(
-            label: Text('${data['status'] ?? 'active'}'),
+            label: const Text('active'),
             labelStyle: const TextStyle(fontSize: 11),
             padding: EdgeInsets.zero,
           ),
@@ -105,7 +100,7 @@ class _PeopleDataSource extends DataTableSource {
   int get selectedRowCount => 0;
 }
 
-class _PeopleScreenState extends State<PeopleScreen> {
+class _PeopleScreenState extends ConsumerState<PeopleScreen> {
   String search = '';
   String stateFilter = 'all';
   int _rowsPerPage = PaginatedDataTable.defaultRowsPerPage;
@@ -115,36 +110,36 @@ class _PeopleScreenState extends State<PeopleScreen> {
   @override
   Widget build(
     BuildContext context,
-  ) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: widget.repository.watchUsers(role: widget.role),
+  ) => StreamBuilder<List<({String id, UserEntity user})>>(
+    stream: widget.role == RoleNames.customer 
+        ? ref.watch(watchCustomersProvider).call() 
+        : ref.watch(watchAgentsProvider).call(),
     builder: (context, snapshot) {
-      final all =
-          snapshot.data?.docs ??
-          const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+      final all = snapshot.data ?? [];
       final filtered = all.where((doc) {
-        final data = doc.data();
+        final user = doc.user;
         final needle = search.trim().toLowerCase();
         final text = [
-          data['name'],
-          data['email'],
-          data['phone'],
+          user.name,
+          user.email,
+          user.phone,
           doc.id,
         ].join(' ').toLowerCase();
-        final accountState = '${data['status'] ?? 'active'}';
+        final accountState = 'active';
         return (needle.isEmpty || text.contains(needle)) &&
             (stateFilter == 'all' || accountState == stateFilter);
       }).toList();
 
       if (_sortColumnIndex == 0) {
         filtered.sort((a, b) {
-          final aName = (a.data()['name'] ?? '').toString().toLowerCase();
-          final bName = (b.data()['name'] ?? '').toString().toLowerCase();
+          final aName = (a.user.name ).toLowerCase();
+          final bName = (b.user.name ).toLowerCase();
           return _sortAscending ? aName.compareTo(bName) : bName.compareTo(aName);
         });
       } else if (_sortColumnIndex == 1) {
         filtered.sort((a, b) {
-          final aEmail = (a.data()['email'] ?? '').toString().toLowerCase();
-          final bEmail = (b.data()['email'] ?? '').toString().toLowerCase();
+          final aEmail = (a.user.email ).toLowerCase();
+          final bEmail = (b.user.email ).toLowerCase();
           return _sortAscending ? aEmail.compareTo(bEmail) : bEmail.compareTo(aEmail);
         });
       }

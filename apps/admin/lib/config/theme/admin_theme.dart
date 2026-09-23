@@ -24,6 +24,33 @@ abstract final class AdminTheme {
   static const error = AppColors.error;
   static const googleBlue = AppColors.googleBlue;
 
-  static ThemeData light() => AppTheme.light();
-  static ThemeData dark() => AppTheme.dark();
+
+  static ThemeData light() {
+    final base = AppTheme.light();
+    return base.copyWith(
+      filledButtonTheme: FilledButtonThemeData(
+        style: base.filledButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: base.elevatedButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: base.outlinedButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+    );
+  }
+  static ThemeData dark() {
+    final base = AppTheme.dark();
+    return base.copyWith(
+      filledButtonTheme: FilledButtonThemeData(
+        style: base.filledButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: base.elevatedButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: base.outlinedButtonTheme.style?.copyWith(minimumSize: const WidgetStatePropertyAll(Size(0, 46))),
+      ),
+    );
+  }
 }

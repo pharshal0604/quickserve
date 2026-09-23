@@ -1,139 +1,54 @@
+import 'package:quickserve_admin/config/routes/app_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
-import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/theme/admin_theme.dart';
-import 'features/auth/presentation/auth_gate.dart';
-import 'features/dashboard/presentation/screens/dashboard_screen.dart';
-import 'features/requests/presentation/screens/requests_screen.dart';
-import 'features/customers/presentation/screens/customers_screen.dart';
-import 'features/agents/presentation/screens/agents_screen.dart';
-import 'features/agents/presentation/screens/agent_details_screen.dart';
-import 'features/services/presentation/screens/services_screen.dart';
-import 'features/activity/presentation/screens/activity_screen.dart';
-import 'features/activity/presentation/screens/notifications_screen.dart';
-import 'features/settings/presentation/screens/settings_screen.dart';
 
 import 'package:quickserve_admin/config/firebase/firebase_options.dart';
+import 'package:go_router/go_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const QuickServeAdminApp());
+  runApp(const ProviderScope(child: QuickServeAdminApp()));
 }
 
-class QuickServeAdminApp extends StatefulWidget {
+final darkModeProvider = StateProvider<bool>((ref) => false);
+final textScaleProvider = StateProvider<double>((ref) => 1.0);
+
+class QuickServeAdminApp extends ConsumerWidget {
   const QuickServeAdminApp({super.key});
 
   @override
-  State<QuickServeAdminApp> createState() => _QuickServeAdminAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    final darkMode = ref.watch(darkModeProvider);
+    final textScale = ref.watch(textScaleProvider);
 
-class _QuickServeAdminAppState extends State<QuickServeAdminApp> {
-  bool darkMode = false;
-  double textScale = 1.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'QuickServe Admin',
       debugShowCheckedModeBanner: false,
       themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: AdminTheme.light(),
       darkTheme: AdminTheme.dark(),
+      routerConfig: router,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context)
             .copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
-      home: AuthGate(
-        adminBuilder: (user) => AdminShell(
-          user: user,
-          darkMode: darkMode,
-          textScale: textScale,
-          onThemeChanged: (value) => setState(() => darkMode = value),
-          onTextScaleChanged: (value) => setState(() => textScale = value),
-        ),
-      ),
     );
   }
 }
 
-class AdminShell extends StatefulWidget {
-  const AdminShell({
-    required this.user,
-    required this.darkMode,
-    required this.textScale,
-    required this.onThemeChanged,
-    required this.onTextScaleChanged,
-    super.key,
-  });
-  final User user;
-  final bool darkMode;
-  final double textScale;
-  final ValueChanged<bool> onThemeChanged;
-  final ValueChanged<double> onTextScaleChanged;
-  @override
-  State<AdminShell> createState() => _AdminShellState();
-}
-
-class _AdminShellState extends State<AdminShell> {
-  int index = 0;
-  final repository = AdminRepository();
-  String? selectedAgentId;
-  Map<String, dynamic>? selectedAgentData;
-  final titles = const [
-    'Dashboard',
-    'Requests',
-    'Customers',
-    'Agents',
-    'Services',
-    'Activity',
-    'Notifications',
-    'Settings',
-  ];
-
-  void _clearSelectedAgent() {
-    if (selectedAgentId == null && selectedAgentData == null) return;
-    setState(() {
-      selectedAgentId = null;
-      selectedAgentData = null;
-    });
-  }
+class AdminShell extends StatelessWidget {
+  const AdminShell({required this.navigationShell, super.key});
+  final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      DashboardScreen(repository: repository),
-      RequestsScreen(repository: repository),
-      CustomersScreen(repository: repository),
-      if (selectedAgentId != null && selectedAgentData != null)
-        AgentDetailsScreen(
-          repository: repository,
-          userId: selectedAgentId!,
-          data: selectedAgentData!,
-          onBack: _clearSelectedAgent,
-        )
-      else
-        AgentsScreen(
-          repository: repository,
-          onAgentSelected: (selection) => setState(() {
-            selectedAgentId = selection.userId;
-            selectedAgentData = selection.data;
-          }),
-        ),
-      ServicesScreen(repository: repository),
-      ActivityScreen(repository: repository),
-      const NotificationsScreen(),
-      SettingsScreen(
-        darkMode: widget.darkMode,
-        textScale: widget.textScale,
-        onThemeChanged: widget.onThemeChanged,
-        onTextScaleChanged: widget.onTextScaleChanged,
-      ),
-    ];
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -171,33 +86,16 @@ class _AdminShellState extends State<AdminShell> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Toggle light/dark theme',
-            onPressed: () => widget.onThemeChanged(
-              Theme.of(context).brightness == Brightness.light,
-            ),
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.light
-                  ? Icons.dark_mode_outlined
-                  : Icons.light_mode_outlined,
-            ),
-          ),
-        ],
       ),
       body: Row(
         children: [
           _AdminSidebar(
-            selectedIndex: index,
-            onSelected: (value) => setState(() {
-              index = value;
-              selectedAgentId = null;
-              selectedAgentData = null;
-            }),
+            selectedIndex: navigationShell.currentIndex,
+            onSelected: (value) => navigationShell.goBranch(value),
             onLogout: FirebaseAuth.instance.signOut,
           ),
           const VerticalDivider(width: 1),
-          Expanded(child: pages[index]),
+          Expanded(child: navigationShell),
         ],
       ),
     );
@@ -223,8 +121,7 @@ class _AdminSidebar extends StatelessWidget {
       (label: 'Agents', icon: Icons.engineering_outlined, index: 3),
       (label: 'Services', icon: Icons.home_repair_service_outlined, index: 4),
       (label: 'Audit & Activity', icon: Icons.history, index: 5),
-      (label: 'Notifications', icon: Icons.notifications_none, index: 6),
-      (label: 'Settings', icon: Icons.settings_outlined, index: 7),
+      (label: 'Settings', icon: Icons.settings_outlined, index: 6),
     ];
     return Container(
       width: 220,

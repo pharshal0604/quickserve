@@ -1,3 +1,4 @@
+import 'package:shared/entities/request_entity.dart';
 import 'package:shared/constants/enums.dart';
 import 'package:shared/utils/model_helpers.dart';
 
@@ -140,5 +141,41 @@ class Request {
     createdAt,
     updatedAt,
     cancellationReason,
+  );
+
+  /// Converts this model to a pure-Dart domain entity.
+  RequestEntity toEntity() => RequestEntity(
+    requestCode: requestCode,
+    customerId: customerId,
+    agentId: agentId,
+    agentName: agentName,
+    agentPhone: agentPhone,
+    serviceType: serviceType,
+    description: description,
+    preferredDateTime: preferredDateTime,
+    address: address,
+    priority: priority,
+    status: status,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    cancellationReason: cancellationReason,
+  );
+
+  /// Creates this model from a pure-Dart domain entity.
+  factory Request.fromEntity(RequestEntity entity) => Request(
+    requestCode: entity.requestCode,
+    customerId: entity.customerId,
+    agentId: entity.agentId,
+    agentName: entity.agentName,
+    agentPhone: entity.agentPhone,
+    serviceType: entity.serviceType,
+    description: entity.description,
+    preferredDateTime: entity.preferredDateTime,
+    address: entity.address,
+    priority: entity.priority,
+    status: entity.status,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+    cancellationReason: entity.cancellationReason,
   );
 }

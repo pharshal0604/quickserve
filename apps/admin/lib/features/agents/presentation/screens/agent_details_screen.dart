@@ -1,29 +1,41 @@
 import 'dart:math' as math;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:quickserve_admin/core/network/admin_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quickserve_admin/injection_container.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
-class AgentDetailsScreen extends StatelessWidget {
+class AgentDetailsScreen extends ConsumerWidget {
   const AgentDetailsScreen({
-    required this.repository,
-    required this.userId,
-    required this.data,
+    required this.agentId,
     this.onBack,
     super.key,
   });
 
-  final AdminRepository repository;
-  final String userId;
-  final Map<String, dynamic> data;
+  final String agentId;
   final VoidCallback? onBack;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) { return FutureBuilder<({String id, UserEntity user})?>(
+      future: ref.watch(getAgentDetailsProvider).call(agentId),
+      builder: (context, agentSnapshot) {
+        if (agentSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        final userEntity = agentSnapshot.data?.user;
+        if (userEntity == null) return const Scaffold(body: Center(child: Text('Agent not found')));
+        final data = {
+          'name': userEntity.name,
+          'email': userEntity.email,
+          'phone': userEntity.phone,
+          'role': userEntity.role.name,
+          'location': userEntity.office,
+          'schedule': userEntity.schedule,
+        };
+        return Scaffold(
     appBar: AppBar(
       leading: IconButton(
         tooltip: 'Back to agents',
@@ -34,8 +46,8 @@ class AgentDetailsScreen extends StatelessWidget {
       actions: [
         OutlinedButton.icon(
           onPressed: () async {
-            final email = data['email'] as String?;
-            final phone = data['phone'] as String?;
+            final email = data['email'] ;
+            final phone = data['phone'] ;
             if (email != null && email.isNotEmpty) {
               final uri = Uri.parse('mailto:$email');
               if (await canLaunchUrl(uri)) await launchUrl(uri);
@@ -56,7 +68,7 @@ class AgentDetailsScreen extends StatelessWidget {
         const SizedBox(width: 8),
         FilledButton.icon(
           onPressed: () {
-            final controller = TextEditingController(text: data['schedule'] as String? ?? '');
+            final controller = TextEditingController(text: data['schedule']  ?? '');
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
@@ -75,10 +87,7 @@ class AgentDetailsScreen extends StatelessWidget {
                   ),
                   FilledButton(
                     onPressed: () async {
-                      await repository.updateAgentSchedule(
-                        agentId: userId,
-                        schedule: controller.text,
-                      );
+                      await ref.read(updateAgentScheduleProvider).call(agentId, {'schedule': controller.text});
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,21 +107,21 @@ class AgentDetailsScreen extends StatelessWidget {
         const SizedBox(width: 16),
       ],
     ),
-    body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: repository.watchRequests(),
+    body: StreamBuilder<List<({String id, RequestEntity request})>>(
+      stream: ref.watch(watchRequestsProvider).call(),
       builder: (context, snapshot) {
-        final requests = (snapshot.data?.docs ?? const [])
-            .where((doc) => doc.data()['agentId'] == userId)
+        final requests = (snapshot.data ?? const [])
+            .where((doc) => doc.request.agentId == agentId)
             .toList();
         final completed = requests
-            .where((doc) => doc.data()['status'] == StatusNames.completed)
+            .where((doc) => doc.request.status.toStoredValue() == StatusNames.completed)
             .length;
         final active = requests
             .where(
               (doc) => ![
                 StatusNames.completed,
                 StatusNames.cancelled,
-              ].contains(doc.data()['status']),
+              ].contains(doc.request.status.toStoredValue()),
             )
             .length;
         final successRate = requests.isEmpty
@@ -187,7 +196,10 @@ class AgentDetailsScreen extends StatelessWidget {
         );
       },
     ),
-  );
+    );
+      },
+    );
+  }
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -480,7 +492,7 @@ class _SkillsCard extends StatelessWidget {
 
 class _RecentJobs extends StatelessWidget {
   const _RecentJobs({required this.requests});
-  final List<QueryDocumentSnapshot<Map<String, dynamic>>> requests;
+  final List<({String id, RequestEntity request})> requests;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -495,16 +507,16 @@ class _RecentJobs extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (requests.isEmpty) const Text('No assigned requests yet.'),
-          for (final request in requests)
+          for (final reqItem in requests)
             Builder(
               builder: (context) {
-                final status = '${request.data()['status'] ?? 'unknown'}';
+                final status = reqItem.request.status.toStoredValue();
                 final statusColor = adminStatusColor(context, status);
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(adminStatusIcon(status), color: statusColor),
                   title: Text(
-                    '${request.data()['requestCode'] ?? request.id} · ${request.data()['serviceType'] ?? 'Service'}',
+                    ' · ',
                   ),
                   subtitle: Text(
                     adminLabel(status),
