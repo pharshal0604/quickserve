@@ -44,9 +44,8 @@ class _QuickServeAdminAppState extends State<QuickServeAdminApp> {
       theme: AdminTheme.light(),
       darkTheme: AdminTheme.dark(),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(textScale),
-        ),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
       home: AuthGate(
@@ -128,12 +127,12 @@ class _AdminShellState extends State<AdminShell> {
       ServicesScreen(repository: repository),
       ActivityScreen(repository: repository),
       const NotificationsScreen(),
-        SettingsScreen(
-          darkMode: widget.darkMode,
-          textScale: widget.textScale,
-          onThemeChanged: widget.onThemeChanged,
-          onTextScaleChanged: widget.onTextScaleChanged,
-        ),
+      SettingsScreen(
+        darkMode: widget.darkMode,
+        textScale: widget.textScale,
+        onThemeChanged: widget.onThemeChanged,
+        onTextScaleChanged: widget.onTextScaleChanged,
+      ),
     ];
     return Scaffold(
       appBar: AppBar(

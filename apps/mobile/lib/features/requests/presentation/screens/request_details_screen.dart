@@ -187,7 +187,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         ],
       ),
     );
-    controller.dispose();
+    // Delay disposal until dialog animation finishes to prevent ANR freeze
+    Future.delayed(const Duration(milliseconds: 300), () => controller.dispose());
+    
     if (!mounted || note == null) return;
     await _runAgentAction(
       () => ref
@@ -224,15 +226,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         ],
       ),
     );
+    
+    // Delay disposal until dialog animation finishes to prevent ANR freeze
+    Future.delayed(const Duration(milliseconds: 300), () => controller.dispose());
+    
     if (reason == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.dispose();
-      });
       return;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.dispose();
-    });
     if (!mounted) return;
     final normalizedReason = shared.sanitizeRequestText(reason);
     final reasonResult = shared.validateCancellationReason(normalizedReason);
