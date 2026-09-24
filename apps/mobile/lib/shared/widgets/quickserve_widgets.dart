@@ -148,7 +148,12 @@ class CustomerBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
-        final paths = [AppRoutes.home, AppRoutes.services, AppRoutes.requests, AppRoutes.profile];
+        final paths = [
+          AppRoutes.home,
+          AppRoutes.services,
+          AppRoutes.requests,
+          AppRoutes.profile,
+        ];
         context.go(paths[index]);
       },
       indicatorColor: AppColors.mintSurface,

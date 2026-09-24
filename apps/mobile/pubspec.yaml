@@ -1,4 +1,4 @@
-﻿name: quickserve_mobile
+name: quickserve_mobile
 description: QuickServe mobile application.
 publish_to: "none"
 version: 0.0.1
@@ -34,5 +34,9 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: true
+  web:
+    generate: true
+    image_path: "assets/icon.jpg"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
   image_path: "assets/icon.jpg"

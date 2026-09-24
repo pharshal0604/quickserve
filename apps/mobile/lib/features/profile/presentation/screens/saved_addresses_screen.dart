@@ -68,18 +68,85 @@ class _SavedAddressesScreenState extends ConsumerState<SavedAddressesScreen> {
   }
 
   void _showAddDialog() {
-    final controller = TextEditingController();
+    final blockController = TextEditingController();
+    final areaController = TextEditingController();
+    final landmarkController = TextEditingController();
+    final cityController = TextEditingController();
+    final districtController = TextEditingController();
+    final stateController = TextEditingController();
+    final pincodeController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Address'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter your full address',
-            border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: blockController,
+                  decoration: const InputDecoration(labelText: 'Block / Building'),
+                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: areaController,
+                  decoration: const InputDecoration(labelText: 'Area / Street'),
+                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: landmarkController,
+                  decoration: const InputDecoration(labelText: 'Landmark'),
+                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: cityController,
+                        decoration: const InputDecoration(labelText: 'City'),
+                        validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: districtController,
+                        decoration: const InputDecoration(labelText: 'District'),
+                        validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: stateController,
+                        decoration: const InputDecoration(labelText: 'State'),
+                        validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: pincodeController,
+                        decoration: const InputDecoration(labelText: 'Pincode'),
+                        validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          maxLines: 3,
         ),
         actions: [
           TextButton(
@@ -88,11 +155,19 @@ class _SavedAddressesScreenState extends ConsumerState<SavedAddressesScreen> {
           ),
           FilledButton(
             onPressed: () {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                _addAddress(text);
+              if (formKey.currentState?.validate() == true) {
+                final block = blockController.text.trim();
+                final area = areaController.text.trim();
+                final landmark = landmarkController.text.trim();
+                final city = cityController.text.trim();
+                final district = districtController.text.trim();
+                final state = stateController.text.trim();
+                final pincode = pincodeController.text.trim();
+
+                final fullAddress = '$block, $area\nLandmark: $landmark\n$city, $district\n$state - $pincode';
+                _addAddress(fullAddress);
+                Navigator.pop(context);
               }
-              Navigator.pop(context);
             },
             child: const Text('Save'),
           ),

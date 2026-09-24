@@ -188,11 +188,6 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                   ),
                   const SizedBox(height: 5),
                   const Text(
-                    'Browse services',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 3),
-                  const Text(
                     'Find the right professional for your home.',
                     style: TextStyle(color: AppColors.mutedText),
                   ),

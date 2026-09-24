@@ -511,14 +511,6 @@ class _TimelineCard extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.chat_bubble_outline, size: 16),
-            label: const Text('Add Internal Note'),
-          ),
         ],
       ),
     ),

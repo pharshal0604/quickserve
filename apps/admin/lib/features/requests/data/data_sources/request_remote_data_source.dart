@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class RequestRemoteDataSource {
   Stream<QuerySnapshot> watchRequests();
@@ -28,8 +29,8 @@ class RequestRemoteDataSourceImpl implements RequestRemoteDataSource {
     return firestore
         .collection('requests')
         .doc(requestId)
-        .collection('statusHistory')
-        .orderBy('timestamp', descending: true)
+        .collection('status_history')
+        .orderBy('changedAt', descending: true)
         .snapshots();
   }
 
@@ -37,14 +38,32 @@ class RequestRemoteDataSourceImpl implements RequestRemoteDataSource {
   Future<void> assignRequest(String requestId, String agentId) async {
     final agentDoc = await firestore.collection('users').doc(agentId).get();
     final agentData = agentDoc.data();
+    
+    final requestRef = firestore.collection('requests').doc(requestId);
+    final requestDoc = await requestRef.get();
+    final fromStatus = requestDoc.data()?['status'];
+    
+    final batch = firestore.batch();
+    
     final updateData = {
       'agentId': agentId,
       'agentName':
           agentData?['name'] ?? agentData?['email'] ?? 'Assigned Agent',
       'agentPhone': agentData?['phone'],
-      'status': 'assigned', // It also updates status in UI, might as well make sure it's updated in DB if needed, but let's just do name/phone
+      'status': 'assigned',
     };
-    await firestore.collection('requests').doc(requestId).update(updateData);
+    batch.update(requestRef, updateData);
+    
+    final historyRef = requestRef.collection('status_history').doc();
+    batch.set(historyRef, {
+      'fromStatus': fromStatus,
+      'toStatus': 'assigned',
+      'changedBy': FirebaseAuth.instance.currentUser?.uid ?? 'admin',
+      'changedAt': FieldValue.serverTimestamp(),
+      'note': 'Assigned to ${agentData?['name'] ?? 'Agent'}',
+    });
+    
+    await batch.commit();
   }
 
   @override
@@ -53,8 +72,24 @@ class RequestRemoteDataSourceImpl implements RequestRemoteDataSource {
     String status, {
     String? note,
   }) async {
+    final requestRef = firestore.collection('requests').doc(requestId);
+    final requestDoc = await requestRef.get();
+    final fromStatus = requestDoc.data()?['status'];
+
+    final batch = firestore.batch();
+    
     final data = <String, dynamic>{'status': status};
-    if (note != null) data['note'] = note;
-    await firestore.collection('requests').doc(requestId).update(data);
+    batch.update(requestRef, data);
+    
+    final historyRef = requestRef.collection('status_history').doc();
+    batch.set(historyRef, {
+      'fromStatus': fromStatus,
+      'toStatus': status,
+      'changedBy': FirebaseAuth.instance.currentUser?.uid ?? 'admin',
+      'changedAt': FieldValue.serverTimestamp(),
+      'note': note,
+    });
+    
+    await batch.commit();
   }
 }

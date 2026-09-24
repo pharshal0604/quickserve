@@ -51,72 +51,80 @@ class PersonDetailsScreen extends ConsumerWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            return ListView(
+            return Padding(
               padding: const EdgeInsets.all(24),
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final profile = _ProfileCard(
-                      user: user,
-                      userId: customerId,
-                      role: RoleNames.customer,
-                    );
-                    final summary = _ProfileSummary(
-                      requests: requests,
-                      active: active,
-                      completed: completed,
-                    );
-                    return constraints.maxWidth >= 900
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(width: 320, child: profile),
-                              const SizedBox(width: 20),
-                              Expanded(child: summary),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              profile,
-                              const SizedBox(height: 16),
-                              summary,
-                            ],
-                          );
-                  },
-                ),
-                const SizedBox(height: 20),
-                DefaultTabController(
-                  length: 2,
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const TabBar(
-                          tabs: [
-                            Tab(text: 'Service History'),
-                            Tab(text: 'Activity Log'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final profile = _ProfileCard(
+                        user: user,
+                        userId: customerId,
+                        role: RoleNames.customer,
+                      );
+                      final summary = _ProfileSummary(
+                        requests: requests,
+                        active: active,
+                        completed: completed,
+                      );
+                      return constraints.maxWidth >= 900
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(width: 320, child: profile),
+                                const SizedBox(width: 20),
+                                Expanded(child: summary),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                profile,
+                                const SizedBox(height: 16),
+                                summary,
+                              ],
+                            );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  if (active.isNotEmpty) ...[
+                    _RequestTable(title: 'Active requests', docs: active),
+                    const SizedBox(height: 20),
+                  ],
+                  Expanded(
+                    child: DefaultTabController(
+                      length: 2,
+                      child: Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const TabBar(
+                              tabs: [
+                                Tab(text: 'Service History'),
+                                Tab(text: 'Activity Log'),
+                              ],
+                            ),
+                            Expanded(
+                              child: TabBarView(
+                                children: [
+                                  SingleChildScrollView(
+                                    child: _RequestTable(
+                                      title: 'Recent service history',
+                                      docs: completed,
+                                    ),
+                                  ),
+                                  _ActivityPlaceholder(userId: customerId),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        SizedBox(
-                          height: 430,
-                          child: TabBarView(
-                            children: [
-                              _RequestTable(
-                                title: 'Recent service history',
-                                docs: completed,
-                              ),
-                              _ActivityPlaceholder(userId: customerId),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _RequestTable(title: 'Active requests', docs: active),
-              ],
+                ],
+              ),
             );
           },
         );

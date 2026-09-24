@@ -95,21 +95,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
+                        Expanded(
+                          child: Slider(
+                            value: textScale,
+                            min: 0.8,
+                            max: 1.5,
+                            divisions: 7,
+                            label: '${(textScale * 100).toInt()}%',
+                            onChanged: (val) =>
+                                ref.read(textScaleProvider.notifier).state =
+                                    val,
+                          ),
+                        ),
                         Text(
                           '${(textScale * 100).toInt()}%',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: textScale,
-                      min: 0.8,
-                      max: 1.5,
-                      divisions: 7,
-                      label: '${(textScale * 100).toInt()}%',
-                      onChanged: (val) =>
-                          ref.read(textScaleProvider.notifier).state = val,
                     ),
                   ],
                 ),

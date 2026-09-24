@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
@@ -39,9 +40,13 @@ class AgentProfileScreen extends StatelessWidget {
       );
     }
 
-    final displayName = cleanName?.isNotEmpty == true ? cleanName! : 'Assigned technician';
+    final displayName = cleanName?.isNotEmpty == true
+        ? cleanName!
+        : 'Assigned technician';
     final initial = displayName[0].toUpperCase();
-    final displayPhone = cleanPhone?.isNotEmpty == true ? cleanPhone! : 'Not provided';
+    final displayPhone = cleanPhone?.isNotEmpty == true
+        ? cleanPhone!
+        : 'Not provided';
 
     return PopScope(
       canPop: context.canPop(),
@@ -74,7 +79,9 @@ class AgentProfileScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 46,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
                       child: Text(
                         initial,
                         style: const TextStyle(
@@ -112,9 +119,35 @@ class AgentProfileScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.phone_outlined),
+                leading: const Icon(
+                  Icons.phone_outlined,
+                  color: AppColors.statusAssigned,
+                ),
                 title: const Text('Phone'),
                 subtitle: Text(displayPhone),
+                onTap: cleanPhone?.isNotEmpty == true
+                    ? () async {
+                        final uri = Uri.parse('tel:$cleanPhone');
+                        try {
+                          final launched = await launchUrl(uri);
+                          if (!launched && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch phone dialer'),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch phone dialer'),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    : null,
               ),
             ),
           ],
