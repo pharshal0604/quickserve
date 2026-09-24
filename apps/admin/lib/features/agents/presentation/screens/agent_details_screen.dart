@@ -116,6 +116,34 @@ class AgentDetailsScreen extends ConsumerWidget {
                 icon: const Icon(Icons.calendar_month_outlined, size: 17),
                 label: const Text('Update schedule'),
               ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                onPressed: () async {
+                  final deleted = await showDialog<bool>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (ctx) => _DeleteAgentDialog(agentId: agentId),
+                  );
+                  if (deleted == true) {
+                    if (context.mounted) {
+                      if (onBack != null) {
+                        onBack!();
+                      } else {
+                        Navigator.of(context).maybePop();
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Agent deleted successfully')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.delete_outline, size: 17),
+                label: const Text('Delete'),
+              ),
               const SizedBox(width: 16),
             ],
           ),
@@ -653,4 +681,6 @@ class _DeleteAgentDialogState extends State<_DeleteAgentDialog> {
     );
   }
 }
+
+
 
