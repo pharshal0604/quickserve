@@ -434,9 +434,9 @@ flutter run
 
 | Role | Email | Password |
 |---|---|---|
-| Customer | customer.demo@quickserve.app | `Demo@1234` |
-| Agent | agent.demo@quickserve.app | `Demo@1234` |
-| Admin | admin.demo@quickserve.app | `Demo@1234` |
+| Customer | Register freely on the mobile app | `Harshal@12.` |
+| Agent | harshalpidurakr.dev@gmail.com | `Harshal@12.` |
+| Admin | harshal.pkr@gmail.com | `Harshal@12.` |
 
 > Full setup guide: [`docs/QuickServe_README_Setup_Deployment.md`](docs/QuickServe_README_Setup_Deployment.md)
 
@@ -530,3 +530,4 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
