@@ -67,9 +67,9 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
     setState(() => _loading = true);
 
     try {
-      // 1. Create a temporary FirebaseApp
+      // 1. Create a temporary FirebaseApp with a unique name to prevent collisions
       final tempApp = await Firebase.initializeApp(
-        name: 'AgentCreationApp',
+        name: 'AgentCreationApp_${DateTime.now().millisecondsSinceEpoch}',
         options: Firebase.app().options,
       );
 
@@ -83,14 +83,20 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
         final uid = cred.user!.uid;
 
         // 2. Save profile using the default Firebase app instance
-        await FirebaseFirestore.instance.collection('users').doc(uid).set({
-          'role': RoleNames.agent,
-          'name': _nameCtrl.text.trim(),
-          'email': _emailCtrl.text.trim(),
-          'phone': _phoneCtrl.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(uid).set({
+            'role': RoleNames.agent,
+            'name': _nameCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } catch (e) {
+          // Rollback: if database fails, delete the orphaned auth user
+          await cred.user!.delete();
+          rethrow;
+        }
 
         if (mounted) {
           Navigator.pop(context);
