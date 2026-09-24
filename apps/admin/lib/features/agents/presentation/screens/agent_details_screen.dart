@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickserve_admin/injection_container.dart';
@@ -550,3 +552,105 @@ class _RecentJobs extends StatelessWidget {
     ),
   );
 }
+class _DeleteAgentDialog extends StatefulWidget {
+  final String agentId;
+  const _DeleteAgentDialog({required this.agentId});
+
+  @override
+  State<_DeleteAgentDialog> createState() => _DeleteAgentDialogState();
+}
+
+class _DeleteAgentDialogState extends State<_DeleteAgentDialog> {
+  final _passwordCtrl = TextEditingController();
+  bool _loading = false;
+  String? _error;
+
+  Future<void> _delete() async {
+    final password = _passwordCtrl.text;
+    if (password.isEmpty) {
+      setState(() => _error = 'Please enter admin password');
+      return;
+    }
+    
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final adminUser = FirebaseAuth.instance.currentUser;
+      if (adminUser == null || adminUser.email == null) {
+        throw Exception("No admin logged in");
+      }
+      
+      final cred = EmailAuthProvider.credential(
+        email: adminUser.email!,
+        password: password,
+      );
+      
+      await adminUser.reauthenticateWithCredential(cred);
+
+      // Deleting the document revokes all role-based permissions immediately
+      await FirebaseFirestore.instance.collection('users').doc(widget.agentId).delete();
+
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _error = (e.code == 'wrong-password' || e.code == 'invalid-credential') 
+            ? 'Incorrect password' 
+            : e.message;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Agent', style: TextStyle(color: Colors.red)),
+      content: SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Are you sure you want to delete this agent? This action cannot be undone.'),
+            const SizedBox(height: 16),
+            const Text('Please enter admin password to confirm:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _passwordCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'Admin Password',
+                errorText: _error,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: _loading ? null : _delete,
+          child: _loading 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : const Text('Delete Agent'),
+        ),
+      ],
+    );
+  }
+}
+
