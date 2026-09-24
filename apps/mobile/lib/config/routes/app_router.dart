@@ -208,10 +208,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (registering && path == AppRoutes.register) return null;
 
-      if (!user.emailVerified) {
-        return path == AppRoutes.verifyEmail ? null : AppRoutes.verifyEmail;
-      }
-
       final profileState = ref.read(userProfileProvider);
       final justLoggedIn = ref.read(justLoggedInProvider);
 
@@ -228,7 +224,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return path == AppRoutes.splash ? null : AppRoutes.splash;
       }
 
+      if (profileState.isLoading) {
+        return path == AppRoutes.splash ? null : AppRoutes.splash;
+      }
+
       final userProfile = profileState.value;
+      final isAdmin = userProfile?.role == shared.UserRole.admin;
+
+      if (!user.emailVerified && !isAdmin) {
+        return path == AppRoutes.verifyEmail ? null : AppRoutes.verifyEmail;
+      }
+
       if (userProfile != null) {
         if (userProfile.role == shared.UserRole.agent) {
           if (path == AppRoutes.home) return '/a/home';

@@ -8,7 +8,6 @@ import 'package:shared/shared.dart' hide User;
 import '../../../main.dart';
 import '../../../injection_container.dart';
 import '../../features/auth/presentation/login_screen.dart';
-import '../../features/auth/presentation/email_verification_page.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/requests/presentation/screens/requests_screen.dart';
 import '../../features/requests/presentation/screens/request_details_screen.dart';
@@ -73,7 +72,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final user = authState.valueOrNull;
 
       final isLoggingIn = state.uri.path == '/login';
-      final isVerifying = state.uri.path == '/verify-email';
       //       final isDenied = state.uri.path == '/access-denied';
 
       if (authState.isLoading) return null;
@@ -82,16 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isLoggingIn ? null : '/login';
       }
 
-      if (!user.emailVerified) {
-        return isVerifying ? null : '/verify-email';
-      }
-
-      // We cannot await inside sync redirect easily without a Listenable,
-      // but we will handle the admin check via a route or shell.
-      // Wait, let's just let the access-denied check happen at the shell level
-      // or we can use the provider.
-
-      if (isLoggingIn || isVerifying) {
+      if (isLoggingIn) {
         return '/';
       }
 
@@ -99,13 +88,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(
-        path: '/verify-email',
-        builder: (context, state) {
-          final user = ref.read(firebaseAuthProvider).currentUser!;
-          return EmailVerificationPage(user: user);
-        },
-      ),
       GoRoute(
         path: '/access-denied',
         builder: (context, state) => const AccessDeniedScreen(),
