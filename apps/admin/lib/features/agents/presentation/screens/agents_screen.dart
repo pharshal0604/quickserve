@@ -161,7 +161,10 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Full Name'),
-                validator: (v) => v!.trim().length < 2 ? 'Enter a valid name' : null,
+                validator: (v) {
+                  final result = validateName(v ?? '');
+                  return result.isValid ? null : result.reason;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -169,9 +172,8 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
                 decoration: const InputDecoration(labelText: 'Email Address'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
-                  final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                  if (!regex.hasMatch(v!.trim())) return 'Enter a valid email';
-                  return null;
+                  final result = validateEmail(v ?? '');
+                  return result.isValid ? null : result.reason;
                 },
               ),
               const SizedBox(height: 16),
@@ -181,9 +183,8 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (v) {
-                  final regex = RegExp(r'^\d{10}$');
-                  if (!regex.hasMatch(v!.trim())) return 'Enter exactly 10 digits';
-                  return null;
+                  final result = validatePhone(v ?? '');
+                  return result.isValid ? null : result.reason;
                 },
               ),
               const SizedBox(height: 16),
@@ -191,7 +192,10 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
                 controller: _passwordCtrl,
                 decoration: const InputDecoration(labelText: 'Initial Password'),
                 obscureText: true,
-                validator: (v) => v!.length < 8 ? 'Min 8 characters' : null,
+                validator: (v) {
+                  final result = validatePassword(v ?? '');
+                  return result.isValid ? null : result.reason;
+                },
               ),
             ],
           ),
