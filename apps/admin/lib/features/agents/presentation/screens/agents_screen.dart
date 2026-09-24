@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
@@ -67,6 +68,25 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
     setState(() => _loading = true);
 
     try {
+      final email = _emailCtrl.text.trim();
+      final phone = _phoneCtrl.text.trim();
+
+      // 0. Check for duplicate phone number in Firestore BEFORE creating Auth account
+      final phoneCheck = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: phone)
+          .get();
+
+      if (phoneCheck.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('This phone number is already registered.')),
+          );
+          setState(() => _loading = false);
+        }
+        return; // Abort creation
+      }
+
       // 1. Create a temporary FirebaseApp with a unique name to prevent collisions
       final tempApp = await Firebase.initializeApp(
         name: 'AgentCreationApp_${DateTime.now().millisecondsSinceEpoch}',
@@ -76,7 +96,7 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
       try {
         final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
         final cred = await tempAuth.createUserWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
+          email: email,
           password: _passwordCtrl.text,
         );
 
@@ -87,8 +107,8 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
           await FirebaseFirestore.instance.collection('users').doc(uid).set({
             'role': RoleNames.agent,
             'name': _nameCtrl.text.trim(),
-            'email': _emailCtrl.text.trim(),
-            'phone': _phoneCtrl.text.trim(),
+            'email': email,
+            'phone': phone,
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
@@ -141,26 +161,37 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Full Name'),
-                validator: (v) => v!.trim().isEmpty ? 'Required' : null,
+                validator: (v) => v!.trim().length < 2 ? 'Enter a valid name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailCtrl,
                 decoration: const InputDecoration(labelText: 'Email Address'),
-                validator: (v) => !v!.contains('@') ? 'Invalid email' : null,
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!regex.hasMatch(v!.trim())) return 'Enter a valid email';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-                validator: (v) => v!.trim().isEmpty ? 'Required' : null,
+                decoration: const InputDecoration(labelText: 'Phone Number (10 digits)'),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  final regex = RegExp(r'^\d{10}$');
+                  if (!regex.hasMatch(v!.trim())) return 'Enter exactly 10 digits';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordCtrl,
                 decoration: const InputDecoration(labelText: 'Initial Password'),
                 obscureText: true,
-                validator: (v) => v!.length < 6 ? 'Min 6 characters' : null,
+                validator: (v) => v!.length < 8 ? 'Min 8 characters' : null,
               ),
             ],
           ),
