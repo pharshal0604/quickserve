@@ -1,30 +1,30 @@
-﻿# QuickServe
+# QuickServe
 
 A production-oriented home-service platform built with **Flutter**, **Firebase**, and **Riverpod**.
 
-> **Customer App** Â· **Agent App** Â· **Admin Portal**
+> **Customer App** · **Agent App** · **Admin Portal**
 
-[Screenshots](#-screenshots) Â· [Architecture](#-architecture) Â· [Features](#-features) Â· [Setup](#-setup)
+[Screenshots](#screenshots) · [Architecture](#architecture) · [Features](#features) · [Setup](#setup)
 
 ---
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                  QUICKSERVE                     â”‚
-â”‚                                                 â”‚
-â”‚   Customer  â†’  Browse Â· Request Â· Track         â”‚
-â”‚        â†“                                        â”‚
-â”‚   Agent     â†’  Accept Â· Work Â· Complete         â”‚
-â”‚        â†“                                        â”‚
-â”‚   Admin     â†’  Manage Â· Monitor Â· Configure     â”‚
-â”‚                                                 â”‚
-â”‚   Flutter + Riverpod + GoRouter + Firebase      â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────────────────────────┐
+│                   QUICKSERVE                    │
+│                                                 │
+│   Customer  →  Browse · Request · Track         │
+│        ↓                                        │
+│   Agent     →  Accept · Work · Complete         │
+│        ↓                                        │
+│   Admin     →  Manage · Monitor · Configure     │
+│                                                 │
+│   Flutter + Riverpod + GoRouter + Firebase      │
+└─────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ðŸ“‹ Project Overview
+## Project Overview
 
 QuickServe is a multi-role service request management system designed for home-service businesses. It connects **Customers** who need services (AC repair, plumbing, electrical work, etc.) with **Agents** who perform the work, supervised by **Admins** who manage operations.
 
@@ -40,7 +40,7 @@ The system is built as a **Flutter monorepo** with a shared Dart package, and us
 
 ---
 
-## ðŸ“± Screenshots
+## Screenshots
 
 ### Customer App
 <p align="center">
@@ -87,64 +87,64 @@ The system is built as a **Flutter monorepo** with a shared Dart package, and us
 
 ---
 
-## âœ¨ Features
+## Features
 
 ### Feature Matrix
 
 | Feature | Customer | Agent | Admin |
-|---------|:--------:|:-----:|:-----:|
-| Email + Google Authentication | âœ… | âœ… | âœ… |
-| Service browsing | âœ… | â€” | âœ… |
-| Create service request | âœ… | â€” | âœ… |
-| Real-time request tracking | âœ… | âœ… | âœ… |
-| Cancel request | âœ… | â€” | âœ… |
-| Accept assigned request | â€” | âœ… | âœ… |
-| Start / Complete work | â€” | âœ… | âœ… |
-| Request history | âœ… | âœ… | âœ… |
-| Push notifications (FCM) | âœ… | âœ… | âœ… |
-| Profile management | âœ… | âœ… | âœ… |
-| Agent management | â€” | â€” | âœ… |
-| Service management | â€” | â€” | âœ… |
-| Customer management | â€” | â€” | âœ… |
-| Dashboard analytics | â€” | âœ… | âœ… |
-| Dark mode | âœ… | âœ… | â€” |
-| Audit logging | â€” | â€” | âœ… |
+|---|:---:|:---:|:---:|
+| Email + Google Authentication | ✅ | ✅ | ✅ |
+| Service browsing | ✅ | — | ✅ |
+| Create service request | ✅ | — | ✅ |
+| Real-time request tracking | ✅ | ✅ | ✅ |
+| Cancel request | ✅ | — | ✅ |
+| Accept assigned request | — | ✅ | ✅ |
+| Start / Complete work | — | ✅ | ✅ |
+| Request history | ✅ | ✅ | ✅ |
+| Push notifications (FCM) | ✅ | ✅ | ✅ |
+| Profile management | ✅ | ✅ | ✅ |
+| Agent management | — | — | ✅ |
+| Service management | — | — | ✅ |
+| Customer management | — | — | ✅ |
+| Dashboard analytics | — | ✅ | ✅ |
+| Dark mode | ✅ | ✅ | — |
+| Audit logging | — | — | ✅ |
 
 ### Key Technical Features
 
-- **Atomic Firestore Transactions** â€” Request status transitions, counter increments, audit logs, and status history are all written in a single Firestore transaction. No partial writes.
-- **Request Lifecycle State Machine** â€” Strict server-side and client-side validation of status transitions (`created â†’ assigned â†’ accepted â†’ in_progress â†’ completed`). Invalid transitions are rejected at both the code layer and Firestore Security Rules.
-- **Yearly Request Codes** â€” Auto-incrementing human-readable codes (e.g., `REQ-2026-0001`) generated atomically via a Firestore counter document.
-- **Real-time Streams** â€” All request lists and details use Firestore `snapshots()` streams. When an Agent accepts a request, the Customer's UI updates instantly.
-- **Push Notifications** â€” FCM tokens are stored per-user. A Node.js backend on Render sends push notifications on status changes.
-- **Centralized Design System** â€” All colors, spacing, typography, radii, shadows, and component themes live in a shared Dart package. Zero hardcoded values in UI screens.
+- **Atomic Firestore Transactions** — Request status transitions, counter increments, audit logs, and status history are all written in a single Firestore transaction. No partial writes.
+- **Request Lifecycle State Machine** — Strict server-side and client-side validation of status transitions (`created → assigned → accepted → in_progress → completed`). Invalid transitions are rejected at both the code layer and Firestore Security Rules.
+- **Yearly Request Codes** — Auto-incrementing human-readable codes (e.g., `REQ-2026-0001`) generated atomically via a Firestore counter document.
+- **Real-time Streams** — All request lists and details use Firestore `snapshots()` streams. When an Agent accepts a request, the Customer's UI updates instantly.
+- **Push Notifications** — FCM tokens are stored per-user. A Node.js backend on Render sends push notifications on status changes.
+- **Centralized Design System** — All colors, spacing, typography, radii, shadows, and component themes live in a shared Dart package. Zero hardcoded values in UI screens.
 
 ---
 
-## ðŸ— Architecture
+## Architecture
 
 The application follows a **layered architecture** separating presentation, domain, and data concerns so that UI components never directly depend on Firebase implementations.
 
 ```
                     PRESENTATION
-                         â”‚
+                         │
                Flutter Widgets + Riverpod
-                         â”‚
-                         â–¼
+                         │
+                         ▼
                       DOMAIN
-                         â”‚
-              Entities Â· Validators Â· Lifecycle
-                         â”‚
-                         â–¼
+                         │
+              Entities · Validators · Lifecycle
+                         │
+                         ▼
                        DATA
-                         â”‚
+                         │
               Repository Implementations
-                         â”‚
-                         â–¼
+                         │
+                         ▼
                      FIREBASE
-              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-              â”‚          â”‚           â”‚
-            Auth    Firestore      FCM
+              ┌──────────┼───────────┐
+              │          │           │
+            Auth    Firestore       FCM
 ```
 
 ### Why This Architecture?
@@ -156,7 +156,7 @@ The application follows a **layered architecture** separating presentation, doma
 ### State Management
 
 | Concern | Tool |
-|---------|------|
+|---|---|
 | Authentication state | `StreamProvider<User?>` (Firebase Auth) |
 | User profile | `FutureProvider<shared.User?>` |
 | Request lists | `StreamProvider` (Firestore snapshots) |
@@ -166,7 +166,7 @@ The application follows a **layered architecture** separating presentation, doma
 
 ---
 
-## ðŸ”’ Security
+## Security
 
 ### Firebase Authentication
 - Email/password and Google Sign-In
@@ -177,7 +177,7 @@ The application follows a **layered architecture** separating presentation, doma
 The security rules enforce:
 
 | Rule | Description |
-|------|-------------|
+|---|---|
 | **Role-based access** | Customers can only read their own requests. Agents can only read requests assigned to them. Admins have read access to all collections. |
 | **Ownership validation** | `request.auth.uid == resource.data.customerId` for customer operations |
 | **Immutable fields** | `createdAt`, `role`, and `email` cannot be changed after creation |
@@ -195,101 +195,101 @@ The security rules enforce:
 
 ---
 
-## ðŸ›  Tech Stack
+## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
-| **Frontend** | Flutter 3.47 Â· Dart 3.13 |
+|---|---|
+| **Frontend** | Flutter 3.47 · Dart 3.13 |
 | **State Management** | Riverpod |
 | **Navigation** | GoRouter (StatefulShellRoute for persistent bottom nav) |
-| **Backend** | Firebase Auth Â· Cloud Firestore Â· Firebase Cloud Messaging |
+| **Backend** | Firebase Auth · Cloud Firestore · Firebase Cloud Messaging |
 | **Push Notifications** | Node.js backend on Render + FCM |
 | **Cloud Functions** | Firebase Cloud Functions (TypeScript) |
 | **Admin Portal** | Flutter Web with Riverpod + GoRouter |
-| **Design System** | Material 3 Â· Centralized theme package |
+| **Design System** | Material 3 · Centralized theme package |
 | **CI/CD** | GitHub Actions (analyze + format + test) |
 | **Monorepo** | Dart workspace with shared package |
 
 ---
 
-## ðŸ“ Project Structure
+## Project Structure
 
 ```
 quickserve/
-â”‚
-â”œâ”€â”€ apps/
-â”‚   â”œâ”€â”€ mobile/                    Flutter mobile app (Customer + Agent)
-â”‚   â”‚   â””â”€â”€ lib/
-â”‚   â”‚       â”œâ”€â”€ config/
-â”‚   â”‚       â”‚   â”œâ”€â”€ routes/        GoRouter configuration
-â”‚   â”‚       â”‚   â””â”€â”€ theme/         Re-exports from shared package
-â”‚   â”‚       â”œâ”€â”€ core/
-â”‚   â”‚       â”‚   â””â”€â”€ error/         AppException hierarchy + Firebase error mapping
-â”‚   â”‚       â”œâ”€â”€ features/
-â”‚   â”‚       â”‚   â”œâ”€â”€ agent/         Agent dashboard, requests, history
-â”‚   â”‚       â”‚   â”œâ”€â”€ auth/          Login, register, password reset
-â”‚   â”‚       â”‚   â”œâ”€â”€ home/          Customer + Agent home screens
-â”‚   â”‚       â”‚   â”œâ”€â”€ profile/       Profile view/edit, settings, notifications
-â”‚   â”‚       â”‚   â”œâ”€â”€ requests/      Create, track, cancel, details
-â”‚   â”‚       â”‚   â””â”€â”€ services/      Service catalog browsing
-â”‚   â”‚       â””â”€â”€ shared/
-â”‚   â”‚           â””â”€â”€ widgets/       Reusable UI components
-â”‚   â”‚
-â”‚   â””â”€â”€ admin/                     Flutter Web admin portal
-â”‚       â””â”€â”€ lib/
-â”‚           â”œâ”€â”€ config/            Routes + injection container
-â”‚           â””â”€â”€ features/          Dashboard, agents, customers, requests, services
-â”‚
-â”œâ”€â”€ packages/
-â”‚   â””â”€â”€ shared/                    Pure Dart shared package
-â”‚       â””â”€â”€ lib/
-â”‚           â”œâ”€â”€ constants/         Collection names, enums, status colors
-â”‚           â”œâ”€â”€ entities/          Domain entities (User, Request, Service, AuditLog)
-â”‚           â”œâ”€â”€ models/            fromMap/toMap data models
-â”‚           â”œâ”€â”€ theme/             AppColors, AppSpacing, AppTheme, AppRadius
-â”‚           â”œâ”€â”€ utils/             Lifecycle rules, request codes, error types
-â”‚           â””â”€â”€ validators/        Input validation (name, phone, address, etc.)
-â”‚
-â”œâ”€â”€ firebase/
-â”‚   â””â”€â”€ firestore/
-â”‚       â”œâ”€â”€ rules/                 firestore.rules (518 lines)
-â”‚       â””â”€â”€ indexes/               Composite index definitions
-â”‚
-â”œâ”€â”€ functions/                     Firebase Cloud Functions (TypeScript)
-â”œâ”€â”€ custom_backend/                Node.js notification server (Render)
-â”‚
-â”œâ”€â”€ docs/                          Project documentation (10 documents)
-â”‚
-â”œâ”€â”€ .github/
-â”‚   â”œâ”€â”€ workflows/flutter_ci.yml   CI: analyze + format + test
-â”‚   â”œâ”€â”€ ISSUE_TEMPLATE/
-â”‚   â””â”€â”€ PULL_REQUEST_TEMPLATE.md
-â”‚
-â”œâ”€â”€ LICENSE                        MIT
-â”œâ”€â”€ CODE_OF_CONDUCT.md
-â”œâ”€â”€ CONTRIBUTING.md
-â””â”€â”€ README.md
+│
+├── apps/
+│   ├── mobile/                    Flutter mobile app (Customer + Agent)
+│   │   └── lib/
+│   │       ├── config/
+│   │       │   ├── routes/        GoRouter configuration
+│   │       │   └── theme/         Re-exports from shared package
+│   │       ├── core/
+│   │       │   └── error/         AppException hierarchy + Firebase error mapping
+│   │       ├── features/
+│   │       │   ├── agent/         Agent dashboard, requests, history
+│   │       │   ├── auth/          Login, register, password reset
+│   │       │   ├── home/          Customer + Agent home screens
+│   │       │   ├── profile/       Profile view/edit, settings, notifications
+│   │       │   ├── requests/      Create, track, cancel, details
+│   │       │   └── services/      Service catalog browsing
+│   │       └── shared/
+│   │           └── widgets/       Reusable UI components
+│   │
+│   └── admin/                     Flutter Web admin portal
+│       └── lib/
+│           ├── config/            Routes + injection container
+│           └── features/          Dashboard, agents, customers, requests, services
+│
+├── packages/
+│   └── shared/                    Pure Dart shared package
+│       └── lib/
+│           ├── constants/         Collection names, enums, status colors
+│           ├── entities/          Domain entities (User, Request, Service, AuditLog)
+│           ├── models/            fromMap/toMap data models
+│           ├── theme/             AppColors, AppSpacing, AppTheme, AppRadius
+│           ├── utils/             Lifecycle rules, request codes, error types
+│           └── validators/        Input validation (name, phone, address, etc.)
+│
+├── firebase/
+│   └── firestore/
+│       ├── rules/                 firestore.rules (518 lines)
+│       └── indexes/               Composite index definitions
+│
+├── functions/                     Firebase Cloud Functions (TypeScript)
+├── custom_backend/                Node.js notification server (Render)
+│
+├── docs/                          Project documentation (10 documents)
+│
+├── .github/
+│   ├── workflows/flutter_ci.yml   CI: analyze + format + test
+│   ├── ISSUE_TEMPLATE/
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── LICENSE                        MIT
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+└── README.md
 ```
 
 ---
 
-## ðŸ”„ Application Flow
+## Application Flow
 
 ### Customer Flow
 
 ```
 Authentication
-      â†“
+      ↓
 Customer Home
-      â†“
+      ↓
 Browse Services
-      â†“
+      ↓
 Create Request
-      â†“
+      ↓
 Review & Confirm
-      â†“
+      ↓
 Track Request (real-time)
-      â†“
+      ↓
 Service Completed / Cancelled
 ```
 
@@ -297,15 +297,15 @@ Service Completed / Cancelled
 
 ```
 Authentication
-      â†“
+      ↓
 Agent Dashboard (metrics + upcoming tasks)
-      â†“
+      ↓
 Assigned Requests
-      â†“
+      ↓
 Request Details
-      â†“
-Accept Request â†’ Start Work â†’ Complete Work
-      â†“
+      ↓
+Accept Request → Start Work → Complete Work
+      ↓
 History
 ```
 
@@ -313,45 +313,45 @@ History
 
 ```
 Authentication
-      â†“
+      ↓
 Admin Dashboard
-      â†“
-Manage: Users Â· Agents Â· Services Â· Requests
-      â†“
-Activity Logs Â· Settings
+      ↓
+Manage: Users · Agents · Services · Requests
+      ↓
+Activity Logs · Settings
 ```
 
 ### Request Lifecycle State Machine
 
 ```
-           â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-           â”‚                                      â”‚
-     â”Œâ”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”
-     â”‚  created   â”‚â”€â”€â”€â”€â–¶â”‚ assigned â”‚â”€â”€â”€â”€â–¶â”‚  accepted  â”‚
-     â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
-           â”‚                                    â”‚
-           â”‚                              â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”
-           â”‚                              â”‚ in_progress â”‚
-           â”‚                              â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-           â”‚                                    â”‚
-     â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”                      â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
-     â”‚ cancelled  â”‚                      â”‚ completed  â”‚
-     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+            ┌───────────────────────────────────────┐
+            │                                        │
+      ┌─────┴──────┐     ┌───────────┐     ┌─────────┴───┐
+      │  created   │────▶│ assigned  │────▶│  accepted    │
+      └─────┬──────┘     └───────────┘     └───────┬──────┘
+            │                                       │
+            │                                 ┌─────▼───────┐
+            │                                 │ in_progress │
+            │                                 └─────┬───────┘
+            │                                       │
+      ┌─────▼──────┐                          ┌─────▼──────┐
+      │ cancelled  │                          │ completed  │
+      └────────────┘                          └────────────┘
 ```
 
 Transition rules are enforced at three levels:
-1. **Dart code** â€” `shared/utils/lifecycle.dart`
-2. **Repository layer** â€” Transaction-level validation
-3. **Firestore Security Rules** â€” Server-side enforcement
+1. **Dart code** — `shared/utils/lifecycle.dart`
+2. **Repository layer** — Transaction-level validation
+3. **Firestore Security Rules** — Server-side enforcement
 
 ---
 
-## ðŸŽ¨ Design System
+## Design System
 
 The design system is centralized in `packages/shared/lib/theme/` and consumed by both the mobile app and admin portal:
 
 | Token | File | Examples |
-|-------|------|---------|
+|---|---|---|
 | Colors | `app_colors.dart` | `AppColors.primary`, `AppColors.success`, `AppColors.mintSurface` |
 | Spacing | `app_spacing.dart` | `AppSpacing.sm` (8), `AppSpacing.md` (12), `AppSpacing.lg` (16) |
 | Typography | `app_theme.dart` | Centralized `TextTheme` with consistent weights and sizes |
@@ -361,21 +361,21 @@ The design system is centralized in `packages/shared/lib/theme/` and consumed by
 
 ### Reusable Components (`shared/widgets/`)
 
-- `StatusPill` â€” Color-coded request status chips
-- `SectionHeader` â€” Consistent section titles with optional actions
-- `CustomerBottomNav` / `AgentShellScreen` â€” Role-specific navigation
-- `HomeBackScope` â€” Android back-button handling for tab navigation
+- `StatusPill` — Color-coded request status chips
+- `SectionHeader` — Consistent section titles with optional actions
+- `CustomerBottomNav` / `AgentShellScreen` — Role-specific navigation
+- `HomeBackScope` — Android back-button handling for tab navigation
 
 ---
 
-## âœ… Quality
+## Quality
 
 ### CI/CD Pipeline
 
 GitHub Actions runs on every push and PR to `main`:
 
 ```yaml
-flutter pub get â†’ dart format --set-exit-if-changed â†’ flutter analyze â†’ flutter test
+flutter pub get → dart format --set-exit-if-changed → flutter analyze → flutter test
 ```
 
 Matrix strategy runs the pipeline across `apps/mobile`, `apps/admin`, and `packages/shared`.
@@ -390,7 +390,7 @@ flutter build apk     # Release build verification
 
 ---
 
-## ðŸš€ Setup
+## Setup
 
 ### Prerequisites
 
@@ -430,16 +430,24 @@ flutter run
 5. Deploy indexes: `firebase deploy --only firestore:indexes`
 6. Copy `.env.example` to `.env` and fill in your configuration
 
+### Test Credentials
+
+| Role | Email | Password |
+|---|---|---|
+| Customer | customer.demo@quickserve.app | `Demo@1234` |
+| Agent | agent.demo@quickserve.app | `Demo@1234` |
+| Admin | admin.demo@quickserve.app | `Demo@1234` |
+
 > Full setup guide: [`docs/QuickServe_README_Setup_Deployment.md`](docs/QuickServe_README_Setup_Deployment.md)
 
 ---
 
-## ðŸ“– Documentation
+## Documentation
 
 Comprehensive documentation lives in [`docs/`](docs/):
 
 | # | Document | Description |
-|---|----------|-------------|
+|---|---|---|
 | 1 | [PRD](docs/QuickServe_PRD.md) | Product Requirements Document |
 | 2 | [Requirements Checklist](docs/QuickServe_Requirements_Checklist.md) | Traceability matrix |
 | 3 | [System Architecture](docs/QuickServe_System_Architecture.md) | Architecture decisions and diagrams |
@@ -453,7 +461,7 @@ Comprehensive documentation lives in [`docs/`](docs/):
 
 ---
 
-## ðŸ§  Engineering Decisions
+## Engineering Decisions
 
 ### Why Riverpod?
 
@@ -461,11 +469,11 @@ Selected over `Provider` and `BLoC` for its compile-time safety, testability wit
 
 ### Why Firebase?
 
-Firebase provides authentication, real-time database, push notifications, and server-side security rules in a single platform â€” ideal for a multi-role real-time application without a custom backend for core operations.
+Firebase provides authentication, real-time database, push notifications, and server-side security rules in a single platform — ideal for a multi-role real-time application without a custom backend for core operations.
 
 ### Why Repository Pattern?
 
-Repositories encapsulate all Firebase operations and map raw Firebase errors into safe, typed `AppException` subclasses. UI screens never see `FirebaseException` â€” they receive human-readable error messages. This also makes it possible to swap Firebase for another backend without touching UI code.
+Repositories encapsulate all Firebase operations and map raw Firebase errors into safe, typed `AppException` subclasses. UI screens never see `FirebaseException` — they receive human-readable error messages. This also makes it possible to swap Firebase for another backend without touching UI code.
 
 ### Why a Shared Package?
 
@@ -473,11 +481,11 @@ Entities, validators, lifecycle rules, and theme tokens are consumed by both the
 
 ### Why GoRouter with StatefulShellRoute?
 
-GoRouter provides URL-based deep linking, declarative redirects for authentication guards, and `StatefulShellRoute` preserves tab state in the Agent's bottom navigation â€” so switching between Home, Tasks, History, and Profile doesn't lose scroll position or loaded data.
+GoRouter provides URL-based deep linking, declarative redirects for authentication guards, and `StatefulShellRoute` preserves tab state in the Agent's bottom navigation — so switching between Home, Tasks, History, and Profile doesn't lose scroll position or loaded data.
 
 ---
 
-## ðŸ”§ Engineering Challenges Solved
+## Engineering Challenges Solved
 
 ### Role-Based Navigation
 
@@ -493,7 +501,7 @@ When an Agent accepts a request, the Customer's tracking screen updates within m
 
 ### Firestore Security at Scale
 
-518 lines of security rules enforce ownership, role-based access, field immutability, status transition validity, and input constraints â€” providing defense-in-depth beyond what the client-side code validates.
+518 lines of security rules enforce ownership, role-based access, field immutability, status transition validity, and input constraints — providing defense-in-depth beyond what the client-side code validates.
 
 ### Graceful Error Handling
 
@@ -501,7 +509,7 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 
 ---
 
-## âš ï¸ Known Limitations
+## Known Limitations
 
 - Admin portal is functional but some advanced features (batch operations, analytics export) are planned.
 - Payment processing is not implemented (out of scope for this version).
@@ -510,7 +518,7 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 
 ---
 
-## ðŸ‘¤ Author
+## Author
 
 **Harshal Pidurkar**
 
@@ -519,7 +527,6 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 
 ---
 
-## ðŸ“œ License
+## License
 
-This project is licensed under the MIT License â€” see the [LICENSE](LICENSE) file for details.
-
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

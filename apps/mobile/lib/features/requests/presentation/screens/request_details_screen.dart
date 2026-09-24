@@ -66,7 +66,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         body: request.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) =>
-              const _Message('Could not load this request.'),
+              _Message('Error: $error'),
           data: (item) {
             if (item == null) {
               return const _Message('This request is unavailable.');
