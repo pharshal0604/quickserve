@@ -72,6 +72,10 @@ class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
     final query = _searchController.text.trim().toLowerCase();
     final result = items.where((item) {
       final status = item.request.status.toStoredValue();
+      
+      // Do not show completed or cancelled requests on the active tasks screen
+      if (shared.isTerminalStatus(status)) return false;
+
       final matchesFilter = switch (_filter) {
         'assigned' => status == shared.StatusNames.assigned,
         'accepted' => status == shared.StatusNames.accepted,

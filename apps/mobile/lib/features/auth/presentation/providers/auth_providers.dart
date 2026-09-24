@@ -70,6 +70,9 @@ class RegistrationInProgressNotifier extends Notifier<bool> {
   void finish() => state = false;
 }
 
+/// Tracks if the user has just logged in, so we can show a 3-second data loading screen.
+final justLoggedInProvider = StateProvider<bool>((ref) => false);
+
 /// Resolves the shared profile for the current Firebase Authentication user.
 final userProfileProvider = FutureProvider<shared.User?>((ref) async {
   ref.watch(registrationInProgressProvider);

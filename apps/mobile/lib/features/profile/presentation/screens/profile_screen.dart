@@ -9,6 +9,7 @@ import 'package:quickserve_mobile/features/auth/presentation/providers/auth_prov
 import 'package:url_launcher/url_launcher.dart';
 import 'package:quickserve_mobile/config/theme/theme_provider.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
+import 'package:quickserve_mobile/core/services/push_notification_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -80,6 +81,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _signOut() async {
+    final user = ref.read(authStateProvider).value;
+    if (user != null) {
+      try {
+        await ref.read(pushNotificationServiceProvider).removeToken(user.uid);
+      } catch (e) {
+        debugPrint('Could not remove FCM token: $e');
+      }
+    }
+    await ref.read(authRepositoryProvider).signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
@@ -105,7 +118,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onToggleEditing: () => setState(() => _editing = !_editing),
             onSave: _saveProfile,
             onSettings: () => context.push('/settings'),
-            onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+            onSignOut: _signOut,
             onUnavailable: _showUnavailable,
           );
         }
@@ -117,7 +130,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           phoneController: _phoneController,
           onToggleEditing: () => setState(() => _editing = !_editing),
           onSave: _saveProfile,
-          onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+          onSignOut: _signOut,
           onNotifications: () => context.push('/notifications'),
           onSettings: () => context.push('/settings'),
           onUnavailable: _showUnavailable,
@@ -175,128 +188,120 @@ class _AgentProfileView extends ConsumerWidget {
         title: const Text('Profile'),
       ),
       body: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
-          children: [
-            // ── Avatar ─────────────────────────────────────────────
-            Center(
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  CircleAvatar(
-                    radius: 42,
-                    backgroundColor: AppColors.mintSurface,
-                    backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-                        ? null
-                        : NetworkImage(avatarUrl),
-                    child: avatarUrl == null || avatarUrl.isEmpty
-                        ? Text(
-                            initial.toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          )
-                        : null,
-                  ),
-                  Positioned(
-                    right: -3,
-                    bottom: 1,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 3,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        size: 13,
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+        children: [
+          // ── Avatar ─────────────────────────────────────────────
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 42,
+                  backgroundColor: AppColors.mintSurface,
+                  backgroundImage: avatarUrl == null || avatarUrl.isEmpty
+                      ? null
+                      : NetworkImage(avatarUrl),
+                  child: avatarUrl == null || avatarUrl.isEmpty
+                      ? Text(
+                          initial.toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  right: -3,
+                  bottom: 1,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        width: 3,
                       ),
                     ),
+                    child: Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: 13,
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // ── Name & role ─────────────────────────────────────────
+          Text(
+            user.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            user.email,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.mutedText),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: _StatusLabel(label: 'Active', icon: Icons.verified_outlined),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: onToggleEditing,
+            child: Text(editing ? 'Cancel' : 'Edit Profile'),
+          ),
+          if (editing) ...[
+            const SizedBox(height: 14),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: quickServeInputDecoration('Phone Number'),
             ),
             const SizedBox(height: 12),
-            // ── Name & role ─────────────────────────────────────────
-            Text(
-              user.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              user.email,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.mutedText),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: _StatusLabel(
-                label: 'Active',
-                icon: Icons.verified_outlined,
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: onToggleEditing,
-              child: Text(editing ? 'Cancel' : 'Edit Profile'),
-            ),
-            if (editing) ...[
-              const SizedBox(height: 14),
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: quickServeInputDecoration('Phone Number'),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: saving ? null : onSave,
-                child: Text(saving ? 'Saving...' : 'Save changes'),
-              ),
-            ],
-            const SizedBox(height: 20),
-            _CustomerRow(
-              icon: Icons.lock_outline_rounded,
-              title: 'Security Settings',
-              onTap: () => context.push('/security-settings'),
-            ),
-            _CustomerRow(
-              icon: Icons.phone_android_outlined,
-              title: 'Authorized Devices',
-              onTap: () => context.push('/authorized-devices'),
-            ),
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: _SharedProfileSettings(),
-            ),
-            const Divider(),
-            _CustomerRow(
-              icon: Icons.logout_rounded,
-              title: 'Sign Out',
-              color: Theme.of(context).colorScheme.error,
-              onTap: onSignOut,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 8,
-                letterSpacing: .8,
-                fontWeight: FontWeight.w700,
-              ),
+            FilledButton(
+              onPressed: saving ? null : onSave,
+              child: Text(saving ? 'Saving...' : 'Save changes'),
             ),
           ],
-        ),
+          const SizedBox(height: 20),
+          _CustomerRow(
+            icon: Icons.lock_outline_rounded,
+            title: 'Security Settings',
+            onTap: () => context.push('/security-settings'),
+          ),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _SharedProfileSettings(),
+          ),
+          const Divider(),
+          _CustomerRow(
+            icon: Icons.logout_rounded,
+            title: 'Sign Out',
+            color: Theme.of(context).colorScheme.error,
+            onTap: onSignOut,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'QUICKSERVE MOBILE · ${user.role.toStoredValue().toUpperCase()}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 8,
+              letterSpacing: .8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

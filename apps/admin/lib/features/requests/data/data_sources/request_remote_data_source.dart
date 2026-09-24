@@ -40,7 +40,7 @@ class RequestRemoteDataSourceImpl implements RequestRemoteDataSource {
     final updateData = {
       'agentId': agentId,
       'agentName':
-          agentData?['displayName'] ?? agentData?['email'] ?? 'Assigned Agent',
+          agentData?['name'] ?? agentData?['email'] ?? 'Assigned Agent',
       'agentPhone': agentData?['phone'],
       'status': 'assigned', // It also updates status in UI, might as well make sure it's updated in DB if needed, but let's just do name/phone
     };

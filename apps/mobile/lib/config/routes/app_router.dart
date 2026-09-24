@@ -21,7 +21,6 @@ import 'package:quickserve_mobile/features/profile/presentation/screens/saved_ad
 
 import 'package:quickserve_mobile/features/profile/presentation/screens/settings_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/security_settings_screen.dart';
-import 'package:quickserve_mobile/features/profile/presentation/screens/authorized_devices_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_details_screen.dart';
 import 'package:quickserve_mobile/features/services/presentation/screens/services_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/password_reset_screen.dart';
@@ -29,17 +28,25 @@ import 'package:quickserve_mobile/features/auth/presentation/screens/register_sc
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_success_screen.dart';
 import 'package:quickserve_mobile/features/services/presentation/screens/service_details_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/splash_screen.dart';
+import 'package:quickserve_mobile/features/auth/presentation/screens/loading_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
 
 final class _AuthRefreshNotifier extends ChangeNotifier {
   _AuthRefreshNotifier(Ref ref) {
-    ref.listen<AsyncValue<fb.User?>>(authStateProvider, (_, _) {
+    ref.listen<AsyncValue<fb.User?>>(authStateProvider, (previous, next) {
+      if (previous != null && previous.value == null && next.value != null) {
+        // User just logged in
+        ref.read(justLoggedInProvider.notifier).state = true;
+      }
       notifyListeners();
     });
     ref.listen<bool>(registrationInProgressProvider, (_, _) {
       notifyListeners();
     });
     ref.listen<AsyncValue<shared.User?>>(userProfileProvider, (_, _) {
+      notifyListeners();
+    });
+    ref.listen<bool>(justLoggedInProvider, (_, _) {
       notifyListeners();
     });
     ref.onDispose(dispose);
@@ -57,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/loading',
+        builder: (context, state) => const PostLoginDelayScreen(),
       ),
       GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
       GoRoute(
@@ -103,10 +114,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.securitySettings,
         builder: (context, state) => const SecuritySettingsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.authorizedDevices,
-        builder: (context, state) => const AuthorizedDevicesScreen(),
       ),
       GoRoute(
         path: AppRoutes.notifications,
@@ -170,6 +177,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/agents/:agentId',
         builder: (context, state) => AgentProfileScreen(
           agentId: state.pathParameters['agentId']!,
+          name: state.uri.queryParameters['name'],
+          phone: state.uri.queryParameters['phone'],
         ),
       ),
       GoRoute(
@@ -194,13 +203,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (registering && path == AppRoutes.register) return null;
 
-      if (AppRoutes.publicPaths.contains(path)) return AppRoutes.home;
-
       final profileState = ref.read(userProfileProvider);
-      
-      // If we are authenticated but profile is still loading, wait on splash
-      if (profileState.isLoading && !AppRoutes.publicPaths.contains(path) && path != AppRoutes.splash) {
-        return AppRoutes.splash;
+      final justLoggedIn = ref.read(justLoggedInProvider);
+
+      if (justLoggedIn) {
+        return path == '/loading' ? null : '/loading';
+      }
+
+      if (AppRoutes.publicPaths.contains(path)) {
+        if (!profileState.isLoading && profileState.value != null) {
+          // Profile is loaded, we can safely go to home (which will redirect to /a/home if agent)
+          return AppRoutes.home;
+        }
+        // Still loading profile. Wait on splash.
+        return path == AppRoutes.splash ? null : AppRoutes.splash;
       }
 
       final userProfile = profileState.value;

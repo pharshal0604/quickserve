@@ -32,7 +32,6 @@ abstract final class AppRoutes {
 
   // ── Profile sub-screens ───────────────────────────────────────────
   static const securitySettings = '/security-settings';
-  static const authorizedDevices = '/authorized-devices';
   static const savedAddresses = '/saved-addresses';
 
   /// Returns the agent-contact route for a given [agentId].

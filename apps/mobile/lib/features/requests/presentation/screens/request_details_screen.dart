@@ -65,8 +65,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         ),
         body: request.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) =>
-              _Message('Error: $error'),
+          error: (error, stackTrace) => _Message('Error: $error'),
           data: (item) {
             if (item == null) {
               return const _Message('This request is unavailable.');
@@ -88,7 +87,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _BookingInformation(request: item),
-                if (item.agentId != null) ...[
+                // Only show the Assigned Technician card to the Customer, not the Agent
+                if (isCustomer && item.agentId != null) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _AssignedTechnician(
                     name: item.agentName,
@@ -538,7 +538,8 @@ class _TimelineStep extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (isCurrent) StatusPill(label: 'ACTIVE', color: color),
+                      if (isCurrent && !shared.isTerminalStatus(status))
+                        StatusPill(label: 'ACTIVE', color: color),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -690,7 +691,7 @@ class _AssignedTechnician extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Assigned Field Technician',
+              'Assigned Technician',
               style: Theme.of(context).textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800),
             ),
@@ -698,7 +699,7 @@ class _AssignedTechnician extends StatelessWidget {
             _TechnicianIdentity(
               name: displayName,
               subtitle: hasSnapshot
-                  ? 'Tap to view contact details'
+                  ? 'Tap to view '
                   : 'Contact details unavailable for this request',
               onTap: hasSnapshot ? onTap : null,
             ),
@@ -759,13 +760,6 @@ class _TechnicianIdentity extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (onTap != null) ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      'View contact details',
-                      style: TextStyle(color: AppColors.mutedText),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -814,12 +808,6 @@ class _AgentActions extends StatelessWidget {
         onPressed: busy ? null : onComplete,
         icon: const Icon(Icons.task_alt),
         label: const Text('Complete request'),
-      );
-    }
-    if (shared.isTerminalStatus(status)) {
-      return Text(
-        'This request is ${status == shared.StatusNames.completed ? 'completed' : 'cancelled'}.',
-        style: Theme.of(context).textTheme.bodyMedium,
       );
     }
     return const SizedBox.shrink();

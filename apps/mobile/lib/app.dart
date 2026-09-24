@@ -18,15 +18,14 @@ class QuickServeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Initialize or remove FCM token based on auth state
-    ref.listen(authStateProvider, (previous, next) {
-      final user = next.value;
-      if (user != null) {
+    // Initialize FCM token only AFTER profile is successfully loaded/created
+    // This prevents a Firestore offline-cache race condition where FCM writes
+    // create a malformed local document before the registration flow finishes.
+    ref.listen(userProfileProvider, (previous, next) {
+      final profile = next.value;
+      final user = ref.read(authStateProvider).value;
+      if (profile != null && user != null) {
         ref.read(pushNotificationServiceProvider).initialize(user.uid);
-      } else if (previous?.value != null) {
-        ref
-            .read(pushNotificationServiceProvider)
-            .removeToken(previous!.value!.uid);
       }
     });
 
