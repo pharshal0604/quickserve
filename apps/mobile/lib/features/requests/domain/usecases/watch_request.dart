@@ -1,4 +1,5 @@
 import 'package:shared/shared.dart' as shared;
+
 import '../repositories/request_repository_interface.dart';
 
 /// Use case to watch a single request.

@@ -1,4 +1,5 @@
 import 'package:shared/shared.dart' as shared;
+
 import '../repositories/request_repository_interface.dart';
 
 /// Parameters for creating a request.
@@ -28,11 +29,11 @@ class CreateRequest {
 
   /// Executes the usecase.
   Future<String> call(CreateRequestParams params) => _repository.createRequest(
-        customerId: params.customerId,
-        serviceType: params.serviceType,
-        description: params.description,
-        preferredDateTime: params.preferredDateTime,
-        address: params.address,
-        priority: params.priority,
-      );
+    customerId: params.customerId,
+    serviceType: params.serviceType,
+    description: params.description,
+    preferredDateTime: params.preferredDateTime,
+    address: params.address,
+    priority: params.priority,
+  );
 }

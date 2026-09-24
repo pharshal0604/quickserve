@@ -156,7 +156,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AdminTheme.accent,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.bolt, color: AdminTheme.sidebar, size: 28),
+              child: const Icon(
+                Icons.bolt,
+                color: AdminTheme.sidebar,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 12),
             const Text(
@@ -215,7 +219,12 @@ class _LoginScreenState extends State<LoginScreen> {
     children: [
       Icon(icon, color: AdminTheme.accent, size: 18),
       const SizedBox(width: 8),
-      Text(label, style: TextStyle(color: AdminTheme.darkTextSecondary.withValues(alpha: .72))),
+      Text(
+        label,
+        style: TextStyle(
+          color: AdminTheme.darkTextSecondary.withValues(alpha: .72),
+        ),
+      ),
     ],
   );
 

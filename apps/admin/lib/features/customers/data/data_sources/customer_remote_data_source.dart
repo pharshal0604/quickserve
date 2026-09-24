@@ -10,7 +10,11 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
 
   @override
   Stream<QuerySnapshot> watchCustomers() {
-    return firestore.collection('users').where('role', isEqualTo: 'customer').limit(200).snapshots();
+    return firestore
+        .collection('users')
+        .where('role', isEqualTo: 'customer')
+        .limit(200)
+        .snapshots();
   }
 
   @override

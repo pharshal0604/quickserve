@@ -5,8 +5,8 @@ import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
-import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:quickserve_mobile/features/agent/presentation/providers/agent_providers.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 
 /// Agent dashboard with quick access, metrics, and upcoming assigned work.
@@ -22,7 +22,6 @@ class AgentHomeScreen extends ConsumerWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final requests = ref.watch(_agentRequestsProvider(authUser.uid));
     return profile.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -40,63 +39,30 @@ class AgentHomeScreen extends ConsumerWidget {
             body: Center(child: Text('Agent profile not found.')),
           );
         }
-        return _AgentHomeContent(agentName: user.name, requests: requests);
+        return _AgentHomeContent(agentName: user.name);
       },
     );
   }
 }
 
-class _AgentHomeContent extends StatelessWidget {
-  const _AgentHomeContent({required this.agentName, required this.requests});
+class _AgentHomeContent extends ConsumerWidget {
+  const _AgentHomeContent({required this.agentName});
 
   final String agentName;
-  final AsyncValue<List<({String id, shared.Request request})>> requests;
 
   @override
-  Widget build(BuildContext context) {
-    final items = requests.valueOrNull ?? const [];
-    final pending = items
-        .where((item) => item.request.status == shared.RequestStatus.assigned)
-        .length;
-    final active = items
-        .where(
-          (item) =>
-              item.request.status == shared.RequestStatus.accepted ||
-              item.request.status == shared.RequestStatus.inProgress,
-        )
-        .length;
-    final completed = items
-        .where((item) => item.request.status == shared.RequestStatus.completed)
-        .length;
-    final cancelled = items
-        .where((item) => item.request.status == shared.RequestStatus.cancelled)
-        .length;
-    final resolved = completed + cancelled;
-    final efficiency = resolved == 0 ? 1.0 : completed / resolved;
-    final upcoming =
-        items
-            .where(
-              (item) =>
-                  item.request.status != shared.RequestStatus.completed &&
-                  item.request.status != shared.RequestStatus.cancelled,
-            )
-            .toList()
-          ..sort(
-            (a, b) => a.request.preferredDateTime.compareTo(
-              b.request.preferredDateTime,
-            ),
-          );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metrics = ref.watch(agentMetricsProvider);
+    final upcoming = ref.watch(agentUpcomingRequestsProvider);
+    final requestsState = ref.watch(agentRequestsProvider);
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: const AgentBottomNav(currentIndex: 0),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {},
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
               AppSpacing.lg,
               AppSpacing.xl,
@@ -125,17 +91,21 @@ class _AgentHomeContent extends StatelessWidget {
                       ],
                     ),
                   ),
-                  InkWell(
-                    onTap: () => context.go('/profile'),
-                    borderRadius: BorderRadius.circular(28),
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: AppColors.mintSurface,
-                      child: Text(
-                        _initials(agentName),
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w800,
+                  Semantics(
+                    label: 'View Profile',
+                    button: true,
+                    child: InkWell(
+                      onTap: () => context.go('/profile'),
+                      borderRadius: BorderRadius.circular(28),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppColors.mintSurface,
+                        child: Text(
+                          _initials(agentName),
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
@@ -147,7 +117,7 @@ class _AgentHomeContent extends StatelessWidget {
                 children: [
                   _MetricCard(
                     label: 'Pending',
-                    value: '$pending',
+                    value: '${metrics.pending}',
                     caption: 'Needs action',
                     icon: Icons.assignment_outlined,
                     color: AppColors.warning,
@@ -155,7 +125,7 @@ class _AgentHomeContent extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   _MetricCard(
                     label: 'Active',
-                    value: '$active',
+                    value: '${metrics.active}',
                     caption: 'On site',
                     icon: Icons.schedule_outlined,
                     color: Theme.of(context).colorScheme.primary,
@@ -163,7 +133,7 @@ class _AgentHomeContent extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   _MetricCard(
                     label: 'Done',
-                    value: '$completed',
+                    value: '${metrics.completed}',
                     caption: 'This month',
                     icon: Icons.task_alt,
                     color: AppColors.success,
@@ -171,7 +141,7 @@ class _AgentHomeContent extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              _PerformanceCard(efficiency: efficiency),
+              _PerformanceCard(efficiency: metrics.efficiency),
               const SizedBox(height: AppSpacing.lg),
               SectionHeader(title: 'Quick Access'),
               const SizedBox(height: AppSpacing.sm),
@@ -203,12 +173,12 @@ class _AgentHomeContent extends StatelessWidget {
                 onTap: () => context.go('/agent/requests'),
               ),
               const SizedBox(height: AppSpacing.sm),
-              if (requests.isLoading)
+              if (requestsState.isLoading)
                 const Padding(
                   padding: EdgeInsets.all(AppSpacing.lg),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (requests.hasError)
+              else if (requestsState.hasError)
                 const _EmptyState(
                   message: 'Assigned tasks could not be loaded.',
                 )
@@ -220,7 +190,6 @@ class _AgentHomeContent extends StatelessWidget {
                     .map((item) => _UpcomingTaskCard(item: item)),
             ],
           ),
-        ),
       ),
     );
   }
@@ -231,7 +200,6 @@ class _AgentHomeContent extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
-
 }
 
 class _MetricCard extends StatelessWidget {
@@ -373,10 +341,8 @@ class _QuickAction extends StatelessWidget {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -457,9 +423,3 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
-final _agentRequestsProvider =
-    StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) =>
-          ref.watch(agentRepositoryProvider).watchAssignedRequests(uid),
-    );

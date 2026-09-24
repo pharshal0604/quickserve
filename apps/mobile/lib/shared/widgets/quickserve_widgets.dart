@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:quickserve_mobile/config/routes/app_routes.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_shadows.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
@@ -111,9 +112,6 @@ InputDecoration quickServeInputDecoration(
     suffixIcon: suffix,
     prefixText: prefixText,
     filled: true,
-    border: null,
-    enabledBorder: null,
-    focusedBorder: null,
   );
 }
 
@@ -150,7 +148,7 @@ class CustomerBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
-        final paths = ['/home', '/services', '/requests', '/profile'];
+        final paths = [AppRoutes.home, AppRoutes.services, AppRoutes.requests, AppRoutes.profile];
         context.go(paths[index]);
       },
       indicatorColor: AppColors.mintSurface,

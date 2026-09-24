@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared/shared.dart' as shared;
@@ -17,16 +19,16 @@ final class AgentRepository {
   Stream<List<({String id, shared.Request request})>> watchAssignedRequests(
     String agentId,
   ) {
-    return _requests.where('agentId', isEqualTo: agentId).snapshots().map((
-      snapshot,
-    ) {
-      final items = snapshot.docs
+    return _requests
+        .where('agentId', isEqualTo: agentId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
           .map(
             (doc) => (id: doc.id, request: shared.Request.fromMap(doc.data())),
           )
           .toList();
-      items.sort((a, b) => b.request.createdAt.compareTo(a.request.createdAt));
-      return items;
     });
   }
 
@@ -91,12 +93,9 @@ final class AgentRepository {
     final historyRef = requestRef
         .collection(shared.CollectionNames.statusHistory)
         .doc();
-    final auditRef = FirebaseFirestore.instance
-        .collection(shared.CollectionNames.auditLogs)
-        .doc();
 
     try {
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final txnRequest = await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(requestRef);
         if (!snapshot.exists) {
           throw const RequestRepositoryException(
@@ -143,24 +142,19 @@ final class AgentRepository {
           'changedAt': FieldValue.serverTimestamp(),
           'note': note,
         });
-        transaction.set(auditRef, {
-          'actorUserId': agentId,
-          'actorRole': shared.RoleNames.agent,
-          'action': shared.EventNames.requestUpdated,
-          'targetType': 'request',
-          'targetId': requestRef.id,
-          'oldValue': <String, dynamic>{'status': expectedStatus},
-          'newValue': <String, dynamic>{'status': nextStatus},
-          'result': 'success',
-          'timestamp': FieldValue.serverTimestamp(),
-        });
+
+        // Return request data for the notification (avoids a second read).
+        return request;
       });
 
-      // Trigger notification via Render backend
+      // Trigger notification via backend — fire-and-forget.
       _sendNotification(
         requestId: requestId,
         status: nextStatus,
         agentId: agentId,
+        customerId: txnRequest.customerId,
+        agentName: txnRequest.agentName,
+        serviceName: txnRequest.serviceType,
       );
     } catch (error) {
       if (error is RequestRepositoryException) rethrow;
@@ -181,32 +175,42 @@ final class AgentRepository {
       );
     }
   }
-}
 
-void _sendNotification({
-  required String requestId,
-  required String status,
-  required String agentId,
-}) async {
-  try {
-    final doc = await FirebaseFirestore.instance.collection(shared.CollectionNames.requests).doc(requestId).get();
-    if (!doc.exists) return;
-    final data = doc.data()!;
-    final customerId = data['customerId'] as String?;
-    final agentName = data['agentName'] as String?;
-    final serviceName = data['serviceType'] as String?;
+  /// Sends a push notification via the backend. Fire-and-forget.
+  static void _sendNotification({
+    required String requestId,
+    required String status,
+    required String agentId,
+    required String? customerId,
+    required String? agentName,
+    required String? serviceName,
+  }) async {
+    try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null) return;
 
-    await http.post(
-      Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-status-change'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'requestId': requestId,
-        'status': status,
-        'agentId': agentId,
-        'customerId': customerId,
-        'agentName': agentName,
-        'serviceName': serviceName,
-      }),
-    ).timeout(const Duration(seconds: 3));
-  } catch (_) {}
+      const backendUrl = String.fromEnvironment(
+        'BACKEND_URL',
+        defaultValue: 'https://quickserve-backend-w98w.onrender.com',
+      );
+
+      await http.post(
+        Uri.parse('$backendUrl/api/notify-status-change'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'requestId': requestId,
+          'status': status,
+          'agentId': agentId,
+          'customerId': customerId,
+          'agentName': agentName,
+          'serviceName': serviceName,
+        }),
+      ).timeout(const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('Notification failed: $e');
+    }
+  }
 }

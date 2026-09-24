@@ -8,7 +8,8 @@ import 'package:quickserve_mobile/features/auth/presentation/providers/auth_prov
 import 'package:quickserve_mobile/core/services/push_notification_service.dart';
 
 /// Global key to show SnackBars across the app
-final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 /// The root application widget for QuickServe mobile.
 class QuickServeApp extends ConsumerWidget {
@@ -23,7 +24,9 @@ class QuickServeApp extends ConsumerWidget {
       if (user != null) {
         ref.read(pushNotificationServiceProvider).initialize(user.uid);
       } else if (previous?.value != null) {
-        ref.read(pushNotificationServiceProvider).removeToken(previous!.value!.uid);
+        ref
+            .read(pushNotificationServiceProvider)
+            .removeToken(previous!.value!.uid);
       }
     });
 

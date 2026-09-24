@@ -7,15 +7,13 @@ import 'package:quickserve_admin/shared/admin_formatters.dart';
 import 'package:quickserve_admin/injection_container.dart';
 
 class RequestDetailsScreen extends ConsumerStatefulWidget {
-  const RequestDetailsScreen({
-    required this.requestId,
-    super.key,
-  });
+  const RequestDetailsScreen({required this.requestId, super.key});
 
   final String requestId;
 
   @override
-  ConsumerState<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
+  ConsumerState<RequestDetailsScreen> createState() =>
+      _RequestDetailsScreenState();
 }
 
 class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
@@ -30,21 +28,25 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       stream: ref.watch(watchRequestsProvider).call(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
-        
-        final docIndex = snapshot.data!.indexWhere((doc) => doc.id == widget.requestId);
+
+        final docIndex = snapshot.data!.indexWhere(
+          (doc) => doc.id == widget.requestId,
+        );
         if (docIndex == -1) {
           return const Scaffold(body: Center(child: Text('Request not found')));
         }
-        
+
         final doc = snapshot.data![docIndex];
         final request = doc.request;
         final String currentStatus = status ?? request.status.toStoredValue();
         final currentAgentId = agentId ?? request.agentId;
-        
+
         final code = request.requestCode;
-        
+
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
@@ -66,8 +68,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'status', child: Text('Update status')),
                 ],
-          ),
-          const SizedBox(width: 12),
+              ),
+              const SizedBox(width: 12),
             ],
           ),
           body: LayoutBuilder(
@@ -79,14 +81,27 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                       children: [
                         Expanded(flex: 7, child: _mainColumn(context, request)),
                         const SizedBox(width: 16),
-                        SizedBox(width: 330, child: _sideColumn(context, request, currentStatus, currentAgentId)),
+                        SizedBox(
+                          width: 330,
+                          child: _sideColumn(
+                            context,
+                            request,
+                            currentStatus,
+                            currentAgentId,
+                          ),
+                        ),
                       ],
                     )
                   : Column(
                       children: [
                         _mainColumn(context, request),
                         const SizedBox(height: 16),
-                        _sideColumn(context, request, currentStatus, currentAgentId),
+                        _sideColumn(
+                          context,
+                          request,
+                          currentStatus,
+                          currentAgentId,
+                        ),
                       ],
                     ),
             ),
@@ -105,12 +120,15 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     ],
   );
 
-  Widget _sideColumn(BuildContext context, RequestEntity request, String currentStatus, String? currentAgentId) => Column(
+  Widget _sideColumn(
+    BuildContext context,
+    RequestEntity request,
+    String currentStatus,
+    String? currentAgentId,
+  ) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _CustomerInformationCard(
-        userId: request.customerId,
-      ),
+      _CustomerInformationCard(userId: request.customerId),
       const SizedBox(height: 16),
       _AgentInformationCard(
         userId: currentAgentId,
@@ -137,7 +155,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     final options = [
       currentStatus,
       ...StatusNames.values.where(
-        (value) => value != currentStatus && canTransition(currentStatus, value),
+        (value) =>
+            value != currentStatus && canTransition(currentStatus, value),
       ),
     ];
     final next = await showModalBottomSheet<String>(
@@ -154,7 +173,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   color: adminStatusColor(context, value),
                 ),
                 title: Text(adminLabel(value)),
-                trailing: value == currentStatus ? const Icon(Icons.check) : null,
+                trailing: value == currentStatus
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () => Navigator.pop(context, value),
               ),
           ],
@@ -196,7 +217,12 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               }
               if (snapshot.hasError) {
                 return Center(
-                  child: Text('Error loading agents', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  child: Text(
+                    'Error loading agents',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 );
               }
               final agents = snapshot.data ?? [];
@@ -207,22 +233,22 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Assign Service Agent',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   const Divider(),
                   if (agents.isEmpty)
                     const Expanded(
-                      child: Center(
-                        child: Text('No service agents found.'),
-                      ),
+                      child: Center(child: Text('No service agents found.')),
                     )
                   else
                     Expanded(
@@ -233,23 +259,38 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                           final doc = agents[index];
                           final user = doc.user;
                           return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 8,
+                            ),
                             leading: CircleAvatar(
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              foregroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
                               child: Text(adminInitial(user.name)),
                             ),
                             title: Text(
                               user.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             subtitle: Text(
                               user.phone,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                             ),
                             trailing: Icon(
                               Icons.chevron_right,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                             onTap: () => Navigator.pop(context, doc.id),
                           );
@@ -367,9 +408,7 @@ class _ServiceOverviewCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Category: ${adminLabel(request.serviceType)}',
-                ),
+                Text('Category: ${adminLabel(request.serviceType)}'),
                 const SizedBox(height: 12),
                 _InfoLine(
                   icon: Icons.location_on_outlined,
@@ -380,8 +419,7 @@ class _ServiceOverviewCard extends StatelessWidget {
                 _InfoLine(
                   icon: Icons.notes_outlined,
                   label: 'Customer instructions',
-                  value:
-                      request.description,
+                  value: request.description,
                 ),
               ],
             ),
@@ -440,7 +478,7 @@ class _TimelineCard extends ConsumerWidget {
           StreamBuilder<List<({String id, StatusHistoryEntity history})>>(
             stream: ref.watch(watchRequestHistoryProvider).call(requestId),
             builder: (context, historySnapshot) {
-              final history = historySnapshot.data ;
+              final history = historySnapshot.data;
               if ((history ?? []).isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(16),
@@ -456,10 +494,15 @@ class _TimelineCard extends ConsumerWidget {
                   };
                   return Column(
                     children: [
-                      for (var index = 0; index < (history ?? []).length; index++)
+                      for (
+                        var index = 0;
+                        index < (history ?? []).length;
+                        index++
+                      )
                         _TimelineRow(
                           historyEntity: (history ?? [])[index].history,
-                          actor: users[(history ?? [])[index].history.changedBy]?.name,
+                          actor: users[(history ?? [])[index].history.changedBy]
+                              ?.name,
                           isLast: index == (history ?? []).length - 1,
                         ),
                     ],
@@ -573,9 +616,7 @@ class _TimelineRow extends StatelessWidget {
 }
 
 class _CustomerInformationCard extends ConsumerWidget {
-  const _CustomerInformationCard({
-    required this.userId,
-  });
+  const _CustomerInformationCard({required this.userId});
   final String? userId;
 
   @override
@@ -732,8 +773,8 @@ class _UserInformationCard extends ConsumerWidget {
               ],
             )
           : FutureBuilder<({String id, UserEntity user})?>(
-              future: isCustomer 
-                  ? ref.watch(getCustomerDetailsProvider).call(userId!) 
+              future: isCustomer
+                  ? ref.watch(getCustomerDetailsProvider).call(userId!)
                   : ref.watch(getAgentDetailsProvider).call(userId!),
               builder: (context, snapshot) {
                 final user = snapshot.data?.user;

@@ -1,4 +1,5 @@
 import 'package:shared/shared.dart' as shared;
+
 import '../repositories/user_repository_interface.dart';
 
 /// Use case to get a user profile.

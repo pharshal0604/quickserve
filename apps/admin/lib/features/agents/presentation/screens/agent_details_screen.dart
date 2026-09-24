@@ -9,24 +9,25 @@ import 'package:quickserve_admin/injection_container.dart';
 import 'package:quickserve_admin/shared/admin_formatters.dart';
 
 class AgentDetailsScreen extends ConsumerWidget {
-  const AgentDetailsScreen({
-    required this.agentId,
-    this.onBack,
-    super.key,
-  });
+  const AgentDetailsScreen({required this.agentId, this.onBack, super.key});
 
   final String agentId;
   final VoidCallback? onBack;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { return FutureBuilder<({String id, UserEntity user})?>(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<({String id, UserEntity user})?>(
       future: ref.watch(getAgentDetailsProvider).call(agentId),
       builder: (context, agentSnapshot) {
         if (agentSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         final userEntity = agentSnapshot.data?.user;
-        if (userEntity == null) return const Scaffold(body: Center(child: Text('Agent not found')));
+        if (userEntity == null) {
+          return const Scaffold(body: Center(child: Text('Agent not found')));
+        }
         final data = {
           'name': userEntity.name,
           'email': userEntity.email,
@@ -36,167 +37,188 @@ class AgentDetailsScreen extends ConsumerWidget {
           'schedule': userEntity.schedule,
         };
         return Scaffold(
-    appBar: AppBar(
-      leading: IconButton(
-        tooltip: 'Back to agents',
-        onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-        icon: const Icon(Icons.arrow_back),
-      ),
-      title: const Text('Agent profile'),
-      actions: [
-        OutlinedButton.icon(
-          onPressed: () async {
-            final email = data['email'] ;
-            final phone = data['phone'] ;
-            if (email != null && email.isNotEmpty) {
-              final uri = Uri.parse('mailto:$email');
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            } else if (phone != null && phone.isNotEmpty) {
-              final uri = Uri.parse('sms:$phone');
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            } else {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No contact info available.')),
-                );
-              }
-            }
-          },
-          icon: const Icon(Icons.mail_outline, size: 17),
-          label: const Text('Message'),
-        ),
-        const SizedBox(width: 8),
-        FilledButton.icon(
-          onPressed: () {
-            final controller = TextEditingController(text: data['schedule']  ?? '');
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Update Schedule'),
-                content: TextField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g. Mon-Fri 9AM-5PM',
-                    border: OutlineInputBorder(),
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: 'Back to agents',
+              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back),
+            ),
+            title: const Text('Agent profile'),
+            actions: [
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final email = data['email'];
+                  final phone = data['phone'];
+                  if (email != null && email.isNotEmpty) {
+                    final uri = Uri.parse('mailto:$email');
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                  } else if (phone != null && phone.isNotEmpty) {
+                    final uri = Uri.parse('sms:$phone');
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No contact info available.'),
+                        ),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.mail_outline, size: 17),
+                label: const Text('Message'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () {
+                  final controller = TextEditingController(
+                    text: data['schedule'] ?? '',
+                  );
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Update Schedule'),
+                      content: TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. Mon-Fri 9AM-5PM',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () async {
+                            await ref.read(updateAgentScheduleProvider).call(
+                              agentId,
+                              {'schedule': controller.text},
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Schedule updated'),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.calendar_month_outlined, size: 17),
+                label: const Text('Update schedule'),
+              ),
+              const SizedBox(width: 16),
+            ],
+          ),
+          body: StreamBuilder<List<({String id, RequestEntity request})>>(
+            stream: ref.watch(watchRequestsProvider).call(),
+            builder: (context, snapshot) {
+              final requests = (snapshot.data ?? const [])
+                  .where((doc) => doc.request.agentId == agentId)
+                  .toList();
+              final completed = requests
+                  .where(
+                    (doc) =>
+                        doc.request.status.toStoredValue() ==
+                        StatusNames.completed,
+                  )
+                  .length;
+              final active = requests
+                  .where(
+                    (doc) => ![
+                      StatusNames.completed,
+                      StatusNames.cancelled,
+                    ].contains(doc.request.status.toStoredValue()),
+                  )
+                  .length;
+              final successRate = requests.isEmpty
+                  ? 0
+                  : ((completed / requests.length) * 100).round();
+              return ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _ProfileHeader(data: data),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _Kpi(
+                        icon: Icons.work_outline,
+                        label: 'Total jobs',
+                        value: '${requests.length}',
+                      ),
+                      _Kpi(
+                        icon: Icons.check_circle_outline,
+                        label: 'Success rate',
+                        value: '$successRate%',
+                      ),
+                    ],
                   ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () async {
-                      await ref.read(updateAgentScheduleProvider).call(agentId, {'schedule': controller.text});
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Schedule updated')),
-                        );
-                      }
+                  const SizedBox(height: 18),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final chart = _PerformanceCard(
+                        completed: completed,
+                        active: active,
+                        total: requests.length,
+                      );
+                      final workload = _WorkloadCard(active: active);
+                      return constraints.maxWidth >= 900
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(flex: 2, child: chart),
+                                const SizedBox(width: 16),
+                                Expanded(child: workload),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                chart,
+                                const SizedBox(height: 16),
+                                workload,
+                              ],
+                            );
                     },
-                    child: const Text('Save'),
+                  ),
+                  const SizedBox(height: 18),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final skills = _SkillsCard(data: data);
+                      final history = _RecentJobs(
+                        requests: requests.take(5).toList(),
+                      );
+                      return constraints.maxWidth >= 900
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: skills),
+                                const SizedBox(width: 16),
+                                Expanded(flex: 2, child: history),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                skills,
+                                const SizedBox(height: 16),
+                                history,
+                              ],
+                            );
+                    },
                   ),
                 ],
-              ),
-            );
-          },
-          icon: const Icon(Icons.calendar_month_outlined, size: 17),
-          label: const Text('Update schedule'),
-        ),
-        const SizedBox(width: 16),
-      ],
-    ),
-    body: StreamBuilder<List<({String id, RequestEntity request})>>(
-      stream: ref.watch(watchRequestsProvider).call(),
-      builder: (context, snapshot) {
-        final requests = (snapshot.data ?? const [])
-            .where((doc) => doc.request.agentId == agentId)
-            .toList();
-        final completed = requests
-            .where((doc) => doc.request.status.toStoredValue() == StatusNames.completed)
-            .length;
-        final active = requests
-            .where(
-              (doc) => ![
-                StatusNames.completed,
-                StatusNames.cancelled,
-              ].contains(doc.request.status.toStoredValue()),
-            )
-            .length;
-        final successRate = requests.isEmpty
-            ? 0
-            : ((completed / requests.length) * 100).round();
-        return ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            _ProfileHeader(data: data),
-            const SizedBox(height: 18),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _Kpi(
-                  icon: Icons.work_outline,
-                  label: 'Total jobs',
-                  value: '${requests.length}',
-                ),
-                _Kpi(
-                  icon: Icons.check_circle_outline,
-                  label: 'Success rate',
-                  value: '$successRate%',
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final chart = _PerformanceCard(
-                  completed: completed,
-                  active: active,
-                  total: requests.length,
-                );
-                final workload = _WorkloadCard(active: active);
-                return constraints.maxWidth >= 900
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 2, child: chart),
-                          const SizedBox(width: 16),
-                          Expanded(child: workload),
-                        ],
-                      )
-                    : Column(
-                        children: [chart, const SizedBox(height: 16), workload],
-                      );
-              },
-            ),
-            const SizedBox(height: 18),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final skills = _SkillsCard(data: data);
-                final history = _RecentJobs(
-                  requests: requests.take(5).toList(),
-                );
-                return constraints.maxWidth >= 900
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: skills),
-                          const SizedBox(width: 16),
-                          Expanded(flex: 2, child: history),
-                        ],
-                      )
-                    : Column(
-                        children: [skills, const SizedBox(height: 16), history],
-                      );
-              },
-            ),
-          ],
+              );
+            },
+          ),
         );
-      },
-    ),
-    );
       },
     );
   }
@@ -339,10 +361,7 @@ class _PerformanceCard extends StatelessWidget {
                 'Completed $completed',
               ),
               const SizedBox(width: 18),
-              _legend(
-                Theme.of(context).colorScheme.tertiary,
-                'Active $active',
-              ),
+              _legend(Theme.of(context).colorScheme.tertiary, 'Active $active'),
               const Spacer(),
               Text(
                 '$total total',
@@ -515,9 +534,7 @@ class _RecentJobs extends StatelessWidget {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(adminStatusIcon(status), color: statusColor),
-                  title: Text(
-                    ' · ',
-                  ),
+                  title: Text(' · '),
                   subtitle: Text(
                     adminLabel(status),
                     style: TextStyle(

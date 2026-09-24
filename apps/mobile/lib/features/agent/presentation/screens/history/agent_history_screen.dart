@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
-import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:quickserve_mobile/features/agent/presentation/providers/agent_providers.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
 
 /// Completed and cancelled work for the signed-in agent.
@@ -27,18 +27,11 @@ class _AgentHistoryScreenState extends ConsumerState<AgentHistoryScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final requests = ref.watch(_agentHistoryRequestsProvider(uid));
+    final requests = ref.watch(agentRequestsProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         body: SafeArea(
           child: Column(
             children: [
@@ -167,7 +160,7 @@ class _AgentHistoryScreenState extends ConsumerState<AgentHistoryScreen> {
                             ),
                           ),
                           child: InkWell(
-                            onTap: () => context.push('/requests/'),
+                            onTap: () => context.push('/requests/${item.id}'),
                             borderRadius: BorderRadius.circular(16),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
@@ -275,9 +268,7 @@ class _AgentHistoryScreenState extends ConsumerState<AgentHistoryScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const AgentBottomNav(currentIndex: 2),
-      ),
-    );
+      );
   }
 
   static String _statusLabel(String value) {
@@ -359,8 +350,3 @@ class _HistoryFilterChip extends StatelessWidget {
   }
 }
 
-final _agentHistoryRequestsProvider =
-    StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, uid) =>
-          ref.watch(agentRepositoryProvider).watchAssignedRequests(uid),
-    );

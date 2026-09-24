@@ -17,11 +17,7 @@ class PeopleScreen extends ConsumerStatefulWidget {
 
   final String role;
   final ValueChanged<({String userId, UserEntity user})>? onDetails;
-  final Widget Function(
-    BuildContext context,
-    String userId,
-    UserEntity user,
-  )?
+  final Widget Function(BuildContext context, String userId, UserEntity user)?
   detailsBuilder;
 
   @override
@@ -52,9 +48,7 @@ class _PeopleDataSource extends DataTableSource {
           MaterialPageRoute(
             builder: (_) =>
                 widget.detailsBuilder?.call(context, doc.id, user) ??
-                PersonDetailsScreen(
-                  customerId: doc.id,
-                ),
+                PersonDetailsScreen(customerId: doc.id),
           ),
         );
       },
@@ -66,14 +60,22 @@ class _PeopleDataSource extends DataTableSource {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                foregroundColor: Theme.of(context)
+                    .colorScheme
+                    .onPrimaryContainer,
                 child: Text(
                   adminInitial(user.name),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                user.name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
@@ -111,8 +113,8 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
   Widget build(
     BuildContext context,
   ) => StreamBuilder<List<({String id, UserEntity user})>>(
-    stream: widget.role == RoleNames.customer 
-        ? ref.watch(watchCustomersProvider).call() 
+    stream: widget.role == RoleNames.customer
+        ? ref.watch(watchCustomersProvider).call()
         : ref.watch(watchAgentsProvider).call(),
     builder: (context, snapshot) {
       final all = snapshot.data ?? [];
@@ -132,15 +134,19 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
 
       if (_sortColumnIndex == 0) {
         filtered.sort((a, b) {
-          final aName = (a.user.name ).toLowerCase();
-          final bName = (b.user.name ).toLowerCase();
-          return _sortAscending ? aName.compareTo(bName) : bName.compareTo(aName);
+          final aName = (a.user.name).toLowerCase();
+          final bName = (b.user.name).toLowerCase();
+          return _sortAscending
+              ? aName.compareTo(bName)
+              : bName.compareTo(aName);
         });
       } else if (_sortColumnIndex == 1) {
         filtered.sort((a, b) {
-          final aEmail = (a.user.email ).toLowerCase();
-          final bEmail = (b.user.email ).toLowerCase();
-          return _sortAscending ? aEmail.compareTo(bEmail) : bEmail.compareTo(aEmail);
+          final aEmail = (a.user.email).toLowerCase();
+          final bEmail = (b.user.email).toLowerCase();
+          return _sortAscending
+              ? aEmail.compareTo(bEmail)
+              : bEmail.compareTo(aEmail);
         });
       }
 
@@ -161,12 +167,15 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Showing ${filtered.length} matching records',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -229,7 +238,12 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
             Expanded(
               child: snapshot.hasError
                   ? Center(
-                      child: Text('Unable to load $title: ${snapshot.error}', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      child: Text(
+                        'Unable to load $title: ${snapshot.error}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     )
                   : ListView(
                       children: [
@@ -239,7 +253,9 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
                           rowsPerPage: _rowsPerPage,
                           onRowsPerPageChanged: (value) {
                             setState(() {
-                              _rowsPerPage = value ?? PaginatedDataTable.defaultRowsPerPage;
+                              _rowsPerPage =
+                                  value ??
+                                  PaginatedDataTable.defaultRowsPerPage;
                             });
                           },
                           availableRowsPerPage: const [10, 25, 50, 100],
@@ -248,24 +264,36 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
                           showCheckboxColumn: false,
                           columns: [
                             DataColumn(
-                              label: const Text('Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                              label: const Text(
+                                'Name',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               onSort: (columnIndex, ascending) => setState(() {
                                 _sortColumnIndex = columnIndex;
                                 _sortAscending = ascending;
                               }),
                             ),
                             DataColumn(
-                              label: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                              label: const Text(
+                                'Email',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               onSort: (columnIndex, ascending) => setState(() {
                                 _sortColumnIndex = columnIndex;
                                 _sortAscending = ascending;
                               }),
                             ),
                             const DataColumn(
-                              label: Text('Phone', style: TextStyle(fontWeight: FontWeight.bold)),
+                              label: Text(
+                                'Phone',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                             const DataColumn(
-                              label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                              label: Text(
+                                'Status',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ],
                         ),

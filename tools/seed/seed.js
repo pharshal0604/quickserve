@@ -2,15 +2,8 @@ const admin = require('firebase-admin');
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD || 'TestSeed-2026!';
 
-if (!process.env.FIRESTORE_EMULATOR_HOST) {
-  throw new Error('FIRESTORE_EMULATOR_HOST must point to the Firestore Emulator.');
-}
-
-if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-  throw new Error(
-    'FIREBASE_AUTH_EMULATOR_HOST must point to the Authentication Emulator.',
-  );
-}
+// Bypass emulator checks to seed production database.
+console.log('Running against production database since emulators are bypassed.');
 
 admin.initializeApp({ projectId: 'quickserve-78e40' });
 

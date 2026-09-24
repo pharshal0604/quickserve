@@ -24,7 +24,9 @@ class DashboardScreen extends ConsumerWidget {
       final docs = snapshot.data ?? [];
       final counts = <String, int>{
         for (final status in StatusNames.values)
-          status: docs.where((doc) => doc.request.status.toStoredValue() == status).length,
+          status: docs
+              .where((doc) => doc.request.status.toStoredValue() == status)
+              .length,
       };
       final recent = [...docs]
         ..sort((a, b) => b.request.updatedAt.compareTo(a.request.updatedAt));
@@ -51,7 +53,10 @@ class DashboardScreen extends ConsumerWidget {
           )
           .toList();
       final completed = docs
-          .where((doc) => doc.request.status.toStoredValue() == StatusNames.completed)
+          .where(
+            (doc) =>
+                doc.request.status.toStoredValue() == StatusNames.completed,
+          )
           .toList();
 
       return ListView(

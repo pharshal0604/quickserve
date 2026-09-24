@@ -75,4 +75,16 @@ final class AuthRepository {
       throw mapAuthError(error);
     }
   }
+
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      final user = fb.FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found.');
+      }
+      await user.updatePassword(newPassword);
+    } catch (error) {
+      throw mapAuthError(error);
+    }
+  }
 }

@@ -35,8 +35,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
         stream: ref.watch(watchCustomersProvider).call(),
         builder: (context, usersSnapshot) {
           final usersById = <String, UserEntity>{
-            for (final doc in usersSnapshot.data ?? [])
-              doc.id: doc.user,
+            for (final doc in usersSnapshot.data ?? []) doc.id: doc.user,
           };
           return Padding(
             padding: const EdgeInsets.all(24),
@@ -85,9 +84,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                             usersById: usersById,
                             onOpen: (doc) => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => RequestDetailsScreen(
-                                  requestId: doc.id,
-                                ),
+                                builder: (_) =>
+                                    RequestDetailsScreen(requestId: doc.id),
                               ),
                             ),
                           ),
@@ -178,15 +176,9 @@ class _RequestsTable extends StatelessWidget {
                     DataCell(
                       _CustomerCell(user: usersById[doc.request.customerId]),
                     ),
-                    DataCell(
-                      Text(
-                        adminLabel(doc.request.serviceType),
-                      ),
-                    ),
+                    DataCell(Text(adminLabel(doc.request.serviceType))),
                     DataCell(Text(_dateTime(doc.request.preferredDateTime))),
-                    DataCell(
-                      _StatusBadge(doc.request.status.toStoredValue()),
-                    ),
+                    DataCell(_StatusBadge(doc.request.status.toStoredValue())),
                   ],
                 ),
             ],

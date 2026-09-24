@@ -9,6 +9,7 @@ import 'package:quickserve_mobile/features/auth/data/repositories/auth_repositor
 import 'package:quickserve_mobile/features/requests/data/repositories/request_repository.dart';
 import 'package:quickserve_mobile/features/services/data/repositories/service_repository.dart';
 import 'package:quickserve_mobile/features/profile/data/user_repository.dart';
+import 'package:quickserve_mobile/features/profile/data/notifications_repository.dart';
 
 /// Provides the Firebase Authentication repository.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -35,9 +36,19 @@ final requestRepositoryProvider = Provider<RequestRepository>((ref) {
   return const RequestRepository();
 });
 
+/// Provides notification operations.
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+  return const NotificationsRepository();
+});
+
 /// Streams the current Firebase Authentication user.
 final authStateProvider = StreamProvider<fb.User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
+});
+
+/// Exposes the current user's photo URL (if any) without exposing the Firebase User object.
+final authPhotoUrlProvider = Provider<String?>((ref) {
+  return ref.watch(authStateProvider).value?.photoURL;
 });
 
 /// True while a customer registration flow is in progress. The router

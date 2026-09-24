@@ -13,7 +13,8 @@ abstract class RequestRepositoryInterface {
   });
 
   /// Streams requests owned by a customer.
-  Stream<List<({String id, shared.RequestEntity request})>> watchCustomerRequests(String customerId);
+  Stream<List<({String id, shared.RequestEntity request})>>
+  watchCustomerRequests(String customerId);
 
   /// Streams a single request by its ID.
   Stream<shared.RequestEntity?> watchRequest(String requestId);

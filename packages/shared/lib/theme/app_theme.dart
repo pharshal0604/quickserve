@@ -138,7 +138,9 @@ abstract final class AppTheme {
         selectionHandleColor: accent,
       ),
       appBarTheme: AppBarTheme(
-        systemOverlayStyle: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -224,10 +226,7 @@ abstract final class AppTheme {
             ? const Color(0xff34363b)
             : const Color(0xfff0f1f2),
         selectedColor: accent,
-        labelStyle: TextStyle(
-          fontSize: 12,
-          color: primaryText,
-        ),
+        labelStyle: TextStyle(fontSize: 12, color: primaryText),
         secondaryLabelStyle: TextStyle(
           color: dark ? AppColors.lightTextPrimary : Colors.white,
         ),

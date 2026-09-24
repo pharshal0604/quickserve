@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
@@ -14,17 +13,9 @@ final _notificationsStreamProvider =
       final user = ref.watch(authStateProvider).value;
       if (user == null) return const Stream.empty();
 
-      return FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('notifications')
-          .orderBy('createdAt', descending: true)
-          .snapshots()
-          .map(
-            (snapshot) => snapshot.docs
-                .map((doc) => {'id': doc.id, ...doc.data()})
-                .toList(),
-          );
+      return ref
+          .watch(notificationsRepositoryProvider)
+          .watchNotifications(user.uid);
     });
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -115,15 +106,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         ),
                       ),
                       subtitle: Text(note['body'] ?? ''),
-                      onTap: () async {
+                      onTap: () {
                         final user = ref.read(authStateProvider).value;
                         if (user != null && !isRead) {
-                          FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(user.uid)
-                              .collection('notifications')
-                              .doc(note['id'])
-                              .update({'isRead': true});
+                          ref
+                              .read(notificationsRepositoryProvider)
+                              .markAsRead(
+                                userId: user.uid,
+                                notificationId: note['id'] as String,
+                              );
                         }
                       },
                     );
@@ -140,4 +131,3 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 }
-

@@ -52,11 +52,17 @@ import 'features/services/domain/usecases/update_service.dart';
 import 'features/services/domain/usecases/watch_services.dart';
 
 // Core Firebase Providers
-final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
+final firebaseFirestoreProvider = Provider<FirebaseFirestore>(
+  (ref) => FirebaseFirestore.instance,
+);
+final firebaseAuthProvider = Provider<FirebaseAuth>(
+  (ref) => FirebaseAuth.instance,
+);
 
 // Activity
-final activityRemoteDataSourceProvider = Provider<ActivityRemoteDataSource>((ref) {
+final activityRemoteDataSourceProvider = Provider<ActivityRemoteDataSource>((
+  ref,
+) {
   return ActivityRemoteDataSourceImpl();
 });
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
@@ -110,7 +116,9 @@ final signOutProvider = Provider<SignOut>((ref) {
 });
 
 // Customers
-final customerRemoteDataSourceProvider = Provider<CustomerRemoteDataSource>((ref) {
+final customerRemoteDataSourceProvider = Provider<CustomerRemoteDataSource>((
+  ref,
+) {
   return CustomerRemoteDataSourceImpl();
 });
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
@@ -124,7 +132,9 @@ final watchCustomersProvider = Provider<WatchCustomers>((ref) {
 });
 
 // Requests
-final requestRemoteDataSourceProvider = Provider<RequestRemoteDataSource>((ref) {
+final requestRemoteDataSourceProvider = Provider<RequestRemoteDataSource>((
+  ref,
+) {
   return RequestRemoteDataSourceImpl();
 });
 final requestRepositoryProvider = Provider<RequestRepository>((ref) {
@@ -144,7 +154,9 @@ final watchRequestsProvider = Provider<WatchRequests>((ref) {
 });
 
 // Services
-final serviceRemoteDataSourceProvider = Provider<ServiceRemoteDataSource>((ref) {
+final serviceRemoteDataSourceProvider = Provider<ServiceRemoteDataSource>((
+  ref,
+) {
   return ServiceRemoteDataSourceImpl();
 });
 final serviceRepositoryProvider = Provider<ServiceRepository>((ref) {

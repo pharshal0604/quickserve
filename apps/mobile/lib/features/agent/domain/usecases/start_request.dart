@@ -9,7 +9,7 @@ class StartRequest {
 
   /// Executes the usecase.
   Future<void> call(AgentRequestParams params) => _repository.startRequest(
-        requestId: params.requestId,
-        agentId: params.agentId,
-      );
+    requestId: params.requestId,
+    agentId: params.agentId,
+  );
 }

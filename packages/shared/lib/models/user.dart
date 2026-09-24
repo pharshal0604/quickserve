@@ -86,8 +86,16 @@ class User {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(role, name, email, phone, office, schedule, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    role,
+    name,
+    email,
+    phone,
+    office,
+    schedule,
+    createdAt,
+    updatedAt,
+  );
 
   /// Converts this model to a pure-Dart domain entity.
   UserEntity toEntity() => UserEntity(

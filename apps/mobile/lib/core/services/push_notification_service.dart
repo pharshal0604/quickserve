@@ -1,11 +1,14 @@
 import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickserve_mobile/app.dart';
 
-final pushNotificationServiceProvider = Provider<PushNotificationService>((ref) {
+final pushNotificationServiceProvider = Provider<PushNotificationService>((
+  ref,
+) {
   return PushNotificationService();
 });
 
@@ -24,7 +27,7 @@ class PushNotificationService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         log('User granted FCM permission');
-        
+
         // 2. Get the device token
         final token = await _messaging.getToken();
         if (token != null) {
@@ -39,7 +42,7 @@ class PushNotificationService {
         // 4. Handle foreground messages
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
           log('Received FCM message in foreground: ${message.messageId}');
-          
+
           final notification = message.notification;
           if (notification != null) {
             scaffoldMessengerKey.currentState?.showSnackBar(
@@ -47,7 +50,9 @@ class PushNotificationService {
                 behavior: SnackBarBehavior.floating,
                 margin: const EdgeInsets.all(16),
                 backgroundColor: const Color(0xFF2C3E50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 duration: const Duration(seconds: 5),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -56,10 +61,12 @@ class PushNotificationService {
                     if (notification.title != null)
                       Text(
                         notification.title!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    if (notification.body != null)
-                      Text(notification.body!),
+                    if (notification.body != null) Text(notification.body!),
                   ],
                 ),
                 action: SnackBarAction(
@@ -83,12 +90,9 @@ class PushNotificationService {
 
   Future<void> _saveTokenToFirestore(String userId, String token) async {
     try {
-      await _firestore.collection('users').doc(userId).set(
-        {
-          'fcmTokens': FieldValue.arrayUnion([token]),
-        },
-        SetOptions(merge: true),
-      );
+      await _firestore.collection('users').doc(userId).set({
+        'fcmTokens': FieldValue.arrayUnion([token]),
+      }, SetOptions(merge: true));
       log('=============================================');
       log('YOUR FCM TOKEN:');
       log(token);
@@ -102,12 +106,9 @@ class PushNotificationService {
     try {
       final token = await _messaging.getToken();
       if (token != null) {
-        await _firestore.collection('users').doc(userId).set(
-          {
-            'fcmTokens': FieldValue.arrayRemove([token]),
-          },
-          SetOptions(merge: true),
-        );
+        await _firestore.collection('users').doc(userId).set({
+          'fcmTokens': FieldValue.arrayRemove([token]),
+        }, SetOptions(merge: true));
       }
       await _messaging.deleteToken();
     } catch (e) {

@@ -116,24 +116,27 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Card(
         child: ListTile(
-        onTap: () => context.push('/requests/${item.id}'),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          onTap: () => context.push('/requests/${item.id}'),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          title: Text(
+            '${request.serviceType} · ${request.requestCode}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          subtitle: Text(
+            '${request.description}\n${request.address}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          isThreeLine: true,
+          trailing: StatusPill(
+            label: status,
+            color: _requestStatusColor(status),
+          ),
         ),
-        title: Text(
-          '${request.serviceType} · ${request.requestCode}',
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-        subtitle: Text(
-          '${request.description}\n${request.address}',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        isThreeLine: true,
-        trailing: StatusPill(label: status, color: _requestStatusColor(status)),
       ),
-    ),
     );
   }
 

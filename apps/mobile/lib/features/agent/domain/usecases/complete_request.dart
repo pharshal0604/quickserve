@@ -9,7 +9,7 @@ class CompleteRequest {
 
   /// Executes the usecase.
   Future<void> call(AgentRequestParams params) => _repository.completeRequest(
-        requestId: params.requestId,
-        agentId: params.agentId,
-      );
+    requestId: params.requestId,
+    agentId: params.agentId,
+  );
 }

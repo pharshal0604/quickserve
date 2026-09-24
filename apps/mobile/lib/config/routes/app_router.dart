@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
+import 'app_routes.dart';
+
+import 'package:quickserve_mobile/features/agent/presentation/screens/agent_shell_screen.dart';
+import 'package:quickserve_mobile/features/agent/presentation/screens/agent_home/agent_home_screen.dart';
 import 'package:quickserve_mobile/features/agent/presentation/screens/assigned_requests/assigned_requests_screen.dart';
 import 'package:quickserve_mobile/features/agent/presentation/screens/history/agent_history_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/create_request_screen.dart';
@@ -15,6 +19,7 @@ import 'package:quickserve_mobile/features/profile/presentation/screens/notifica
 import 'package:quickserve_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/saved_addresses_screen.dart';
 
+import 'package:quickserve_mobile/features/profile/presentation/screens/settings_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/security_settings_screen.dart';
 import 'package:quickserve_mobile/features/profile/presentation/screens/authorized_devices_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_details_screen.dart';
@@ -34,6 +39,9 @@ final class _AuthRefreshNotifier extends ChangeNotifier {
     ref.listen<bool>(registrationInProgressProvider, (_, _) {
       notifyListeners();
     });
+    ref.listen<AsyncValue<shared.User?>>(userProfileProvider, (_, _) {
+      notifyListeners();
+    });
     ref.onDispose(dispose);
   }
 }
@@ -43,33 +51,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _AuthRefreshNotifier(ref);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: AppRoutes.splash,
     refreshListenable: refreshNotifier,
     routes: [
       GoRoute(
-        path: '/splash',
+        path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
       GoRoute(
-        path: '/agent-login',
+        path: AppRoutes.agentLogin,
         builder: (context, state) => const LoginScreen(isAgentLogin: true),
       ),
       GoRoute(
-        path: '/register',
+        path: AppRoutes.register,
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
-        path: '/password-reset',
+        path: AppRoutes.passwordReset,
         builder: (context, state) => const PasswordResetScreen(),
       ),
-      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: AppRoutes.home, builder: (context, state) => const HomeScreen()),
       GoRoute(
-        path: '/services',
+        path: AppRoutes.services,
         builder: (context, state) => const ServicesScreen(),
       ),
       GoRoute(
-        path: '/services/detail',
+        path: AppRoutes.serviceDetail,
         builder: (context, state) => ServiceDetailsScreen(
           service: shared.Service(
             name: state.uri.queryParameters['name'] ?? '',
@@ -80,32 +88,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/profile',
+        path: AppRoutes.profile,
         builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
-        path: '/saved-addresses',
+        path: AppRoutes.savedAddresses,
         builder: (context, state) => const SavedAddressesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
       ),
 
       GoRoute(
-        path: '/security-settings',
+        path: AppRoutes.securitySettings,
         builder: (context, state) => const SecuritySettingsScreen(),
       ),
       GoRoute(
-        path: '/authorized-devices',
+        path: AppRoutes.authorizedDevices,
         builder: (context, state) => const AuthorizedDevicesScreen(),
       ),
       GoRoute(
-        path: '/notifications',
+        path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
-        path: '/requests',
+        path: AppRoutes.requests,
         builder: (context, state) => const MyRequestsScreen(),
       ),
       GoRoute(
-        path: '/requests/create',
+        path: AppRoutes.createRequest,
         builder: (context, state) => CreateRequestScreen(
           initialService: state.uri.queryParameters['service'],
         ),
@@ -115,21 +127,49 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             RequestSuccessScreen(requestId: state.pathParameters['requestId']!),
       ),
-      GoRoute(
-        path: '/agent/requests',
-        builder: (context, state) => const AgentRequestsScreen(),
-      ),
-      GoRoute(
-        path: '/agent/history',
-        builder: (context, state) => const AgentHistoryScreen(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return AgentShellScreen(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/a/home',
+                builder: (context, state) => const AgentHomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/a/requests',
+                builder: (context, state) => const AgentRequestsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/a/history',
+                builder: (context, state) => const AgentHistoryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/a/profile',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/agents/:agentId',
         builder: (context, state) => AgentProfileScreen(
-          snapshot: AgentContactSnapshot(
-            name: state.uri.queryParameters['name'],
-            phone: state.uri.queryParameters['phone'],
-          ),
+          agentId: state.pathParameters['agentId']!,
         ),
       ),
       GoRoute(
@@ -144,43 +184,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.uri.path;
 
       if (authState.isLoading) {
-        return path == '/splash' ? null : '/splash';
+        return path == AppRoutes.splash ? null : AppRoutes.splash;
       }
 
       final user = authState.value;
       if (user == null) {
-        const publicPaths = {
-          '/splash',
-          '/login',
-          '/agent-login',
-          '/register',
-          '/password-reset',
-        };
-        return publicPaths.contains(path) ? null : '/splash';
+        return AppRoutes.publicPaths.contains(path) ? null : AppRoutes.splash;
       }
 
-      if (registering && path == '/register') return null;
+      if (registering && path == AppRoutes.register) return null;
 
-      const authPaths = {
-        '/splash',
-        '/login',
-        '/agent-login',
-        '/register',
-        '/password-reset',
-      };
+      if (AppRoutes.publicPaths.contains(path)) return AppRoutes.home;
 
-      if (authPaths.contains(path)) return '/home';
+      final profileState = ref.read(userProfileProvider);
+      
+      // If we are authenticated but profile is still loading, wait on splash
+      if (profileState.isLoading && !AppRoutes.publicPaths.contains(path) && path != AppRoutes.splash) {
+        return AppRoutes.splash;
+      }
 
-      final userProfile = ref.read(userProfileProvider).value;
+      final userProfile = profileState.value;
       if (userProfile != null) {
         if (userProfile.role == shared.UserRole.agent) {
-          if (path.startsWith('/create-request') ||
-              path.startsWith('/services')) {
-            return '/home';
+          if (path == AppRoutes.home) return '/a/home';
+          if (path == AppRoutes.agentRequests) return '/a/requests';
+          if (path == AppRoutes.agentHistory) return '/a/history';
+          if (path == AppRoutes.profile) return '/a/profile';
+
+          if (path.startsWith(AppRoutes.createRequest) ||
+              path.startsWith(AppRoutes.services)) {
+            return '/a/home';
           }
         } else if (userProfile.role == shared.UserRole.customer) {
-          if (path.startsWith('/agent')) {
-            return '/home';
+          if (path.startsWith('/agent/') || path.startsWith('/a/')) {
+            return AppRoutes.home;
           }
         }
       }

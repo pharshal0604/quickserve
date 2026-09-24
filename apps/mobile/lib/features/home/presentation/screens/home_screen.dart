@@ -8,6 +8,7 @@ import 'package:quickserve_mobile/features/agent/presentation/screens/agent_home
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
 import 'package:quickserve_mobile/shared/widgets/quickserve_widgets.dart';
+import 'package:quickserve_mobile/core/error/app_exceptions.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -18,10 +19,28 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       body: profile.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => Center(
-          child: TextButton(
-            onPressed: () => ref.invalidate(userProfileProvider),
-            child: const Text('Retry profile'),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Profile parsing error:\n${err is AppException ? err.userMessage : err}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+              TextButton(
+                onPressed: () => ref.invalidate(userProfileProvider),
+                child: const Text('Retry profile'),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () => ref.read(authRepositoryProvider).signOut(),
+                child: const Text('Sign out'),
+              ),
+            ],
           ),
         ),
         data: (user) {

@@ -2,10 +2,7 @@ import '../repositories/agent_repository_interface.dart';
 
 /// Parameters for agent request operations.
 class AgentRequestParams {
-  const AgentRequestParams({
-    required this.requestId,
-    required this.agentId,
-  });
+  const AgentRequestParams({required this.requestId, required this.agentId});
 
   final String requestId;
   final String agentId;
@@ -18,7 +15,8 @@ class AcceptRequest {
   final AgentRepositoryInterface _repository;
 
   /// Executes the usecase.
-  Future<void> call(AgentRequestParams params) => _repository.acceptAssignedRequest(
+  Future<void> call(AgentRequestParams params) =>
+      _repository.acceptAssignedRequest(
         requestId: params.requestId,
         agentId: params.agentId,
       );

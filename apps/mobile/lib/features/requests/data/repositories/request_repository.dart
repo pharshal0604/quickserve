@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -305,23 +306,30 @@ void _sendNotification({
   String? agentId,
 }) async {
   try {
-    final doc = await FirebaseFirestore.instance.collection(shared.CollectionNames.requests).doc(requestId).get();
+    final doc = await FirebaseFirestore.instance
+        .collection(shared.CollectionNames.requests)
+        .doc(requestId)
+        .get();
     if (!doc.exists) return;
     final data = doc.data()!;
     final agentName = data['agentName'] as String?;
     final serviceName = data['serviceType'] as String?;
 
-    await http.post(
-      Uri.parse('https://quickserve-backend-w98w.onrender.com/api/notify-status-change'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'requestId': requestId,
-        'status': status,
-        'customerId': customerId,
-        'agentId': agentId,
-        'agentName': agentName,
-        'serviceName': serviceName,
-      }),
-    ).timeout(const Duration(seconds: 3));
+    await http
+        .post(
+          Uri.parse(
+            'https://quickserve-backend-w98w.onrender.com/api/notify-status-change',
+          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'requestId': requestId,
+            'status': status,
+            'customerId': customerId,
+            'agentId': agentId,
+            'agentName': agentName,
+            'serviceName': serviceName,
+          }),
+        )
+        .timeout(const Duration(seconds: 3));
   } catch (_) {}
 }

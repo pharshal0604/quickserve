@@ -126,71 +126,71 @@ class _SavedAddressesScreenState extends ConsumerState<SavedAddressesScreen> {
           ),
           title: const Text('Saved Addresses'),
         ),
-      body: profile.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading addresses: $e')),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Profile not found'));
-          }
-          final addresses = user.addresses;
+        body: profile.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error loading addresses: $e')),
+          data: (user) {
+            if (user == null) {
+              return const Center(child: Text('Profile not found'));
+            }
+            final addresses = user.addresses;
 
-          if (addresses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.location_off_outlined,
-                    size: 48,
-                    color: AppColors.mutedText,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No saved addresses yet',
-                    style: TextStyle(color: AppColors.mutedText),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_saving)
-                    const CircularProgressIndicator()
-                  else
-                    FilledButton.icon(
-                      onPressed: _showAddDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Address'),
+            if (addresses.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.location_off_outlined,
+                      size: 48,
+                      color: AppColors.mutedText,
                     ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: addresses.length,
-            separatorBuilder: (context, index) => const Divider(),
-            itemBuilder: (context, index) {
-              final address = addresses[index];
-              return ListTile(
-                leading: const Icon(Icons.location_on_outlined),
-                title: Text(address),
-                trailing: IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                  ),
-                  onPressed: _saving ? null : () => _removeAddress(address),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No saved addresses yet',
+                      style: TextStyle(color: AppColors.mutedText),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_saving)
+                      const CircularProgressIndicator()
+                    else
+                      FilledButton.icon(
+                        onPressed: _showAddDialog,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Address'),
+                      ),
+                  ],
                 ),
               );
-            },
-          );
-        },
-      ),
-      floatingActionButton: profile.value?.addresses.isNotEmpty == true
-          ? FloatingActionButton(
-              onPressed: _saving ? null : _showAddDialog,
-              child: const Icon(Icons.add),
-            )
-          : null,
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: addresses.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final address = addresses[index];
+                return ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: Text(address),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                    ),
+                    onPressed: _saving ? null : () => _removeAddress(address),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: profile.value?.addresses.isNotEmpty == true
+            ? FloatingActionButton(
+                onPressed: _saving ? null : _showAddDialog,
+                child: const Icon(Icons.add),
+              )
+            : null,
       ),
     );
   }

@@ -34,6 +34,14 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     final isCustomer =
         profile?.role.toStoredValue() == shared.RoleNames.customer;
 
+    if (widget.requestId.isEmpty ||
+        RegExp(r'[^a-zA-Z0-9_-]').hasMatch(widget.requestId)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Request Details')),
+        body: const Center(child: Text('Invalid request ID format.')),
+      );
+    }
+
     return PopScope(
       canPop: context.canPop(),
       onPopInvokedWithResult: (didPop, _) {
@@ -56,107 +64,108 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
           title: const Text('Request Details'),
         ),
         body: request.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) =>
-            const _Message('Could not load this request.'),
-        data: (item) {
-          if (item == null) {
-            return const _Message('This request is unavailable.');
-          }
-          final history = ref.watch(_historyProvider(widget.requestId));
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              Text(
-                item.serviceType,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _RequestStatusTimeline(
-                currentStatus: item.status.toStoredValue(),
-                priority: item.priority.toStoredValue(),
-                history: history.valueOrNull ?? const [],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _BookingInformation(request: item),
-              if (item.agentId != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _AssignedTechnician(
-                  name: item.agentName,
-                  phone: item.agentPhone,
-                  onTap: () => context.push(
-                    Uri(
-                      path: '/agents/${item.agentId!}',
-                      queryParameters: {
-                        if (item.agentName != null) 'name': item.agentName,
-                        if (item.agentPhone != null) 'phone': item.agentPhone,
-                      },
-                    ).toString(),
-                  ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) =>
+              const _Message('Could not load this request.'),
+          data: (item) {
+            if (item == null) {
+              return const _Message('This request is unavailable.');
+            }
+            final history = ref.watch(_historyProvider(widget.requestId));
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
+                Text(
+                  item.serviceType,
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-              ],
-              if (item.cancellationReason != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                _DetailRow(
-                  label: 'Cancellation reason',
-                  value: item.cancellationReason!,
-                ),
-              ],
-              if (isAgent) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _AgentActions(
-                  request: item,
-                  busy: _busy,
-                  onAccept: () => _runAgentAction(
-                    () => ref
-                        .read(agentRepositoryProvider)
-                        .acceptAssignedRequest(
-                          requestId: widget.requestId,
-                          agentId: _currentUserId,
-                        ),
-                  ),
-                  onStart: () => _runAgentAction(
-                    () => ref
-                        .read(agentRepositoryProvider)
-                        .startRequest(
-                          requestId: widget.requestId,
-                          agentId: _currentUserId,
-                        ),
-                  ),
-                  onComplete: () => _completeRequest(widget.requestId),
+                _RequestStatusTimeline(
+                  currentStatus: item.status.toStoredValue(),
+                  priority: item.priority.toStoredValue(),
+                  history: history.valueOrNull ?? const [],
                 ),
-              ],
-              if (isCustomer &&
-                  shared.isCancellableByCustomer(
-                    item.status.toStoredValue(),
-                  )) ...[
                 const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: Theme.of(context).filledButtonTheme.style?.copyWith(
-                      backgroundColor: WidgetStatePropertyAll(
-                        Theme.of(context).colorScheme.error,
-                      ),
-                      foregroundColor: WidgetStatePropertyAll(
-                        Theme.of(context).colorScheme.onError,
-                      ),
-                      padding: const WidgetStatePropertyAll(
-                        EdgeInsets.symmetric(vertical: 16),
-                      ),
+                _BookingInformation(request: item),
+                if (item.agentId != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _AssignedTechnician(
+                    name: item.agentName,
+                    phone: item.agentPhone,
+                    onTap: () => context.push(
+                      Uri(
+                        path: '/agents/${item.agentId!}',
+                        queryParameters: {
+                          if (item.agentName != null) 'name': item.agentName,
+                          if (item.agentPhone != null) 'phone': item.agentPhone,
+                        },
+                      ).toString(),
                     ),
-                    onPressed: _busy ? null : _cancel,
-                    icon: const Icon(Icons.cancel_outlined),
-                    label: const Text('Cancel Request'),
                   ),
-                ),
+                ],
+                if (item.cancellationReason != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _DetailRow(
+                    label: 'Cancellation reason',
+                    value: item.cancellationReason!,
+                  ),
+                ],
+                if (isAgent) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _AgentActions(
+                    request: item,
+                    busy: _busy,
+                    onAccept: () => _runAgentAction(
+                      () => ref
+                          .read(agentRepositoryProvider)
+                          .acceptAssignedRequest(
+                            requestId: widget.requestId,
+                            agentId: _currentUserId,
+                          ),
+                    ),
+                    onStart: () => _runAgentAction(
+                      () => ref
+                          .read(agentRepositoryProvider)
+                          .startRequest(
+                            requestId: widget.requestId,
+                            agentId: _currentUserId,
+                          ),
+                    ),
+                    onComplete: () => _completeRequest(widget.requestId),
+                  ),
+                ],
+                if (isCustomer &&
+                    shared.isCancellableByCustomer(
+                      item.status.toStoredValue(),
+                    )) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: Theme.of(context).filledButtonTheme.style
+                          ?.copyWith(
+                            backgroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).colorScheme.error,
+                            ),
+                            foregroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).colorScheme.onError,
+                            ),
+                            padding: const WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                      onPressed: _busy ? null : _cancel,
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('Cancel Request'),
+                    ),
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
     );
   }
 
@@ -208,8 +217,11 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       ),
     );
     // Delay disposal until dialog animation finishes to prevent ANR freeze
-    Future.delayed(const Duration(milliseconds: 300), () => controller.dispose());
-    
+    Future.delayed(
+      const Duration(milliseconds: 300),
+      () => controller.dispose(),
+    );
+
     if (!mounted || note == null) return;
     await _runAgentAction(
       () => ref
@@ -246,10 +258,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         ],
       ),
     );
-    
+
     // Delay disposal until dialog animation finishes to prevent ANR freeze
-    Future.delayed(const Duration(milliseconds: 300), () => controller.dispose());
-    
+    Future.delayed(
+      const Duration(milliseconds: 300),
+      () => controller.dispose(),
+    );
+
     if (reason == null) {
       return;
     }

@@ -55,8 +55,12 @@ UserRepositoryException mapUserRepoError(Object error) {
     return UserRepositoryException(error.code, message);
   }
 
-  return const UserRepositoryException(
+  if (error.runtimeType.toString() == 'SharedParseException') {
+    return UserRepositoryException('parse-error', error.toString());
+  }
+
+  return UserRepositoryException(
     'unknown-user-repository-error',
-    'Something went wrong. Please try again.',
+    'Something went wrong. Please try again. $error',
   );
 }

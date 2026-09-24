@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
-import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:quickserve_mobile/features/agent/presentation/providers/agent_providers.dart';
 
 class AgentRequestsScreen extends ConsumerStatefulWidget {
   const AgentRequestsScreen({super.key});
@@ -34,25 +34,16 @@ class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
       return const Scaffold(body: Center(child: Text('Please sign in again.')));
     }
 
-    final requests = ref.watch(_assignedRequestsProvider(user.uid));
+    final requests = ref.watch(agentRequestsProvider);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        bottomNavigationBar: const AgentBottomNav(currentIndex: 1),
         body: SafeArea(
           child: requests.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, _) => Center(
               child: TextButton(
-                onPressed: () =>
-                    ref.invalidate(_assignedRequestsProvider(user.uid)),
+                onPressed: () => ref.invalidate(agentRequestsProvider),
                 child: const Text('Retry requests'),
               ),
             ),
@@ -72,8 +63,7 @@ class _AgentRequestsScreenState extends ConsumerState<AgentRequestsScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   List<({String id, shared.Request request})> _filteredItems(
@@ -178,10 +168,8 @@ class _AssignedRequestsBody extends StatelessWidget {
   final ValueChanged<({String id, shared.Request request})> onAction;
 
   @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    onRefresh: () async {},
-    child: ListView(
-      padding: const EdgeInsets.fromLTRB(14, 24, 14, 24),
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(14, 24, 14, 24),
       children: [
         Text(
           'Assigned Tasks',
@@ -268,8 +256,7 @@ class _AssignedRequestsBody extends StatelessWidget {
           ),
         ),
       ],
-    ),
-  );
+    );
 }
 
 class _FilterPills extends StatelessWidget {
@@ -586,8 +573,3 @@ String _time(DateTime value) {
   return '$hour:${value.minute.toString().padLeft(2, '0')} ${value.hour >= 12 ? 'PM' : 'AM'}';
 }
 
-final _assignedRequestsProvider =
-    StreamProvider.family<List<({String id, shared.Request request})>, String>(
-      (ref, agentId) =>
-          ref.watch(agentRepositoryProvider).watchAssignedRequests(agentId),
-    );

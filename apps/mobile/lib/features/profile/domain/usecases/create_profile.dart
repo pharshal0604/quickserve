@@ -1,4 +1,5 @@
 import 'package:shared/shared.dart' as shared;
+
 import '../repositories/user_repository_interface.dart';
 
 /// Parameters for creating a profile.
@@ -26,10 +27,10 @@ class CreateProfile {
 
   /// Executes the usecase.
   Future<void> call(CreateProfileParams params) => _repository.createProfile(
-        uid: params.uid,
-        name: params.name,
-        email: params.email,
-        phone: params.phone,
-        role: params.role,
-      );
+    uid: params.uid,
+    name: params.name,
+    email: params.email,
+    phone: params.phone,
+    role: params.role,
+  );
 }

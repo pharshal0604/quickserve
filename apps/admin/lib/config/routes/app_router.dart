@@ -25,9 +25,17 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.read(firebaseAuthProvider).authStateChanges();
 });
 
-final userProfileProvider = StreamProvider.family<DocumentSnapshot<Map<String, dynamic>>, String>((ref, uid) {
-  return ref.read(firebaseFirestoreProvider).collection(CollectionNames.users).doc(uid).snapshots();
-});
+final userProfileProvider =
+    StreamProvider.family<DocumentSnapshot<Map<String, dynamic>>, String>((
+      ref,
+      uid,
+    ) {
+      return ref
+          .read(firebaseFirestoreProvider)
+          .collection(CollectionNames.users)
+          .doc(uid)
+          .snapshots();
+    });
 
 class AccessDeniedScreen extends ConsumerWidget {
   const AccessDeniedScreen({super.key});
@@ -63,11 +71,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) {
       final user = authState.valueOrNull;
-      
+
       final isLoggingIn = state.uri.path == '/login';
       final isVerifying = state.uri.path == '/verify-email';
-//       final isDenied = state.uri.path == '/access-denied';
-      
+      //       final isDenied = state.uri.path == '/access-denied';
+
       if (authState.isLoading) return null;
 
       if (user == null) {
@@ -80,7 +88,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // We cannot await inside sync redirect easily without a Listenable,
       // but we will handle the admin check via a route or shell.
-      // Wait, let's just let the access-denied check happen at the shell level 
+      // Wait, let's just let the access-denied check happen at the shell level
       // or we can use the provider.
 
       if (isLoggingIn || isVerifying) {
@@ -90,10 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/verify-email',
         builder: (context, state) {
@@ -108,8 +113,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           final user = ref.read(firebaseAuthProvider).currentUser;
-          if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          
+          if (user == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
           final profileAsync = ref.watch(userProfileProvider(user.uid));
           return profileAsync.when(
             data: (profile) {
@@ -118,12 +127,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return const AccessDeniedScreen();
               }
               // Wait, AdminShell might not need user, we'll see
-              return AdminShell(
-                navigationShell: navigationShell,
-              );
+              return AdminShell(navigationShell: navigationShell);
             },
-            loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-            error: (_, _) => const Scaffold(body: Center(child: Text('Error loading profile'))),
+            loading: () => const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, _) => const Scaffold(
+              body: Center(child: Text('Error loading profile')),
+            ),
           );
         },
         branches: [
@@ -143,7 +154,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: ':id',
-                    builder: (context, state) => RequestDetailsScreen(requestId: state.pathParameters['id']!),
+                    builder: (context, state) => RequestDetailsScreen(
+                      requestId: state.pathParameters['id']!,
+                    ),
                   ),
                 ],
               ),
@@ -157,7 +170,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: ':id',
-                    builder: (context, state) => PersonDetailsScreen(customerId: state.pathParameters['id']!),
+                    builder: (context, state) => PersonDetailsScreen(
+                      customerId: state.pathParameters['id']!,
+                    ),
                   ),
                 ],
               ),
@@ -171,7 +186,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: ':id',
-                    builder: (context, state) => AgentDetailsScreen(agentId: state.pathParameters['id']!),
+                    builder: (context, state) => AgentDetailsScreen(
+                      agentId: state.pathParameters['id']!,
+                    ),
                   ),
                 ],
               ),

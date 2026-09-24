@@ -11,7 +11,11 @@ class ActivityRemoteDataSourceImpl implements ActivityRemoteDataSource {
 
   @override
   Stream<QuerySnapshot> watchAuditLogs() {
-    return firestore.collection(CollectionNames.auditLogs).orderBy('timestamp', descending: true).limit(100).snapshots();
+    return firestore
+        .collection(CollectionNames.auditLogs)
+        .orderBy('timestamp', descending: true)
+        .limit(100)
+        .snapshots();
   }
 
   @override

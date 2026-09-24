@@ -11,7 +11,11 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Stream<QuerySnapshot> watchServices() {
-    return firestore.collection('services').orderBy('name').limit(100).snapshots();
+    return firestore
+        .collection('services')
+        .orderBy('name')
+        .limit(100)
+        .snapshots();
   }
 
   @override
@@ -21,7 +25,10 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
   }
 
   @override
-  Future<void> updateService(String serviceId, Map<String, dynamic> data) async {
+  Future<void> updateService(
+    String serviceId,
+    Map<String, dynamic> data,
+  ) async {
     await firestore.collection('services').doc(serviceId).update(data);
   }
 }

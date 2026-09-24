@@ -335,39 +335,53 @@ class _RequestTable extends StatelessWidget {
               child: Text('No requests in this section.'),
             ),
           if (docs.isNotEmpty)
-            LayoutBuilder(builder: (context, constraints) { return SingleChildScrollView(scrollDirection: Axis.horizontal, child: ConstrainedBox(constraints: BoxConstraints(minWidth: constraints.maxWidth), child: DataTable(
-                headingRowHeight: 46,
-                dataRowMinHeight: 60,
-                dataRowMaxHeight: 70,
-                columns: const [
-                  DataColumn(label: Text('REQUEST')),
-                  DataColumn(label: Text('SERVICE')),
-                  DataColumn(label: Text('DATE')),
-                  DataColumn(label: Text('STATUS')),
-                ],
-                rows: [
-                  for (final doc in docs)
-                    DataRow(
-                      cells: [
-                        DataCell(
-                          Text(
-                            doc.request.requestCode,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: DataTable(
+                      headingRowHeight: 46,
+                      dataRowMinHeight: 60,
+                      dataRowMaxHeight: 70,
+                      columns: const [
+                        DataColumn(label: Text('REQUEST')),
+                        DataColumn(label: Text('SERVICE')),
+                        DataColumn(label: Text('DATE')),
+                        DataColumn(label: Text('STATUS')),
+                      ],
+                      rows: [
+                        for (final doc in docs)
+                          DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  doc.request.requestCode,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Text(adminLabel(doc.request.serviceType)),
+                              ),
+                              DataCell(
+                                Text(_date(doc.request.preferredDateTime)),
+                              ),
+                              DataCell(
+                                _StatusBadge(
+                                  doc.request.status.toStoredValue(),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        DataCell(Text(adminLabel(doc.request.serviceType))),
-                        DataCell(Text(_date(doc.request.preferredDateTime))),
-                        DataCell(
-                          _StatusBadge(doc.request.status.toStoredValue()),
-                        ),
                       ],
                     ),
-                ],
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
         ],
       ),
     ),

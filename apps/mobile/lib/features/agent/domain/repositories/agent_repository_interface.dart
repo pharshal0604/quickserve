@@ -21,5 +21,6 @@ abstract class AgentRepositoryInterface {
   Future<void> completeRequest({
     required String requestId,
     required String agentId,
+    String note,
   });
 }

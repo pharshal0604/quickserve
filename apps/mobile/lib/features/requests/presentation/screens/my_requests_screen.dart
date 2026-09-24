@@ -54,7 +54,6 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
         child: ChoiceChip(
           label: Text(
             filter[0].toUpperCase() + filter.substring(1),
-            style: TextStyle(color: AppColors.darkTextPrimary),
           ),
           selected: _filter == filter,
           onSelected: (_) => setState(() => _filter = filter),
@@ -134,15 +133,15 @@ class _MyRequestsScreenState extends ConsumerState<MyRequestsScreen> {
                       style: TextStyle(color: mutedColor),
                     ),
                     const Spacer(),
-                    Icon(
-                      Icons.flag_outlined,
-                      size: 15,
-                      color: mutedColor,
-                    ),
+                    Icon(Icons.flag_outlined, size: 15, color: mutedColor),
                     const SizedBox(width: 4),
                     Text(
-                      request.priority.name[0].toUpperCase() + request.priority.name.substring(1),
-                      style: TextStyle(color: mutedColor, fontWeight: FontWeight.w600),
+                      request.priority.name[0].toUpperCase() +
+                          request.priority.name.substring(1),
+                      style: TextStyle(
+                        color: mutedColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

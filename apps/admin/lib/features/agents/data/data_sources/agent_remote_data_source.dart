@@ -3,7 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 abstract class AgentRemoteDataSource {
   Stream<QuerySnapshot> watchAgents();
   Future<DocumentSnapshot> getAgentDetails(String agentId);
-  Future<void> updateAgentSchedule(String agentId, Map<String, dynamic> schedule);
+  Future<void> updateAgentSchedule(
+    String agentId,
+    Map<String, dynamic> schedule,
+  );
   Future<void> createDummyAgent(Map<String, dynamic> agentData);
 }
 
@@ -12,7 +15,11 @@ class AgentRemoteDataSourceImpl implements AgentRemoteDataSource {
 
   @override
   Stream<QuerySnapshot> watchAgents() {
-    return firestore.collection('users').where('role', isEqualTo: 'agent').limit(200).snapshots();
+    return firestore
+        .collection('users')
+        .where('role', isEqualTo: 'agent')
+        .limit(200)
+        .snapshots();
   }
 
   @override
@@ -21,8 +28,13 @@ class AgentRemoteDataSourceImpl implements AgentRemoteDataSource {
   }
 
   @override
-  Future<void> updateAgentSchedule(String agentId, Map<String, dynamic> schedule) async {
-    await firestore.collection('users').doc(agentId).update({'schedule': schedule});
+  Future<void> updateAgentSchedule(
+    String agentId,
+    Map<String, dynamic> schedule,
+  ) async {
+    await firestore.collection('users').doc(agentId).update({
+      'schedule': schedule,
+    });
   }
 
   @override

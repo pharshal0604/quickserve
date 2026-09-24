@@ -1,5 +1,6 @@
 import '../../domain/repositories/service_repository.dart';
 import '../data_sources/service_remote_data_source.dart';
+
 import 'package:shared/models/service.dart';
 import 'package:shared/entities/service_entity.dart';
 
@@ -11,7 +12,15 @@ class ServiceRepositoryImpl implements ServiceRepository {
   @override
   Stream<List<({String id, ServiceEntity service})>> watchServices() {
     return remoteDataSource.watchServices().map((snapshot) {
-      return snapshot.docs.map((doc) => (id: doc.id, service: Service.fromMap(doc.data() as Map<String, dynamic>).toEntity())).toList();
+      return snapshot.docs
+          .map(
+            (doc) => (
+              id: doc.id,
+              service: Service.fromMap(doc.data() as Map<String, dynamic>)
+                  .toEntity(),
+            ),
+          )
+          .toList();
     });
   }
 
@@ -26,7 +35,12 @@ class ServiceRepositoryImpl implements ServiceRepository {
   }
 
   @override
-  Future<void> updateService(String serviceId, String name, String description, bool active) {
+  Future<void> updateService(
+    String serviceId,
+    String name,
+    String description,
+    bool active,
+  ) {
     return remoteDataSource.updateService(serviceId, {
       'name': name,
       'description': description,

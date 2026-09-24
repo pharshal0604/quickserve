@@ -28,12 +28,10 @@ class Counter {
   int get hashCode => lastRequestNumber.hashCode;
 
   /// Converts this model to a pure-Dart domain entity.
-  CounterEntity toEntity() => CounterEntity(
-    lastRequestNumber: lastRequestNumber,
-  );
+  CounterEntity toEntity() =>
+      CounterEntity(lastRequestNumber: lastRequestNumber);
 
   /// Creates this model from a pure-Dart domain entity.
-  factory Counter.fromEntity(CounterEntity entity) => Counter(
-    lastRequestNumber: entity.lastRequestNumber,
-  );
+  factory Counter.fromEntity(CounterEntity entity) =>
+      Counter(lastRequestNumber: entity.lastRequestNumber);
 }

@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +5,6 @@ import 'package:shared/shared.dart' as shared;
 
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/core/error/app_exceptions.dart';
-import 'package:quickserve_mobile/features/agent/presentation/widgets/agent_common/agent_bottom_nav.dart';
 import 'package:quickserve_mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:quickserve_mobile/config/theme/theme_provider.dart';
@@ -25,6 +23,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use ref.listenManual in initState to populate controllers once.
+    // This avoids mutating state during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listenManual(userProfileProvider, (_, next) {
+        if (next.hasValue && next.value != null && !_initialized) {
+          _nameController.text = next.value!.name;
+          _phoneController.text = next.value!.phone;
+          _initialized = true;
+        }
+      }, fireImmediately: true);
+    });
+  }
 
   @override
   void dispose() {
@@ -70,14 +84,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
 
-    if (profile.hasValue && profile.value != null && !_initialized) {
-      _nameController.text = profile.value!.name;
-      _phoneController.text = profile.value!.phone;
-      // We schedule the _initialized flag to be set to true so we don't mutate state during build,
-      // but Dart is single-threaded so simply assigning it here is fine since it's just a local variable.
-      _initialized = true;
-    }
-
     return profile.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -90,11 +96,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             body: Center(child: Text('Profile not found.')),
           );
         }
-        final authUser = ref.watch(authStateProvider).value;
         if (user.role == shared.UserRole.agent) {
           return _AgentProfileView(
             user: user,
-            authUser: authUser,
             editing: _editing,
             saving: _saving,
             phoneController: _phoneController,
@@ -107,7 +111,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
         return _CustomerProfileView(
           user: user,
-          authUser: authUser,
           editing: _editing,
           saving: _saving,
           nameController: _nameController,
@@ -140,7 +143,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 class _AgentProfileView extends ConsumerWidget {
   const _AgentProfileView({
     required this.user,
-    required this.authUser,
     required this.editing,
     required this.saving,
     required this.phoneController,
@@ -152,7 +154,6 @@ class _AgentProfileView extends ConsumerWidget {
   });
 
   final shared.User user;
-  final fb.User? authUser;
   final bool editing;
   final bool saving;
   final TextEditingController phoneController;
@@ -164,18 +165,16 @@ class _AgentProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final avatarUrl = authUser?.photoURL;
+    final avatarUrl = ref.watch(authPhotoUrlProvider);
     final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
 
-    return HomeBackScope(
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: const Text('Profile'),
-        ),
-        bottomNavigationBar: const AgentBottomNav(currentIndex: 3),
-        body: ListView(
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text('Profile'),
+      ),
+      body: ListView(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
           children: [
             // ── Avatar ─────────────────────────────────────────────
@@ -298,7 +297,6 @@ class _AgentProfileView extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -335,7 +333,6 @@ class _StatusLabel extends StatelessWidget {
 class _CustomerProfileView extends ConsumerWidget {
   const _CustomerProfileView({
     required this.user,
-    required this.authUser,
     required this.editing,
     required this.saving,
     required this.nameController,
@@ -349,7 +346,6 @@ class _CustomerProfileView extends ConsumerWidget {
   });
 
   final shared.User user;
-  final fb.User? authUser;
   final bool editing;
   final bool saving;
   final TextEditingController nameController;
@@ -363,7 +359,7 @@ class _CustomerProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photoUrl = authUser?.photoURL;
+    final photoUrl = ref.watch(authPhotoUrlProvider);
     final initial = user.name.trim().isEmpty ? '?' : user.name.trim()[0];
 
     return HomeBackScope(

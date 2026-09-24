@@ -8,8 +8,6 @@ class RemoveAddress {
   final UserRepositoryInterface _repository;
 
   /// Executes the usecase.
-  Future<void> call(AddressParams params) => _repository.removeAddress(
-        uid: params.uid,
-        address: params.address,
-      );
+  Future<void> call(AddressParams params) =>
+      _repository.removeAddress(uid: params.uid, address: params.address);
 }

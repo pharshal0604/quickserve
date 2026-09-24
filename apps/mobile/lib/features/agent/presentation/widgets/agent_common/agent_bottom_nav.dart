@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quickserve_mobile/config/routes/app_routes.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 
 /// Root navigation for the agent experience.
@@ -19,10 +20,10 @@ class AgentBottomNav extends StatelessWidget {
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
         const paths = [
-          '/home',
-          '/agent/requests',
-          '/agent/history',
-          '/profile',
+          AppRoutes.home,
+          AppRoutes.agentRequests,
+          AppRoutes.agentHistory,
+          AppRoutes.profile,
         ];
         context.go(paths[index]);
       },

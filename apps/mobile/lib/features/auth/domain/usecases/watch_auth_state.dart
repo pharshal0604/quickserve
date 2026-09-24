@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../repositories/auth_repository_interface.dart';
 
 /// Use case to watch the authentication state.

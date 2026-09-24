@@ -21,8 +21,8 @@ class CancelRequest {
 
   /// Executes the usecase.
   Future<void> call(CancelRequestParams params) => _repository.cancelRequest(
-        requestId: params.requestId,
-        reason: params.reason,
-        userId: params.userId,
-      );
+    requestId: params.requestId,
+    reason: params.reason,
+    userId: params.userId,
+  );
 }

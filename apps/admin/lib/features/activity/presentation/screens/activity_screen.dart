@@ -41,8 +41,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         stream: ref.watch(watchUsersProvider).call(),
         builder: (context, usersSnapshot) {
           final usersById = <String, UserEntity>{
-            for (final doc in usersSnapshot.data ?? const [])
-              doc.id: doc.user,
+            for (final doc in usersSnapshot.data ?? const []) doc.id: doc.user,
           };
           return ListView(
             padding: const EdgeInsets.all(24),
@@ -60,9 +59,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Review administrative actions, authorization failures, and database events.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ),
@@ -185,9 +187,7 @@ class _ActivityTable extends StatelessWidget {
                   DataCell(
                     SizedBox(
                       width: 160,
-                      child: Text(
-                        adminLabel(doc.log.action.name),
-                      ),
+                      child: Text(adminLabel(doc.log.action.name)),
                     ),
                   ),
                   DataCell(
@@ -198,9 +198,7 @@ class _ActivityTable extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DataCell(
-                    _ResultBadge(doc.log.result),
-                  ),
+                  DataCell(_ResultBadge(doc.log.result)),
                   DataCell(
                     IconButton(
                       tooltip: 'View activity event',
@@ -282,7 +280,10 @@ class _AuditDetailsDialog extends StatelessWidget {
                 children: [
                   _AuditDetailRow(label: 'actorUserId', value: log.actorUserId),
                   const Divider(height: 20),
-                  _AuditDetailRow(label: 'actorRole', value: log.actorRole.name),
+                  _AuditDetailRow(
+                    label: 'actorRole',
+                    value: log.actorRole.name,
+                  ),
                   const Divider(height: 20),
                   _AuditDetailRow(label: 'action', value: log.action.name),
                   const Divider(height: 20),
@@ -290,13 +291,22 @@ class _AuditDetailsDialog extends StatelessWidget {
                   const Divider(height: 20),
                   _AuditDetailRow(label: 'targetId', value: log.targetId),
                   const Divider(height: 20),
-                  _AuditDetailRow(label: 'oldValue', value: _formatAuditValue(log.oldValue)),
+                  _AuditDetailRow(
+                    label: 'oldValue',
+                    value: _formatAuditValue(log.oldValue),
+                  ),
                   const Divider(height: 20),
-                  _AuditDetailRow(label: 'newValue', value: _formatAuditValue(log.newValue)),
+                  _AuditDetailRow(
+                    label: 'newValue',
+                    value: _formatAuditValue(log.newValue),
+                  ),
                   const Divider(height: 20),
                   _AuditDetailRow(label: 'result', value: log.result),
                   const Divider(height: 20),
-                  _AuditDetailRow(label: 'timestamp', value: log.timestamp.toString()),
+                  _AuditDetailRow(
+                    label: 'timestamp',
+                    value: log.timestamp.toString(),
+                  ),
                 ],
               ),
             ],
@@ -357,19 +367,21 @@ class _AuditSummaryCard extends StatelessWidget {
           if (hasStatusChange)
             Text(
               'Status changed from ${adminLabel(oldStatus!)} to ${adminLabel(newStatus!)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             )
           else
             Text(
               adminLabel(action),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
           const SizedBox(height: 12),
-          _SummaryLine(label: 'Result', value: adminLabel(result), color: resultColor),
+          _SummaryLine(
+            label: 'Result',
+            value: adminLabel(result),
+            color: resultColor,
+          ),
           _SummaryLine(
             label: 'Target',
             value: '${adminLabel(targetType)} · $targetId',
@@ -404,7 +416,10 @@ class _SummaryLine extends StatelessWidget {
             ),
             TextSpan(
               text: value,
-              style: TextStyle(color: color, fontWeight: color == null ? null : FontWeight.w700),
+              style: TextStyle(
+                color: color,
+                fontWeight: color == null ? null : FontWeight.w700,
+              ),
             ),
           ],
         ),

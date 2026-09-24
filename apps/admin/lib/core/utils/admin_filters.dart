@@ -45,7 +45,8 @@ class AdminRequestFilters {
     ].join(' ').toLowerCase();
     return (needle.isEmpty || searchable.contains(needle)) &&
         (status == 'all' ||
-            StatusNames.values.contains(status) && request.status.toStoredValue() == status) &&
+            StatusNames.values.contains(status) &&
+                request.status.toStoredValue() == status) &&
         (priority == 'all' ||
             PriorityNames.values.contains(priority) &&
                 request.priority.name == priority) &&
@@ -57,8 +58,8 @@ class AdminRequestFilters {
   ) {
     final result = input.where((doc) => matches(doc.request)).toList()
       ..sort((a, b) {
-        final aTime = a.request.updatedAt.millisecondsSinceEpoch ;
-        final bTime = b.request.updatedAt.millisecondsSinceEpoch ;
+        final aTime = a.request.updatedAt.millisecondsSinceEpoch;
+        final bTime = b.request.updatedAt.millisecondsSinceEpoch;
         return bTime.compareTo(aTime);
       });
     final start = page * pageSize;
