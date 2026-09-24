@@ -248,14 +248,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             : Text('Sign In as $_accountType'),
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      const _DividerLabel(label: 'OR CONTINUE WITH'),
-                      const SizedBox(height: AppSpacing.md),
-                      OutlinedButton.icon(
-                        onPressed: _isLoading ? null : _signInWithGoogle,
-                        icon: const _GoogleMark(),
-                        label: const Text('Continue with Google'),
-                      ),
                       if (!widget.isAgentLogin) ...[
+                        const _DividerLabel(label: 'OR CONTINUE WITH'),
+                        const SizedBox(height: AppSpacing.md),
+                        OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _signInWithGoogle,
+                          icon: const _GoogleMark(),
+                          label: const Text('Continue with Google'),
+                        ),
                         const SizedBox(height: AppSpacing.lg),
                         Center(
                           child: Row(
