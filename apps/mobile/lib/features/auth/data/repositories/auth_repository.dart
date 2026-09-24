@@ -59,6 +59,22 @@ final class AuthRepository {
     }
   }
 
+  Future<void> sendEmailVerification() async {
+    try {
+      await fb.FirebaseAuth.instance.currentUser?.sendEmailVerification();
+    } catch (error) {
+      throw mapAuthError(error);
+    }
+  }
+
+  Future<void> reload() async {
+    try {
+      await fb.FirebaseAuth.instance.currentUser?.reload();
+    } catch (error) {
+      throw mapAuthError(error);
+    }
+  }
+
   Future<void> signOut() async {
     try {
       if (!kIsWeb) await GoogleSignIn().signOut();

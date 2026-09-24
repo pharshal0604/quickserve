@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const agentLogin = '/agent-login';
   static const register = '/register';
   static const passwordReset = '/password-reset';
+  static const verifyEmail = '/verify-email';
 
   // ── Core ──────────────────────────────────────────────────────────
   static const home = '/home';

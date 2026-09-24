@@ -1,13 +1,13 @@
-/// Authorization tests for QuickServe.
-///
-/// These tests verify:
-/// 1. The Firestore `permission-denied` error is correctly mapped to a safe
-///    [UserRepositoryException] with the `permission-denied` code — proving
-///    that the security rule layer (not just the UI) enforces access control.
-/// 2. Role-based routing logic: a customer cannot navigate to agent routes and
-///    vice versa.
-/// 3. The request ownership guard: attempting to parse a request for a
-///    different customer ID throws a [RequestRepositoryException].
+// Authorization tests for QuickServe.
+//
+// These tests verify:
+// 1. The Firestore `permission-denied` error is correctly mapped to a safe
+//    [UserRepositoryException] with the `permission-denied` code — proving
+//    that the security rule layer (not just the UI) enforces access control.
+// 2. Role-based routing logic: a customer cannot navigate to agent routes and
+//    vice versa.
+// 3. The request ownership guard: attempting to parse a request for a
+//    different customer ID throws a [RequestRepositoryException].
 
 
 import 'package:cloud_firestore/cloud_firestore.dart';

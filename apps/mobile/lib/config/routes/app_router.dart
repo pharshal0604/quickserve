@@ -25,6 +25,7 @@ import 'package:quickserve_mobile/features/requests/presentation/screens/request
 import 'package:quickserve_mobile/features/services/presentation/screens/services_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/password_reset_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/register_screen.dart';
+import 'package:quickserve_mobile/features/auth/presentation/screens/verify_email_screen.dart';
 import 'package:quickserve_mobile/features/requests/presentation/screens/request_success_screen.dart';
 import 'package:quickserve_mobile/features/services/presentation/screens/service_details_screen.dart';
 import 'package:quickserve_mobile/features/auth/presentation/screens/splash_screen.dart';
@@ -81,6 +82,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.passwordReset,
         builder: (context, state) => const PasswordResetScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyEmail,
+        builder: (context, state) => const VerifyEmailScreen(),
       ),
       GoRoute(path: AppRoutes.home, builder: (context, state) => const HomeScreen()),
       GoRoute(
@@ -202,6 +207,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (registering && path == AppRoutes.register) return null;
+
+      if (!user.emailVerified) {
+        return path == AppRoutes.verifyEmail ? null : AppRoutes.verifyEmail;
+      }
 
       final profileState = ref.read(userProfileProvider);
       final justLoggedIn = ref.read(justLoggedInProvider);
