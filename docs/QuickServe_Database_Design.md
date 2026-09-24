@@ -835,17 +835,12 @@ Readers should treat newly added optional fields as absent until populated. Writ
 | `AUTHORIZATION_FAILED` | Protected action denied or invalid. |
 | `DATABASE_ERROR` | Relevant database failure. |
 
-## Appendix C — Companion Documentation Set {.unnumbered}
+## Appendix C - Companion Documentation Set
 
-1. PRD (Product Requirements Document) — finalized.
-2. Requirements Checklist / Traceability.
-3. System Architecture Document.
-4. Database Design Document — this document.
-5. RBAC & Security Document.
-6. User Flow Diagram.
-7. Request Lifecycle / State Diagram.
-8. UI/UX Wireframes.
-9. Testing Plan.
-10. README / Setup & Deployment Documentation.
+1. System Architecture Document
+2. Database Design Document - this document
+3. RBAC & Security Document
+4. README / Setup & Deployment Documentation
 
 The companion documents must use the same roles, states, collections, fields, stored enum values, event names, framework decisions, and billing constraints.
+

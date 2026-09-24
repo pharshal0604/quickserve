@@ -890,15 +890,10 @@ firebase deploy --only hosting
 
 No command in this appendix requires Cloud Functions, a paid Firebase plan, a credit card, or a real secret.
 
-## Appendix C — Companion Documentation Set {.unnumbered}
+## Appendix C - Companion Documentation Set
 
-1. PRD (Product Requirements Document) — finalized.
-2. Requirements Checklist / Traceability.
-3. System Architecture Document.
-4. Database Design Document.
-5. RBAC & Security Document.
-6. User Flow Diagram.
-7. Request Lifecycle / State Diagram.
-8. UI/UX Wireframes.
-9. Testing Plan.
-10. README / Setup & Deployment Documentation — this document.
+1. System Architecture Document
+2. Database Design Document
+3. RBAC & Security Document
+4. README / Setup & Deployment Documentation - this document.
+

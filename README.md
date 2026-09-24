@@ -105,7 +105,8 @@ The system is built as a **Flutter monorepo** with a shared Dart package, and us
 
 | Feature | Customer | Agent | Admin |
 |---|:---:|:---:|:---:|
-| Email + Google Authentication | ✅ | ✅ | ✅ |
+| Email/Password Authentication | ✅ | ✅ | ✅ |
+| Google Sign-In | ✅ | — | — | ✅ | ✅ | ✅ |
 | Service browsing | ✅ | — | ✅ |
 | Create service request | ✅ | — | ✅ |
 | Real-time request tracking | ✅ | ✅ | ✅ |
@@ -181,7 +182,7 @@ The application follows a **layered architecture** separating presentation, doma
 ## Security
 
 ### Firebase Authentication
-- Email/password and Google Sign-In
+- Email/Password (All Roles) and Google Sign-In (Customers Only)
 - Role resolved from Firestore `users/{uid}.role` after authentication
 
 ### Firestore Security Rules (518 lines)
@@ -219,7 +220,6 @@ The security rules enforce:
 | **Cloud Functions** | Firebase Cloud Functions (TypeScript) |
 | **Admin Portal** | Flutter Web with Riverpod + GoRouter |
 | **Design System** | Material 3 · Centralized theme package |
-| **CI/CD** | GitHub Actions (analyze + format + test) |
 | **Monorepo** | Dart workspace with shared package |
 
 ---
@@ -446,20 +446,14 @@ flutter run
 
 ## Documentation
 
-Comprehensive documentation lives in [`docs/`](docs/):
+Comprehensive technical documentation lives in the [docs/](docs/) directory:
 
-| # | Document | Description |
-|---|---|---|
-| 1 | [PRD](docs/QuickServe_PRD.md) | Product Requirements Document |
-| 2 | [Requirements Checklist](docs/QuickServe_Requirements_Checklist.md) | Traceability matrix |
-| 3 | [System Architecture](docs/QuickServe_System_Architecture.md) | Architecture decisions and diagrams |
-| 4 | [Database Design](docs/QuickServe_Database_Design.md) | Firestore schema and relationships |
-| 5 | [RBAC & Security](docs/QuickServe_RBAC_Security.md) | Role-based access control and Firestore rules |
-| 6 | [User Flow Diagram](docs/QuickServe_User_Flow_Diagram.md) | End-to-end user journeys |
-| 7 | [Request Lifecycle](docs/QuickServe_Request_Lifecycle_State_Diagram.md) | State machine and transition rules |
-| 8 | [UI/UX Wireframes](docs/QuickServe_UI_UX_Wireframes.md) | Screen layouts and interaction patterns |
-| 9 | [Testing Plan](docs/QuickServe_Testing_Plan.md) | Testing strategy and coverage |
-| 10 | [Setup & Deployment](docs/QuickServe_README_Setup_Deployment.md) | Installation and deployment guide |
+| Document | Description |
+|---|---|
+| [System Architecture](docs/QuickServe_System_Architecture.md) | High-level architecture, layer responsibilities, and state management. |
+| [Database Design](docs/QuickServe_Database_Design.md) | Firestore schema, collections, and document relationships. |
+| [RBAC & Security](docs/QuickServe_RBAC_Security.md) | Role-based access control flows and Firestore security rules. |
+| [Setup & Deployment](docs/QuickServe_README_Setup_Deployment.md) | Detailed installation and Firebase configuration guide. |
 
 ---
 
@@ -489,9 +483,9 @@ GoRouter provides URL-based deep linking, declarative redirects for authenticati
 
 ## Engineering Challenges Solved
 
-### Role-Based Navigation
+### Role-Based Navigation & Render-Level Failsafes
 
-A single mobile app serves both Customer and Agent roles. The router dynamically redirects to the correct shell (`/home` vs `/a/home`) based on the user's Firestore profile role, while sharing screens like Request Details between both roles.
+A single mobile app serves both Customer and Agent roles. The router dynamically redirects to the correct shell (`/home` vs `/a/home`) based on the user's Firestore profile role. To ensure absolute security, role-based navigation is protected by both `GoRouter` redirect guards AND synchronous Render-Level Failsafes built directly into the UI components (which violently intercept and block unverified accesses if the navigation stack ever glitches).
 
 ### Atomic Request Creation
 
@@ -532,6 +526,11 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+
+
+
+
 
 
 

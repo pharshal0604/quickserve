@@ -649,18 +649,12 @@ Refer to the “Architecture overview” subsection of the “High-Level Archite
 | Firebase Hosting | Optional static Flutter Web hosting | Mobile distribution | Hosting deployment review |
 | Git/GitHub | Source history, collaboration, documentation, optional CI | Runtime business behavior | Repository review |
 
-## Appendix C — Companion Documentation Set {.unnumbered}
+## Appendix C - Companion Documentation Set
 
-1. PRD (Product Requirements Document) — finalized.
-2. Requirements Checklist / Traceability.
-3. System Architecture Document — this document.
-4. Database Design Document.
-5. RBAC & Security Document.
-6. User Flow Diagram.
-7. Request Lifecycle / State Diagram.
-8. UI/UX Wireframes.
-9. Testing Plan.
-10. README / Setup & Deployment Documentation.
+1. System Architecture Document - this document
+2. Database Design Document
+3. RBAC & Security Document
+4. README / Setup & Deployment Documentation
 
 The companion documents must use the same roles, states, collections, stored enum values, events, framework decisions, and billing constraints.
 
@@ -679,3 +673,4 @@ The companion documents must use the same roles, states, collections, stored enu
 - [ ] No Cloud Functions, paid services, or non-Flutter UI frameworks are required.
 - [ ] Crashlytics configuration is documented where supported.
 - [ ] Architecture, database, security, testing, and README documents are consistent.
+

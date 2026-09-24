@@ -1634,15 +1634,10 @@ service cloud.firestore {
 
 The client must build `oldValue` and `newValue` with an allowlist rather than serializing an entire Dart model or exception object. Before a write, the serializer must reject forbidden key names and omit fields that are not needed for the event.
 
-## Appendix C — Companion Documentation Set {.unnumbered}
+## Appendix C - Companion Documentation Set
 
-1. PRD (Product Requirements Document) — finalized.
-2. Requirements Checklist / Traceability.
-3. System Architecture Document.
-4. Database Design Document.
-5. RBAC & Security Document — this document.
-6. User Flow Diagram.
-7. Request Lifecycle / State Diagram.
-8. UI/UX Wireframes.
-9. Testing Plan.
-10. README / Setup & Deployment Documentation.
+1. System Architecture Document
+2. Database Design Document
+3. RBAC & Security Document - this document
+4. README / Setup & Deployment Documentation
+
