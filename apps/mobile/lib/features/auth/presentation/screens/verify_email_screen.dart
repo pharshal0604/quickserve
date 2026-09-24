@@ -51,6 +51,18 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     setState(() => _checking = true);
     try {
       await ref.read(authRepositoryProvider).reload();
+      // Double check after reload to give immediate user feedback
+      final user = ref.read(authStateProvider).value;
+      if (user != null && !user.emailVerified) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are not verified yet! Please check your email inbox and click the link first.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
