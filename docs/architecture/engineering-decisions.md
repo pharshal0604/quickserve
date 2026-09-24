@@ -1,4 +1,4 @@
-<![CDATA[# Engineering Decisions
+﻿# Engineering Decisions
 
 This document explains the **why** behind QuickServe's technical choices. Each decision was made to solve a specific engineering problem, not just to use a popular library.
 
@@ -6,11 +6,11 @@ This document explains the **why** behind QuickServe's technical choices. Each d
 
 ## State Management: Riverpod
 
-**Problem:** The app needs authentication state, user profiles, real-time request lists, and computed metrics — all reactive, all interconnected.
+**Problem:** The app needs authentication state, user profiles, real-time request lists, and computed metrics â€” all reactive, all interconnected.
 
 **Why Riverpod over Provider:**
 - `Provider` requires `BuildContext` to read state, which makes it impossible to use in repositories or non-widget code.
-- Riverpod's `ref.watch` provides compile-time safety. If a provider is deleted, every consumer gets a compile error — not a runtime crash.
+- Riverpod's `ref.watch` provides compile-time safety. If a provider is deleted, every consumer gets a compile error â€” not a runtime crash.
 - Derived state is natural: `agentMetricsProvider` watches `agentRequestsProvider` and computes pending/active/completed counts reactively, with zero manual subscription management.
 
 **Why not BLoC:**
@@ -20,7 +20,7 @@ This document explains the **why** behind QuickServe's technical choices. Each d
 
 ## Backend: Firebase
 
-**Problem:** The app needs authentication, a real-time database, push notifications, and server-side security rules — all without building and maintaining a custom backend for core CRUD operations.
+**Problem:** The app needs authentication, a real-time database, push notifications, and server-side security rules â€” all without building and maintaining a custom backend for core CRUD operations.
 
 **Why Firebase fits:**
 - **Firestore Security Rules** provide defense-in-depth. Even if a malicious client bypasses all Dart validation, the rules still enforce ownership, role-based access, field immutability, and valid status transitions.
@@ -59,11 +59,11 @@ final message = switch (error.code) {
 **Problem:** The mobile app and admin portal both need the same entities, validators, lifecycle rules, status colors, and theme tokens. Duplicating them creates drift.
 
 **Solution:** `packages/shared` is a pure Dart package consumed by both apps:
-- **Entities** — `User`, `Request`, `Service`, `AuditLog`, `StatusHistory`, `Counter`
-- **Validators** — `validateName()`, `validatePhone()`, `validateAddress()`, `validatePreferredDateTime()`
-- **Lifecycle** — `requireValidTransition()`, `isCancellableByCustomer()`
-- **Theme** — `AppColors`, `AppSpacing`, `AppTheme`, `AppRadius`, `AppShadows`
-- **Constants** — `CollectionNames`, `StatusNames`, `RoleNames`, `EventNames`
+- **Entities** â€” `User`, `Request`, `Service`, `AuditLog`, `StatusHistory`, `Counter`
+- **Validators** â€” `validateName()`, `validatePhone()`, `validateAddress()`, `validatePreferredDateTime()`
+- **Lifecycle** â€” `requireValidTransition()`, `isCancellableByCustomer()`
+- **Theme** â€” `AppColors`, `AppSpacing`, `AppTheme`, `AppRadius`, `AppShadows`
+- **Constants** â€” `CollectionNames`, `StatusNames`, `RoleNames`, `EventNames`
 
 **Key constraint:** The shared package has **zero Firebase dependencies**. All `fromMap()` / `toMap()` methods work with plain `Map<String, dynamic>`, not Firebase `DocumentSnapshot`.
 
@@ -97,7 +97,7 @@ if (userProfile.role == UserRole.agent) {
 - No requests without history entries
 - No audit logs for operations that didn't succeed
 
-**The same pattern applies to status transitions:** When an Agent accepts a request, the transaction reads the current status, validates the transition, updates the request, and writes the history entry — all atomically.
+**The same pattern applies to status transitions:** When an Agent accepts a request, the transaction reads the current status, validates the transition, updates the request, and writes the history entry â€” all atomically.
 
 ---
 
@@ -138,7 +138,7 @@ final class ServiceRepositoryException extends AppException { ... }
 
 - `code` is logged for debugging but never shown to users.
 - `userMessage` is always grammatically correct and actionable.
-- The `sealed` keyword ensures exhaustive `switch` handling — the compiler forces you to handle every exception type.
+- The `sealed` keyword ensures exhaustive `switch` handling â€” the compiler forces you to handle every exception type.
 
 ---
 
@@ -148,11 +148,12 @@ final class ServiceRepositoryException extends AppException { ... }
 
 **Solution:** Three layers of enforcement:
 
-1. **Shared Package** (`utils/lifecycle.dart`) — `requireValidTransition(from, to, role)` throws `SharedLifecycleException` if the transition is invalid. This runs on the client before any network call.
+1. **Shared Package** (`utils/lifecycle.dart`) â€” `requireValidTransition(from, to, role)` throws `SharedLifecycleException` if the transition is invalid. This runs on the client before any network call.
 
-2. **Repository Layer** — Inside the Firestore transaction, the repository reads the current status and validates it matches the expected status before writing. This prevents race conditions where two agents try to accept simultaneously.
+2. **Repository Layer** â€” Inside the Firestore transaction, the repository reads the current status and validates it matches the expected status before writing. This prevents race conditions where two agents try to accept simultaneously.
 
-3. **Firestore Security Rules** — The rules re-validate the transition server-side. Even if a malicious client bypasses all Dart code, the rules reject invalid transitions.
+3. **Firestore Security Rules** â€” The rules re-validate the transition server-side. Even if a malicious client bypasses all Dart code, the rules reject invalid transitions.
 
 This defense-in-depth approach means the system is correct even if any single layer fails.
-]]>
+
+
