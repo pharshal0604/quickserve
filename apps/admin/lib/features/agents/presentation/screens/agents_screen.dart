@@ -62,6 +62,7 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _loading = false;
+  bool _obscurePassword = true;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -190,8 +191,18 @@ class _AddAgentDialogState extends State<_AddAgentDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordCtrl,
-                decoration: const InputDecoration(labelText: 'Initial Password'),
-                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Initial Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscurePassword,
                 validator: (v) {
                   final result = validatePassword(v ?? '');
                   return result.isValid ? null : result.reason;
