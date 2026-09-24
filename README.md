@@ -1,3 +1,15 @@
+# QuickServe Assignment Submission
+
+**Candidate:** Harshal Pidurkar
+**Submission For:** Founding Engineering Internship at Swasiq
+
+## Deliverables Quick Links
+- **[Setup & Run Instructions](#setup)**
+- **[Architecture & Security Documentation](docs/QuickServe_System_Architecture.md)**
+- **[RBAC & Firestore Rules Documentation](docs/QuickServe_RBAC_Security.md)**
+- **[Complete Documentation Directory](docs/)**
+
+---
 # QuickServe
 
 A production-oriented home-service platform built with **Flutter**, **Firebase**, and **Riverpod**.
@@ -370,17 +382,7 @@ The design system is centralized in `packages/shared/lib/theme/` and consumed by
 
 ## Quality
 
-### CI/CD Pipeline
-
-GitHub Actions runs on every push and PR to `main`:
-
-```yaml
-flutter pub get → dart format --set-exit-if-changed → flutter analyze → flutter test
-```
-
-Matrix strategy runs the pipeline across `apps/mobile`, `apps/admin`, and `packages/shared`.
-
-### Verification
+### Local Verification
 
 ```bash
 flutter analyze       # Static analysis
@@ -530,4 +532,6 @@ Every Firebase error is caught at the repository layer and transformed into a ty
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+
 
