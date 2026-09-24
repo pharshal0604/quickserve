@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quickserve_mobile/config/theme/app_colors.dart';
 import 'package:quickserve_mobile/config/theme/app_spacing.dart';
@@ -52,7 +53,8 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     try {
       await ref.read(authRepositoryProvider).reload();
       // Double check after reload to give immediate user feedback
-      final user = ref.read(authStateProvider).value;
+      // Use FirebaseAuth directly here to avoid Riverpod stream microtask delay
+      final user = FirebaseAuth.instance.currentUser;
       if (user != null && !user.emailVerified) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
