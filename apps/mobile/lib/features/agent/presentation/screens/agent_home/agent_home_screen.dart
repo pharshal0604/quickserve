@@ -18,6 +18,18 @@ class AgentHomeScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
     final authUser = ref.watch(authStateProvider).value;
 
+    // FAILSAFE: Hard-block unverified users from rendering the dashboard
+    if (authUser != null && !authUser.emailVerified) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/verify-email');
+      });
+      return const Scaffold(
+        body: Center(
+          child: Text('UNVERIFIED ACCESS BLOCKED.\nRedirecting...', textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+        ),
+      );
+    }
+
     if (authUser == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

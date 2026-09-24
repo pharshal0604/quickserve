@@ -16,6 +16,20 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
+    final authUser = ref.watch(authStateProvider).value;
+
+    // FAILSAFE: Hard-block unverified users from rendering the dashboard
+    if (authUser != null && !authUser.emailVerified) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/verify-email');
+      });
+      return const Scaffold(
+        body: Center(
+          child: Text('UNVERIFIED ACCESS BLOCKED.\nRedirecting...', textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+        ),
+      );
+    }
+
     return Scaffold(
       body: profile.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -68,6 +82,19 @@ class _CustomerDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authUser = ref.watch(authStateProvider).value;
+
+    // FAILSAFE: Hard-block unverified users from rendering the dashboard
+    if (authUser != null && !authUser.emailVerified) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/verify-email');
+      });
+      return const Scaffold(
+        body: Center(
+          child: Text('UNVERIFIED ACCESS BLOCKED.\nRedirecting...', textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+        ),
+      );
+    }
+
     final services = ref.watch(_homeServicesProvider);
     final requests = authUser == null
         ? null
